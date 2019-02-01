@@ -1,10 +1,13 @@
 << GroupsAndIndices`
 << FieldsAndCouplings`
 
-Tf[A_, i_, j_] := Module[{ferm, rep, gRep, f1, f2, v}, 
-	Sum[
-		SdelF[ferm, i, f1] SdelF[Bar[ferm], j, f2] 
-		* Sum[SdelV[gaugeGroups[Head @ gRep][Field], A, v] TGen[gRep, v, f1, f2] ,{gRep, fermions[ferm][GaugeRep]}] 
-		* Product[del[rep, f1, f2], {rep, fermions[ferm][FlavorIndices]}]
-	,{ferm, Keys @ fermions}]
-];
+(*Symmetrizing in indices*)
+Sym[i1_, i2_][expr_] := expr /2 + ReplaceAll[expr, {i -> j, j -> i}] /2 ;
+AntiSym[i1_, i2_][expr_] := expr /2 + ReplaceAll[expr, {i -> j, j -> i}] /2 ;
+
+(*Functions that speed up evaluation by applying expand succesively to each couple of terms in the evaluation.*)
+Ttimes[a_, b_, c___] := Ttimes[Expand[a b], c];
+Ttimes[a_] = a;
+Tdot[a_, b_, c___] := Tdot[Expand[a.b], c];
+Tdot[a_] = a;
+

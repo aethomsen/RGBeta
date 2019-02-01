@@ -16,7 +16,7 @@ Clear[eps];
 (*Default group generator properties.*)
 Clear[TGen];
 	TGen /: del[rep_, a___, x_, b___] TGen[rep_, A_, c___, x_, d___] := TGen[rep, A, c, a, b, d];
-	TGen /: del[group_[adj], A___, X_, B___] TGen[group_, rep_, X_, c__] := TGen[rep, A, B, c];
+	TGen /: del[group_[adj], A___, X_, B___] TGen[group_[rep_], X_, c__] := TGen[group[rep], A, B, c];
 	TGen /: TGen[rep_, A_, a_, b_] TGen[rep_, A_, b_, c_] := Casimir2[rep] del[rep, a, c];
 	TGen /: TGen[rep_, A_, a_, b_] TGen[rep_, B_, b_, a_] := TraceNormalization[rep] del[Head[rep][adj], A, B];
 	TGen[rep_, A_, a_, a_] := 0;
