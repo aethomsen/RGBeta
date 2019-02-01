@@ -1,3 +1,4 @@
+(*----------Generic tensor properties----------*)
 (*del[rep, a, b] is the symbol for Kronecker delta \delta_{a,b} belong to the indices specified by the representation.*)
 Clear[del];
 	del /: del[rep_, a___, x_, b___] del[rep_, c___, x_, d___] := del[rep, c, a, b, d];
@@ -20,11 +21,27 @@ Clear[TGen];
 	TGen /: TGen[rep_, A_, a_, b_] TGen[rep_, A_, b_, c_] := Casimir2[rep] del[rep, a, c];
 	TGen /: TGen[rep_, A_, a_, b_] TGen[rep_, B_, b_, a_] := TraceNormalization[rep] del[Head[rep][adj], A, B];
 	TGen[rep_, A_, a_, a_] := 0;
+	
+(*Default structure constant properties.*)
+CasimirSig[group_, a_, b_] := 
+	Block[{common, ind1, ind2},
+		common = Intersection[a, b];
+		ind1 = Complement[a, common][[1]];
+		ind2 = Complement[b, common][[1]];
+		Signature[DeleteCases[a, ind1]] Signature[DeleteCases[b, ind2]] del[group[adj], ind1, ind2]
+	];
+Clear[fStruct];
+	fStruct /: del[group_[adj], A___, X_, B___] fStruct[group_, C___, X_, D___] := fStruct[group, C, A, B, D];
+	fStruct /: fStruct[group_, A___] fStruct[group_, B___] /; Length @ Intersection[List @A, List @B] === 2 := 
+		Casimir2@ group[adj] CasimirSig[group, List@A, List@B];
+	fStruct[group_, a___, x_, b___, x_, c___] := 0;
 
-(*Associationwith all information on the gauge groups: fields, couplings etc.*)
+
+(*----------Gauge group definitions----------*)
+(*Association with all information on the gauge groups: fields, couplings etc.*)
 gaugeGroups = <||>;
 
-(*Initiation for an SU(n) gauge group.*)
+(*Initialization for an SU(n) gauge group.*)
 SUGroup[group_Symbol, n_Integer, OptionsPattern[{Field -> A[group], Coupling -> g[group]}] ] := 
 	Block[{},		
 		AppendTo[gaugeGroups, group -> <|Field -> OptionValue[Field], Coupling -> OptionValue[Coupling] |>];
@@ -52,7 +69,7 @@ SUGroup[group_Symbol, n_Integer, OptionsPattern[{Field -> A[group], Coupling -> 
 			del[group[adj], v1, v2] / Dim @ group[adj]; 
 	];
 
-(*Initiation for a U(1) gauge group.*)	
+(*Initialization for a U(1) gauge group.*)	
 U1Group[group_Symbol, OptionsPattern[{Field -> A[group], Coupling -> g[group]}] ] := 
 	Block[{},
 		AppendTo[gaugeGroups, group -> <|Field -> OptionValue[Field], Coupling -> OptionValue[Coupling] |>];
@@ -61,6 +78,7 @@ U1Group[group_Symbol, OptionsPattern[{Field -> A[group], Coupling -> g[group]}] 
 		Dim[group[x_]] = x;
 		TGen[group[x_],___] = x; 
 		Dim[group[adj]] = 1; 
+		fStruct[group, __] = 0; 
 		
 		(*Sets up the gauge fields and 2-point projection*)
 		CreateVector[OptionValue[Field], group];

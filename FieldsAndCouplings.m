@@ -12,18 +12,18 @@ scalars = <||>;
 (*Initiates a scalar field*)
 Options[CreateScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}};
 CreateScalar[field_, OptionsPattern[] ] :=
-	Block[{},
+	Block[{rep},
 		AppendTo[scalars, field -> <|GaugeRep -> OptionValue[GaugeRep], FlavorIndices -> OptionValue[FlavorIndices],
 			SelfConjugate -> OptionValue[SelfConjugate]|>];
 		If[OptionValue[SelfConjugate],
-			SdelS/: SdelS[field, ind_, f1_] SdelS[field, ind_, f2_] = 1 
-				* Product[del[rep, f1, f2], {rep, OptionValue[GaugeRep]}]
-				* Product[del[rep, f1, f2], {rep, OptionValue[FlavorIndices]}];
+			SdelS/: SdelS[field, ind_, s1_] SdelS[field, ind_, s2_] = 1 
+				* Product[del[rep, s1, s2], {rep, OptionValue[GaugeRep]}]
+				* Product[del[rep, s1, s2], {rep, OptionValue[FlavorIndices]}];
 			Bar[field] = field;
 		,
-			SdelS/: SdelS[field, ind_, f1_] SdelS[Bar[field], ind_, f2_] = 2 
-				* Product[del[rep, f1, f2], {rep, OptionValue[GaugeRep]}]
-				* Product[del[rep, f1, f2], {rep, OptionValue[FlavorIndices]}];
+			SdelS/: SdelS[field, ind_, s1_] SdelS[Bar[field], ind_, s2_] = 2 
+				* Product[del[rep, s1, s2], {rep, OptionValue[GaugeRep]}]
+				* Product[del[rep, s1, s2], {rep, OptionValue[FlavorIndices]}];
 		];
 	];
 
@@ -32,7 +32,7 @@ fermions = <||>;
 (*Initiates a fermion field*)	
 Options[CreateFermion] = {GaugeRep -> {}, FlavorIndices -> {}};
 CreateFermion[field_, OptionsPattern[] ] :=
-	Block[{},
+	Block[{rep},
 		AppendTo[fermions, field -> <|GaugeRep -> OptionValue[GaugeRep], FlavorIndices -> OptionValue[FlavorIndices]|>]; 
 		SdelF/: SdelF[field, ind_, f1_] SdelF[Bar[field], ind_, f2_] = 
 			Product[del[rep, f1, f2], {rep, OptionValue[GaugeRep]}]
@@ -42,7 +42,7 @@ CreateFermion[field_, OptionsPattern[] ] :=
 (*Initiates a vector field*)	
 CreateVector[name_, group_] :=
 	Block[{},
-		SdelV/: SdelV[name, ind_, f1_] SdelV[name, ind_, f2_] = del[group[adj], f1, f2];
+		SdelV/: SdelV[name, ind_, v1_] SdelV[name, ind_, v2_] = del[group[adj], v1, v2];
 	];
 
 (*The gauge coupling matrix G^2_{AB}*)
@@ -78,6 +78,18 @@ Ts[A_, a_, b_] :=
 				{gRep2, DeleteCases[scalars[scal][GaugeRep], gRep1]}],{gRep1, scalars[scal][GaugeRep]}] 
 		,{scal, Keys @ scalars}]
 	];
+
+(*Defining the gauge structure constant multiplied with G^-2*)
+FGauge[A_, B_, C_] := 
+	Module[{gauge, v1, v2, v3},
+		Sum[
+			SdelV[gaugeGroups[gauge] @ Field, A, v1] SdelV[gaugeGroups[gauge] @ Field, B, v2] SdelV[gaugeGroups[gauge] @ Field, C, v3]
+				* Power[gaugeGroups[gauge] @ Coupling, -2] fStruct[gauge, v1, v2, v3]  
+		,{gauge, Keys @ gaugeGroups}]
+	];
+
+
+
 
 
 
