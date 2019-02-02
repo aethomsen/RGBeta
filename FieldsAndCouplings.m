@@ -45,6 +45,8 @@ CreateVector[name_, group_] :=
 		SdelV/: SdelV[name, ind_, v1_] SdelV[name, ind_, v2_] = del[group[adj], v1, v2];
 	];
 
+
+(*----------Gauge couplings----------*)
 (*The gauge coupling matrix G^2_{AB}*)
 G2[A_, B_, power_: 1] := 
 	Module[{gauge, v1, v2},
@@ -53,15 +55,14 @@ G2[A_, B_, power_: 1] :=
 				*Power[gaugeGroups[gauge] @ Coupling, 2 power] del[gauge[adj], v1, v2]  
 		,{gauge, Keys @ gaugeGroups}]
 	];
-
 	
 (*Defining the gauge generators for the left-handed spinors, \bar{\psi} T^A \psi.*)
 TfLeft[A_, i_, j_] := 
 	Module[{ferm, rep, gRep1, gRep2, f1, f2, v}, 
 		Sum[
-			SdelF[ferm, i, f1] SdelF[Bar[ferm], j, f2] * Product[del[rep, f1, f2], {rep, fermions[ferm][FlavorIndices]}]
+			SdelF[ferm, i, f1] SdelF[Bar[ferm], j, f2] * Product[del[rep, f1, f2], {rep, fermions[ferm, FlavorIndices]}]
 			* Sum[SdelV[gaugeGroups[Head @ gRep1][Field], A, v] TGen[gRep1, v, f1, f2] * Product[del[gRep2, f1, f2],
-				{gRep2, DeleteCases[fermions[ferm][GaugeRep], gRep1]}],{gRep1, fermions[ferm][GaugeRep]}] 
+				{gRep2, DeleteCases[fermions[ferm, GaugeRep], gRep1]}],{gRep1, fermions[ferm, GaugeRep]}] 
 		,{ferm, Keys @ fermions}]
 	];
 (*And for the Majorana-spinor*)
@@ -73,9 +74,9 @@ Ts[A_, a_, b_] :=
 	Module[{scal, rep, gRep1, gRep2, s1, s2, v}, 
 		Sum[
 			AntiSym[a, b][SdelS[scal, a, s1] SdelS[Bar[scal], b, s2]]  
-			* Product[del[rep, s1, s2], {rep, scalars[scal][FlavorIndices]}]
+			* Product[del[rep, s1, s2], {rep, scalars[scal, FlavorIndices]}]
 			* Sum[SdelV[gaugeGroups[Head @ gRep1][Field], A, v] TGen[gRep1, v, s1, s2] * Product[del[gRep2, s1, s2],
-				{gRep2, DeleteCases[scalars[scal][GaugeRep], gRep1]}],{gRep1, scalars[scal][GaugeRep]}] 
+				{gRep2, DeleteCases[scalars[scal, GaugeRep], gRep1]}],{gRep1, scalars[scal, GaugeRep]}] 
 		,{scal, Keys @ scalars}]
 	];
 
@@ -89,6 +90,16 @@ FGauge[A_, B_, C_] :=
 	];
 
 
+(*----------Yukawa couplings----------*)
+
+(*Associationwith all information on the Yukawa couplings.*)
+yukawas = <||>;
+AddYukawaCoupling[coupling_, fields_List, groupInvariants_:1] :=
+	Block[{projection}, 
+		projection = SdelS[Bar@fields[[1]], #1, s] SdelF[Bar@fields[[2]], #2, f1] SdelF[Bar@fields[[3]], #3, f2] groupInvariants &;
+		AppendTo[yukawas, Head@coupling -> <|Coupling -> coupling, Fields -> fields, 
+			Projector -> projection, Invaraints -> groupInvariants|>];
+	];
 
 
 
