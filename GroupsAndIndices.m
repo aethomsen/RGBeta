@@ -7,10 +7,10 @@ Clear[del];
 
 (*Default properties for anti-symmetric inavariants.*)
 Clear[eps];
-	eps /: del[rep_, fund_, a___, x_, b___] eps[rep_, c___, x_, d___] := eps[rep, c, a, b, d];
-	eps /: eps[rep_ ,a_, b_] eps[rep_ ,b_, c_] := -Dim[rep];
-	eps /: eps[rep_ ,a_, b_] eps[rep_ ,c_, b_] := Dim[rep];
-	eps /: eps[rep_ ,b_, a_] eps[rep_ ,b_, c_] := Dim[rep];
+	eps /: del[rep_, a___, x_, b___] eps[rep_, c___, x_, d___] := eps[rep, c, a, b, d];
+	eps /: eps[rep_ ,a_, b_] eps[rep_ ,b_, c_] := -del[rep, a, c];
+	eps /: eps[rep_ ,a_, b_] eps[rep_ ,c_, b_] := del[rep, a, c];
+	eps /: eps[rep_ ,b_, a_] eps[rep_ ,b_, c_] := del[rep, a, c];
 	eps /: Power[eps[rep_, a_, b_], 2] := Dim[rep];
 	eps[rep_, a_, a_] := 0;
 

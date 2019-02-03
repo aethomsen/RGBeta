@@ -51,8 +51,8 @@ CreateVector[name_, group_] :=
 G2[A_, B_, power_: 1] := 
 	Module[{gauge, v1, v2},
 		Sum[
-			SdelV[gaugeGroups[gauge] @ Field, A, v1] SdelV[gaugeGroups[gauge] @ Field, B, v2] 
-				*Power[gaugeGroups[gauge] @ Coupling, 2 power] del[gauge[adj], v1, v2]  
+			SdelV[gaugeGroups[gauge, Field], A, v1] SdelV[gaugeGroups[gauge, Field], B, v2] 
+				*Power[gaugeGroups[gauge, Coupling], 2 power] del[gauge[adj], v1, v2]  
 		,{gauge, Keys @ gaugeGroups}]
 	];
 	
@@ -60,8 +60,8 @@ G2[A_, B_, power_: 1] :=
 TfLeft[A_, i_, j_] := 
 	Module[{ferm, rep, gRep1, gRep2, f1, f2, v}, 
 		Sum[
-			SdelF[ferm, i, f1] SdelF[Bar[ferm], j, f2] * Product[del[rep, f1, f2], {rep, fermions[ferm, FlavorIndices]}]
-			* Sum[SdelV[gaugeGroups[Head @ gRep1][Field], A, v] TGen[gRep1, v, f1, f2] * Product[del[gRep2, f1, f2],
+			SdelF[Bar @ ferm, i, f1] SdelF[ferm, j, f2] * Product[del[rep, f1, f2], {rep, fermions[ferm, FlavorIndices]}]
+			* Sum[SdelV[gaugeGroups[Head @ gRep1, Field], A, v] TGen[gRep1, v, f1, f2] * Product[del[gRep2, f1, f2],
 				{gRep2, DeleteCases[fermions[ferm, GaugeRep], gRep1]}],{gRep1, fermions[ferm, GaugeRep]}] 
 		,{ferm, Keys @ fermions}]
 	];
@@ -73,9 +73,9 @@ Tft[A_, i_, j_] := {{-TfLeft[A, j, i], 0}, {0, TfLeft[A, i, j]}};
 Ts[A_, a_, b_] := 
 	Module[{scal, rep, gRep1, gRep2, s1, s2, v}, 
 		Sum[
-			AntiSym[a, b][SdelS[scal, a, s1] SdelS[Bar[scal], b, s2]]  
+			AntiSym[a, b][SdelS[Bar @ scal, a, s1] SdelS[scal, b, s2]]  
 			* Product[del[rep, s1, s2], {rep, scalars[scal, FlavorIndices]}]
-			* Sum[SdelV[gaugeGroups[Head @ gRep1][Field], A, v] TGen[gRep1, v, s1, s2] * Product[del[gRep2, s1, s2],
+			* Sum[SdelV[gaugeGroups[Head @ gRep1, Field], A, v] TGen[gRep1, v, s1, s2] * Product[del[gRep2, s1, s2],
 				{gRep2, DeleteCases[scalars[scal, GaugeRep], gRep1]}],{gRep1, scalars[scal, GaugeRep]}] 
 		,{scal, Keys @ scalars}]
 	];
@@ -84,8 +84,8 @@ Ts[A_, a_, b_] :=
 FGauge[A_, B_, C_] := 
 	Module[{gauge, v1, v2, v3},
 		Sum[
-			SdelV[gaugeGroups[gauge] @ Field, A, v1] SdelV[gaugeGroups[gauge] @ Field, B, v2] SdelV[gaugeGroups[gauge] @ Field, C, v3]
-				* Power[gaugeGroups[gauge] @ Coupling, -2] fStruct[gauge, v1, v2, v3]  
+			SdelV[gaugeGroups[gauge, Field], A, v1] SdelV[gaugeGroups[gauge, Field], B, v2] SdelV[gaugeGroups[gauge, Field], C, v3]
+				* Power[gaugeGroups[gauge, Coupling], -2] fStruct[gauge, v1, v2, v3]  
 		,{gauge, Keys @ gaugeGroups}]
 	];
 
@@ -94,11 +94,34 @@ FGauge[A_, B_, C_] :=
 
 (*Associationwith all information on the Yukawa couplings.*)
 yukawas = <||>;
-AddYukawaCoupling[coupling_, fields_List, groupInvariants_:1] :=
-	Block[{projection}, 
-		projection = SdelS[Bar@fields[[1]], #1, s] SdelF[Bar@fields[[2]], #2, f1] SdelF[Bar@fields[[3]], #3, f2] groupInvariants &;
-		AppendTo[yukawas, Head@coupling -> <|Coupling -> coupling, Fields -> fields, 
-			Projector -> projection, Invaraints -> groupInvariants|>];
+AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Function] :=
+	Block[{group, invariance, normalization = 1, projection, temp, test, yuk, y}, 
+		If[!scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization = 1/Sqrt[2];];
+		If[Length @ coupling <= 2,
+			yuk = Matrix @ coupling;
+		,
+			yuk = coupling;
+		];
+		
+		(*Tests whether the Yukawa coupling satisfy gauge invariance*)
+		y = With[{c = normalization, y1 = yuk, ind = Sequence@@ indices[s, f1, f2], gi = groupInvariant[s, f1, f2]},
+			Sym[#2, #3][c * y1[ind] SdelS[phi, #1, s] SdelF[psi1, #2, f1] SdelF[psi2, #3, f2] gi ] &];
+		test = TfLeft[A, k, i] y[a, k ,j] + y[a, i, k] TfLeft[A, k, j] + y[b, i, j] Ts[A, b, a]//Expand;
+		test = test SdelS[Bar@phi, a, scal] SdelF[Bar@psi1, i, ferm1] SdelF[Bar@psi2, j, ferm2] //Expand;
+		Do[
+			temp = test SdelV[group @ Field, A, vec1] //Expand;
+			If [temp =!= 0, 
+				Print[coupling,"---Gauge invarinace check inconclusive for the ", group @ Field, " field:"];
+				Print["0 = ", temp];
+			];
+		,{group, gaugeGroups}];
+		
+		(*Defines the projection operator for extracting out the particular Yukawa coupling.*)	
+		projection = With[{c = normalization / Expand @ Power[groupInvariant[a,b,c], 2] },
+			c SdelS[Bar@phi, #1, s] SdelF[Bar@psi1, #2, f1] SdelF[Bar@psi2, #3, f2] groupInvariant[s, f1, f2] &];	
+			
+		AppendTo[yukawas, coupling -> <|Coupling -> yuk normalization, Fields -> {phi, psi1, psi2}, Indices -> indices,
+			Invaraint -> groupInvariant, Projector -> projection|>];
 	];
 
 
