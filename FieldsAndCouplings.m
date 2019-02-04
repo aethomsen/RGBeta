@@ -91,21 +91,25 @@ FGauge[A_, B_, C_] :=
 
 
 (*----------Yukawa couplings----------*)
-
 (*Associationwith all information on the Yukawa couplings.*)
 yukawas = <||>;
+(*Function for defining the Yukawa couplings of the theory*)
 AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Function] :=
-	Block[{group, invariance, normalization = 1, projection, temp, test, yuk, y}, 
-		If[!scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization = 1/Sqrt[2];];
-		If[Length @ coupling <= 2,
-			yuk = Matrix @ coupling;
-		,
-			yuk = coupling;
+	Block[{group, invariance, normalization = 2, projection, temp, test, yuk, yukbar, y}, 
+		If[!scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization *= 1/Sqrt[2];];
+		With[{n = normalization},
+			If[Length @ coupling <= 2,
+				yuk = n Matrix[coupling]@ ## &;
+				yukbar = n Matrix[Bar @coupling]@ ## &
+			,
+				yuk = n coupling @ ## &;
+				yukbar = n coupling@ ## &
+			];
 		];
 		
 		(*Tests whether the Yukawa coupling satisfy gauge invariance*)
-		y = With[{c = normalization, y1 = yuk, ind = Sequence@@ indices[s, f1, f2], gi = groupInvariant[s, f1, f2]},
-			Sym[#2, #3][c * y1[ind] SdelS[phi, #1, s] SdelF[psi1, #2, f1] SdelF[psi2, #3, f2] gi ] &];
+		y = With[{y1 = yuk, ind = Sequence@@ indices[s, f1, f2], gi = groupInvariant[s, f1, f2]},
+			Sym[#2, #3][y1[ind] SdelS[phi, #1, s] SdelF[psi1, #2, f1] SdelF[psi2, #3, f2] gi ] &];
 		test = TfLeft[A, k, i] y[a, k ,j] + y[a, i, k] TfLeft[A, k, j] + y[b, i, j] Ts[A, b, a]//Expand;
 		test = test SdelS[Bar@phi, a, scal] SdelF[Bar@psi1, i, ferm1] SdelF[Bar@psi2, j, ferm2] //Expand;
 		Do[
@@ -118,11 +122,45 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Func
 		
 		(*Defines the projection operator for extracting out the particular Yukawa coupling.*)	
 		projection = With[{c = normalization / Expand @ Power[groupInvariant[a,b,c], 2] },
-			c SdelS[Bar@phi, #1, s] SdelF[Bar@psi1, #2, f1] SdelF[Bar@psi2, #3, f2] groupInvariant[s, f1, f2] &];	
+			c/2 SdelS[Bar@phi, #1, s] SdelF[Bar@psi1, #2, f1] SdelF[Bar@psi2, #3, f2] groupInvariant[s, f1, f2] &];	
 			
-		AppendTo[yukawas, coupling -> <|Coupling -> yuk normalization, Fields -> {phi, psi1, psi2}, Indices -> indices,
-			Invaraint -> groupInvariant, Projector -> projection|>];
+		AppendTo[yukawas, coupling -> <|Coupling -> yuk, CouplingBar -> yukbar, Fields -> {phi, psi1, psi2}, Indices -> indices,
+			Invariant -> groupInvariant, Projector -> projection|>];
 	];
+
+Yuk[a_, i_, j_] :=
+	Module[{f1, f2, yu, s1},
+		Sum[SdelS[yu[Fields][[1]], a, s1] SdelF[yu[Fields][[2]], i, f1] SdelF[yu[Fields][[3]], j, f2]
+				* yu[Invariant][s1, f1, f2] yu[Coupling][Sequence @@ yu[Indices][s1, f1, f2]]  
+			,{yu, yukawas}] //Sym[i, j]
+	];
+
+YukBar[a_, i_, j_] :=
+	Module[{f1, f2, yu, s1},
+		Sum[SdelS[Bar @ yu[Fields][[1]], a, s1] SdelF[Bar @ yu[Fields][[2]], i, f1] SdelF[Bar @ yu[Fields][[3]], j, f2]
+				* yu[Invariant][s1, f1, f2] yu[CouplingBar][Sequence @@ yu[Indices][s1, f1, f2]]  
+			,{yu, yukawas}] //Sym[i, j]
+	];
+
+y[a_, i_, j_] := {{Yuk[a, i, j], 0}, {0, YukBar[a, i, j]}};
+yt[a_, i_, j_] := {{YukBar[a, i, j], 0}, {0, Yuk[a, i, j]}};
+
+
+(*----------Quartic couplings----------*)
+(*Associationwith all information on the quartic couplings.*)
+quartics = <||>;
+(*Function for defining the Yukawa couplings of the theory*)
+AddQuartic [coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Function] :=
+	Block[{group, invariance, normalization = 2, projection, temp},
+		0
+		
+	];
+
+
+
+
+
+
 
 
 
