@@ -47,6 +47,7 @@ Clear[Matrix];
 	Matrix /: Matrix[m1__][ind_[b_], a_] Matrix[m2__][ind_[b_], c_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][a, c];
 	Matrix[m__][ind_[a_], ind_[a_]] := Tr @ Dot[m];
 	Matrix[m__][] := m;
+	Matrix[m__][Null] := m;
 
 
 (*----------Gauge group definitions----------*)
