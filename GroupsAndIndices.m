@@ -36,9 +36,11 @@ Clear[fStruct];
 		Casimir2@ group[adj] CasimirSig[group, List@A, List@B];
 	fStruct[group_, a___, x_, b___, x_, c___] := 0;
 
-(*Matrix head for symbolic matrix manipulations*)
+Clear[Bar];
+	Bar[Bar[x_]] := x;	
 Clear[Trans];
 	Trans[Trans[x_]] := x;
+(*Matrix head for symbolic matrix manipulations*)
 Clear[Matrix];
 	Matrix /: del[ind_, a___, x_, b___] Matrix[m__][c___, ind_[x_], d___] := Matrix[m][c, ind[a, b], d];
 	Matrix /: Matrix[m1__][ind_[b_]] Matrix[m2__][ind_[b_], c_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][c];
@@ -48,7 +50,13 @@ Clear[Matrix];
 	Matrix[m__][ind_[a_], ind_[a_]] := Tr @ Dot[m];
 	Matrix[m__][] := m;
 	Matrix[m__][Null] := m;
-
+(*Formating*)
+	Format[Trans[x_]] := x^T;
+	Format[Bar[x_]] := OverBar @ x;
+	Format[Trans[Bar[x_]] ] := x^Style[\[Dagger], Bold, 12];
+	Format[Matrix[x__][h1_[i1_] ] ]:= Subscript[Dot[x], i1];
+	Format[Matrix[x__][h1_[i1_], h2_[i2_]] ] := Subscript[Dot[x], i1, i2];
+	
 
 (*----------Gauge group definitions----------*)
 (*Association with all information on the gauge groups: fields, couplings etc.*)

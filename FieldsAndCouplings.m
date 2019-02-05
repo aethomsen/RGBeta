@@ -1,6 +1,3 @@
-Clear[Bar];
-Bar[Bar[field_]] := field; 
-
 (*Structure deltas*)
 Clear[SdelS, SdelF, SdelV]
 SdelS /: SdelS[field1_, ind_, f_] SdelS[field2_, ind_, g_] := 0; 
@@ -94,7 +91,7 @@ FGauge[A_, B_, C_] :=
 (*Associationwith all information on the Yukawa couplings.*)
 yukawas = <||>;
 (*Function for defining the Yukawa couplings of the theory*)
-Options[AddYukawa] = {OverallFactor -> 1}; 
+Options[AddYukawa] = {OverallFactor -> 1, InvarianceCheck -> False}; 
 AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Function, OptionsPattern[]] :=
 	Block[{group, invariance, normalization, projection, symmetryFactor, temp, test, yuk, yukbar, y}, 
 		normalization = 2 OptionValue @ OverallFactor;
@@ -110,17 +107,19 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Func
 		];
 		
 		(*Tests whether the Yukawa coupling satisfy gauge invariance*)
-		y = With[{y1 = yuk, ind = Sequence@@ indices[s, f1, f2], gi = groupInvariant[s, f1, f2]},
-			Sym[#2, #3][y1[ind] SdelS[phi, #1, s] SdelF[psi1, #2, f1] SdelF[psi2, #3, f2] gi ] &];
-		test = TfLeft[A, k, i] y[a, k ,j] + y[a, i, k] TfLeft[A, k, j] + y[b, i, j] Ts[A, b, a]//Expand;
-		test = test SdelS[Bar@phi, a, scal] SdelF[Bar@psi1, i, ferm1] SdelF[Bar@psi2, j, ferm2] //Expand;
-		Do[
-			temp = test SdelV[group @ Field, A, vec1] //Expand;
-			If [temp =!= 0, 
-				Print[coupling,"---Gauge invarinace check inconclusive for the ", group @ Field, " field:"];
-				Print["0 = ", temp];
-			];
-		,{group, gaugeGroups}];
+		If[OptionValue @ InvarianceCheck,
+			y = With[{y1 = yuk, ind = Sequence@@ indices[s, f1, f2], gi = groupInvariant[s, f1, f2]},
+				Sym[#2, #3][y1[ind] SdelS[phi, #1, s] SdelF[psi1, #2, f1] SdelF[psi2, #3, f2] gi ] &];
+			test = TfLeft[A, k, i] y[a, k ,j] + y[a, i, k] TfLeft[A, k, j] + y[b, i, j] Ts[A, b, a]//Expand;
+			test = test SdelS[Bar@phi, a, scal] SdelF[Bar@psi1, i, ferm1] SdelF[Bar@psi2, j, ferm2] //Expand;
+			Do[
+				temp = test SdelV[group @ Field, A, vec1] //Expand;
+				If [temp =!= 0, 
+					Print[coupling,"---Gauge invarinace check inconclusive for the ", group @ Field, " field:"];
+					Print["0 = ", temp];
+				];
+			,{group, gaugeGroups}];
+		];
 		
 		(*Defines the projection operator for extracting out the particular Yukawa coupling.*)
 		symmetryFactor = If[psi1 === psi2, 2, 1];	
@@ -154,7 +153,7 @@ yt[a_, i_, j_] := {{YukBar[a, i, j], 0}, {0, Yuk[a, i, j]}};
 (*Associationwith all information on the quartic couplings.*)
 quartics = <||>;
 (*Function for defining the Yukawa couplings of the theory*)
-Options[AddQuartic] = {OverallFactor -> 1, SelfConjugate -> True}; 
+Options[AddQuartic] = {OverallFactor -> 1, SelfConjugate -> True, InvarianceCheck -> False}; 
 AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, indices_Function, groupInvariant_Function, OptionsPattern[]] :=
 	Block[{group, invariance, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
 		normalization = 24 OptionValue[OverallFactor];
@@ -171,18 +170,20 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, indices_Function, groupInva
 			];
 		];
 		(*Tests whether the Yukawa coupling satisfy gauge invariance*)
-		lambda = With[{l1 = lam, ind = Sequence@@ indices[s1, s2, s3, s4], gi = groupInvariant[s1, s2, s3, s4]},
-			Sym[#1, #2, #3, #4][l1[ind] SdelS[phi1, #1, s1] SdelS[phi2, #2, s2] SdelS[phi3, #3, s3] SdelS[phi4, #4, s4] gi] &];
-		test = Ts[A, a, e] lambda[e, b, c, d] + Ts[A, b, e] lambda[a, e, c, d] 
-			+ Ts[A, c, e] lambda[a, b, e, d] + Ts[A, d, e] lambda[a, b, c, e]//Expand;
-		test = test SdelS[Bar@phi1, a, scal1] SdelS[Bar@phi2, b, scal2] SdelS[Bar@phi3, c, scal3] SdelS[Bar@phi4, d, scal4] //Expand;
-		Do[
-			temp = test SdelV[group @ Field, A, vec1] //Expand;
-			If [temp =!= 0, 
-				Print[coupling,"---Gauge invarinace check inconclusive for the ", group @ Field, " field:"];
-				Print["0 = ", temp//S];
-			];
-		,{group, gaugeGroups}];
+		If[OptionValue @ InvarianceCheck,
+			lambda = With[{l1 = lam, ind = Sequence@@ indices[s1, s2, s3, s4], gi = groupInvariant[s1, s2, s3, s4]},
+				Sym[#1, #2, #3, #4][l1[ind] SdelS[phi1, #1, s1] SdelS[phi2, #2, s2] SdelS[phi3, #3, s3] SdelS[phi4, #4, s4] gi] &];
+			test = Ts[A, a, e] lambda[e, b, c, d] + Ts[A, b, e] lambda[a, e, c, d] 
+				+ Ts[A, c, e] lambda[a, b, e, d] + Ts[A, d, e] lambda[a, b, c, e]//Expand;
+			test = test SdelS[Bar@phi1, a, scal1] SdelS[Bar@phi2, b, scal2] SdelS[Bar@phi3, c, scal3] SdelS[Bar@phi4, d, scal4] //Expand;
+			Do[
+				temp = test SdelV[group @ Field, A, vec1] //Expand;
+				If [temp =!= 0, 
+					Print[coupling,"---Gauge invarinace check inconclusive for the ", group @ Field, " field:"];
+					Print["0 = ", temp//S];
+				];
+			,{group, gaugeGroups}];
+		];
 		
 		(*Defines the projection operator for extracting out the particular quartic coupling.*)
 		symmetryFactor = 24 / Length @ DeleteDuplicates @ Permutations @ {phi1, phi2, phi3, phi4};	
