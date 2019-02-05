@@ -1,5 +1,6 @@
 << GroupsAndIndices`
 << FieldsAndCouplings`
+<< Tensors`
 
 (*Symmetrizing in indices*)
 Sym[i1_, i2_][expr_] := expr /2 + ReplaceAll[expr, {i1 -> i2, i2 -> i1}] /2 ;
@@ -16,3 +17,11 @@ Ttimes[a_] = a;
 Tdot[a_, b_, c___] := Tdot[Expand[a.b], c];
 Tdot[a_] = a;
 
+BetaGauge[n_] := 
+	Block[{betaG},
+		If[n > 3, 
+			Print["Gauge beta function unknown at that loop order"];
+			Return[Null];
+		];
+		betaG = GaugeTensors[n] G2[B, C, 3/2] // Expand;
+	];

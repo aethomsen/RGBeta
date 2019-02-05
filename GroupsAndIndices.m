@@ -56,9 +56,7 @@ gaugeGroups = <||>;
 
 (*Initialization for an SU(n) gauge group.*)
 SUGroup[group_Symbol, n_Integer, OptionsPattern[{Field -> A[group], Coupling -> g[group]}] ] := 
-	Block[{},		
-		AppendTo[gaugeGroups, group -> <|Field -> OptionValue[Field], Coupling -> OptionValue[Coupling] |>];
-		
+	Block[{projection},		
 		(*Fundamental*)
 		Dim[group[fund]] = n;
 		TraceNormalization[group[fund]] = 1/2;
@@ -78,15 +76,14 @@ SUGroup[group_Symbol, n_Integer, OptionsPattern[{Field -> A[group], Coupling -> 
 		
 		(*Sets up the gauge fields and 2-point projection*)
 		CreateVector[OptionValue[Field], group];
-		GaugeProjection[group, A_, B_] := SdelV[OptionValue[Field], A, v1] SdelV[OptionValue[Field], B, v2] *
-			del[group[adj], v1, v2] / Dim @ group[adj]; 
+		projection := With[{V = OptionValue @ Field, gStruct = del[group[adj], v1, v2] / Dim @ group[adj]}, 
+			SdelV[V, #1, v1] SdelV[V, #2, v2] gStruct &]; 
+		AppendTo[gaugeGroups, group -> <|Field -> OptionValue[Field], Coupling -> OptionValue[Coupling], Projector -> projection|>];
 	];
 
 (*Initialization for a U(1) gauge group.*)	
 U1Group[group_Symbol, OptionsPattern[{Field -> A[group], Coupling -> g[group]}] ] := 
-	Block[{},
-		AppendTo[gaugeGroups, group -> <|Field -> OptionValue[Field], Coupling -> OptionValue[Coupling] |>];
-		
+	Block[{projection},
 		del[group[_],___] = 1;
 		Dim[group[x_]] = x;
 		TGen[group[x_],___] = x; 
@@ -95,7 +92,8 @@ U1Group[group_Symbol, OptionsPattern[{Field -> A[group], Coupling -> g[group]}] 
 		
 		(*Sets up the gauge fields and 2-point projection*)
 		CreateVector[OptionValue[Field], group];
-		GaugeProjection[group, A_, B_] := SdelV[OptionValue[Field], A, v1] SdelV[OptionValue[Field], B, v2];
+		projection := With[{V = OptionValue @ Field}, SdelV[V, #1, v1] SdelV[V, #2, v2] &]; 
+		AppendTo[gaugeGroups, group -> <|Field -> OptionValue[Field], Coupling -> OptionValue[Coupling], Projector -> projection|>];
 	];	
 	
 	
