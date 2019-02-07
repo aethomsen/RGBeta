@@ -194,7 +194,7 @@ YukawaTensors[1] := YukawaTensors[1] =
 		Sum[B[2, 1, n] by[1, n], {n, 5}]
 	];
 
-(*Yukawa tensors at 1-loop order*)
+(*Yukawa tensors at 2-loop order*)
 YukawaTensors[2] := YukawaTensors[2] = 
 	Block[{by, n},
 		(* y^1 terms*)
@@ -237,8 +237,19 @@ YukawaTensors[2] := YukawaTensors[2] =
 	];
 
 
-
-
+(*##################################*)
+(*----------Quartic tensors----------*)
+(*##################################*)
+(*Quartic tensors at 1-loop order*)
+QuarticTensors[1] := QuarticTensors[1] = 
+	Block[{bl, n},
+		bl[1, 1] = Ttimes[TsG2[A1, a, b1], TsG2[A2, b1, b], Ts[A1, c, b2], Ts[A2, b2, d]] // Sym[a, b, c, d];
+		bl[1, 2] = Lam[a, b, c, e] C2S[e, d] // Expand // Sym[a, b, c, d];
+		bl[1, 3] = Lam[a, b, e, f] Lam[e, f, c, d] // Expand // Sym[a, b, c, d];
+		bl[1, 4] = Lam[a, b, c, e] Y2S[e, d] // Expand // Sym[a, b, c, d];
+		bl[1, 5] = Tr @ Tdot[y[a, k4, k1], yt[b, k1, k2], y[c, k2, k3], yt[d, k3, k4]] // Sym[a, b, c, d];
+		Sum[B[3, 1, n] bl[1, n], {n, 5}]
+	];
 
 
 

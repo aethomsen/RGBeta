@@ -91,18 +91,31 @@ FGauge[A_, B_, C_] :=
 (*Associationwith all information on the Yukawa couplings.*)
 yukawas = <||>;
 (*Function for defining the Yukawa couplings of the theory*)
-Options[AddYukawa] = {OverallFactor -> 1, InvarianceCheck -> False}; 
+Options[AddYukawa] = {OverallFactor -> 1, Chirality -> Left, InvarianceCheck -> False};
+AddYukawa::chirality = "The chirality `1` is invalid: Left or Right expected. Returning Null"; 
 AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Function, OptionsPattern[]] :=
-	Block[{group, invariance, normalization, projection, symmetryFactor, temp, test, yuk, yukbar, y}, 
+	Block[{g, group, invariance, normalization, projection, symmetryFactor, temp, test, yuk, yukbar, y}, 
 		normalization = 2 OptionValue @ OverallFactor;
+		
+		(*If the chirality is right handed, the coupling is written with the barred fields*)
+		Switch[OptionValue @ Chirality
+		,Left,
+			g = coupling;
+		,Right, 	
+			g = Bar @ coupling;
+		,_,
+			Message[AddYukawa::chirality, OptionValue @ Chirality];
+			Return @ Null;
+		];
+		(*Constructs the coupling structure*)
 		If[!scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization *= 1/Sqrt[2];];
-		With[{n = normalization},
+		With[{n = normalization, g0 = g},
 			If[Length @ coupling <= 2,
-				yuk = n Matrix[coupling]@ ## &;
-				yukbar = n Matrix[Bar @coupling]@ ## &
+				yuk = n Matrix[g0]@ ## &;
+				yukbar = n Matrix[Bar @g0]@ ## &
 			,
-				yuk = n coupling @ ## &;
-				yukbar = n coupling@ ## &
+				yuk = n * g0 @ ## &;
+				yukbar = n Bar[g0]@ ## &
 			];
 		];
 		
@@ -122,13 +135,25 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Func
 		];
 		
 		(*Defines the projection operator for extracting out the particular Yukawa coupling.*)
-		symmetryFactor = If[psi1 === psi2, 2, 1];	
-		projection = With[{c = normalization/2 /symmetryFactor / Expand @ Power[OptionValue[OverallFactor] groupInvariant[a,b,c], 2] },
+		symmetryFactor = If[psi1 === psi2, 2, 1];
+		Switch[OptionValue @ Chirality
+		,Left,
+			projection = With[{c = normalization/2 /symmetryFactor / Expand @ Power[OptionValue[OverallFactor] groupInvariant[a,b,c], 2] },
 			c SdelS[Bar@phi, #1, s] SdelF[Bar@psi1, #2, f1] SdelF[Bar@psi2, #3, f2] groupInvariant[s, f1, f2] &];	
+		,Right,
+			projection = With[{c = normalization/2 /symmetryFactor / Expand @ Power[OptionValue[OverallFactor] groupInvariant[a,b,c], 2] },
+			c SdelS[phi, #1, s] SdelF[psi1, #2, f1] SdelF[psi2, #3, f2] groupInvariant[s, f1, f2] &];
+		];
 		
 		(*Adds the Yukawa coupling to the association*)
-		AppendTo[yukawas, coupling -> <|Coupling -> yuk, CouplingBar -> yukbar, Fields -> {phi, psi1, psi2}, Indices -> indices,
-			Invariant -> groupInvariant, Projector -> projection|>];
+		AppendTo[yukawas, coupling -> 
+			<|Chirality -> OptionValue @ Chirality,
+			Coupling -> yuk,
+			CouplingBar -> yukbar, 
+			Fields -> {phi, psi1, psi2},
+			Indices -> indices,
+			Invariant -> groupInvariant,
+			Projector -> projection|>];
 	];
 
 Yuk[a_, i_, j_] :=
@@ -166,7 +191,7 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, indices_Function, groupInva
 				lambar = n Matrix[Bar @ coupling]@ ## &
 			,
 				lam = n coupling @ ## &;
-				lambar = n coupling @ ## &
+				lambar = n Bar[coupling] @ ## &
 			];
 		];
 		(*Tests whether the Yukawa coupling satisfy gauge invariance*)

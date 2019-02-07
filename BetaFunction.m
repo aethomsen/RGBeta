@@ -17,7 +17,7 @@ Ttimes[a_] = a;
 Tdot[a_, b_, c___] := Tdot[Expand[a.b], c];
 Tdot[a_] = a;
 
-BetaGauge[n_, group_] := 
+GaugeBeta[n_, group_] := 
 	Block[{betaG},
 		If[n > 3, 
 			Print["Gauge beta function unknown at that loop order"];
@@ -27,13 +27,20 @@ BetaGauge[n_, group_] :=
 		Return @ betaG;
 	];
 	
-BetaYukawa[n_, coupling_] := 
-	Block[{betaY},
+YukawaBeta[n_, coupling_] := 
+	Block[{betaY, tensor},
 		If[n > 2, 
 			Print["Yukawa beta function unknown at that loop order"];
 			Return[Null];
 		];
-		betaY = YukawaTensors[n][[1, 1]] yukawas[coupling, Projector][a, i, j] /. yukawaCoefficients // Expand;
+		Switch[yukawas[coupling, Chirality]
+		,Left,
+			tensor = YukawaTensors[n][[1, 1]];
+		,Right,
+			tensor = YukawaTensors[n][[2, 2]];
+		];
+		
+		betaY = tensor yukawas[coupling, Projector][a, i, j] /. yukawaCoefficients // Expand;
 		Return @ betaY;
 	];
 
