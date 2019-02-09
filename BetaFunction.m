@@ -17,18 +17,32 @@ Ttimes[a_] = a;
 Tdot[a_, b_, c___] := Tdot[Expand[a.b], c];
 Tdot[a_] = a;
 
+
+(*##################################*)
+(*----------Beta functions----------*)
+(*##################################*)
+
+Finalize[expr_] :=
+	Block[{rules},
+		rules = {
+			Matrix[y__][a_[f1_], b_[f2_]] /; !OrderedQ[{f1, f2}] :> 
+				Matrix[Sequence @@ Reverse[Trans /@ List@ y]][b_[f2_], a_[f1_]]
+		}; 
+		
+	];
+
 GaugeBeta[n_, group_] := 
-	Block[{betaG},
+	Block[{beta},
 		If[n > 3, 
 			Print["Gauge beta function unknown at that loop order"];
 			Return[Null];
 		];
-		betaG = Ttimes[GaugeTensors[n], G2[B, C, 3/2], gaugeGroups[group, Projector][C, A] ] /. gaugeCoefficients;
-		Return @ betaG;
+		beta = Ttimes[GaugeTensors[n], G2[B, C, 3/2], gaugeGroups[group, Projector][C, A] ] /. gaugeCoefficients;
+		Return @ beta;
 	];
 	
 YukawaBeta[n_, coupling_] := 
-	Block[{betaY, tensor},
+	Block[{beta, tensor},
 		If[n > 2, 
 			Print["Yukawa beta function unknown at that loop order"];
 			Return[Null];
@@ -40,8 +54,19 @@ YukawaBeta[n_, coupling_] :=
 			tensor = YukawaTensors[n][[2, 2]];
 		];
 		
-		betaY = tensor yukawas[coupling, Projector][a, i, j] /. yukawaCoefficients // Expand;
-		Return @ betaY;
+		beta = tensor yukawas[coupling, Projector][a, i, j] /. yukawaCoefficients // Expand;
+		Return @ beta;
+	];
+
+QuarticBeta[n_, coupling_] := 
+	Block[{beta},
+		If[n > 2, 
+			Print["Yukawa beta function unknown at that loop order"];
+			Return[Null];
+		];
+		
+		beta = QuarticTensors[n] quartics[coupling, Projector][a, b, c, d] /. quarticCoefficients // Expand;
+		Return @ beta;
 	];
 
 

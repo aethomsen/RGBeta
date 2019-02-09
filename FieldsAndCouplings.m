@@ -42,8 +42,9 @@ CreateVector[name_, group_] :=
 		SdelV/: SdelV[name, ind_, v1_] SdelV[name, ind_, v2_] = del[group[adj], v1, v2];
 	];
 
-
+(*###################################*)
 (*----------Gauge couplings----------*)
+(*###################################*)
 (*The gauge coupling matrix G^2_{AB}*)
 G2[A_, B_, power_: 1] := 
 	Module[{gauge, v1, v2},
@@ -86,8 +87,9 @@ FGauge[A_, B_, C_] :=
 		,{gauge, Keys @ gaugeGroups}]
 	];
 
-
+(*####################################*)
 (*----------Yukawa couplings----------*)
+(*####################################*)
 (*Associationwith all information on the Yukawa couplings.*)
 yukawas = <||>;
 (*Function for defining the Yukawa couplings of the theory*)
@@ -174,7 +176,9 @@ y[a_, i_, j_] := {{Yuk[a, i, j], 0}, {0, YukBar[a, i, j]}};
 yt[a_, i_, j_] := {{YukBar[a, i, j], 0}, {0, Yuk[a, i, j]}};
 
 
+(*#####################################*)
 (*----------Quartic couplings----------*)
+(*#####################################*)
 (*Associationwith all information on the quartic couplings.*)
 quartics = <||>;
 (*Function for defining the Yukawa couplings of the theory*)
@@ -218,8 +222,14 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, indices_Function, groupInva
 			* SdelS[Bar@phi4, #4, s4] groupInvariant[s1, s2, s3, s4] &];
 		
 		(*Adds the quartic coupling to the association*)
-		AppendTo[quartics, coupling -> <|Coupling -> lam, CouplingBar -> lambar, Fields -> {phi1, phi2, phi3, phi4}, Indices -> indices,
-			Invariant -> groupInvariant, Projector -> projection, SelfConjugate -> OptionValue[SelfConjugate]|>];
+		AppendTo[quartics, coupling -> 
+			<|Coupling -> lam,
+			CouplingBar -> lambar,
+			Fields -> {phi1, phi2, phi3, phi4},
+			Indices -> indices,
+			Invariant -> groupInvariant,
+			Projector -> projection,
+			SelfConjugate -> OptionValue[SelfConjugate]|>];
 	];
 
 Lam[a_, b_, c_, d_] :=

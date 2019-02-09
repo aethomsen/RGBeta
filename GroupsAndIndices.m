@@ -1,4 +1,6 @@
+(*#############################################*)
 (*----------Generic tensor properties----------*)
+(*#############################################*)
 (*del[rep, a, b] is the symbol for Kronecker delta \delta_{a,b} belong to the indices specified by the representation.*)
 Clear[del];
 	del /: del[rep_, a___, x_, b___] del[rep_, c___, x_, d___] := del[rep, c, a, b, d];
@@ -43,13 +45,29 @@ Clear[Trans];
 (*Matrix head for symbolic matrix manipulations*)
 Clear[Matrix];
 	Matrix /: del[ind_, a___, x_, b___] Matrix[m__][c___, ind_[x_], d___] := Matrix[m][c, ind[a, b], d];
-	Matrix /: Matrix[m1__][ind_[b_]] Matrix[m2__][ind_[b_], c_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][c];
-	Matrix /: Matrix[m1__][a___, ind_[b_]] Matrix[m2__][ind_[b_], c___] := Matrix[m1, m2][a, c];
-	Matrix /: Matrix[m1__][a_, ind_[b_]] Matrix[m2__][c_, ind_[b_]] := Matrix[m1, Sequence @@ Reverse[Trans /@ List@m2]][a, c];
-	Matrix /: Matrix[m1__][ind_[b_], a_] Matrix[m2__][ind_[b_], c_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][a, c];
-	Matrix[m__][ind_[a_], ind_[a_]] := Tr @ Dot[m];
+	Matrix /: Matrix[m1__][a_] Matrix[m2__][a_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][a];
+	Matrix /: Matrix[m1__][b_] Matrix[m2__][b_, c_] := Matrix[m1, Sequence @@ Reverse[Trans /@ List@m2]][c];
+	Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][b_] := Matrix[m1, m2][a];
+	Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][b_, c_] := Matrix[m1, m2][a, c];
+	Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][c_, b_] := Matrix[m1, Sequence @@ Reverse[Trans /@ List@m2]][a, c];
+	Matrix /: Matrix[m1__][b_, a_] Matrix[m2__][b_, c_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][a, c];
 	Matrix[m__][] := m;
 	Matrix[m__][Null] := m;
+	(*Matrix[m__][a_, a_] := Tr @ Dot[m];*)
+	Matrix[m__][a_, a_] :=
+		Block[{matrices, pass1, pass2, temp},
+			matrices = List@m;
+			pass1 = matrices /. {Bar @ x_->x, Trans @ x_ -> x};
+			temp = pass1[[Ordering[pass1, 1][[1]] ]];
+			pass1 = If[# === temp, 1, 0] & /@ pass1; 
+			pass2 = Replace[matrices, {Trans[Bar[_]] -> 2, Trans[_]-> 3, Bar[_] -> 1, _Symbol -> 4}, {1}];
+			temp = Ordering[MapThread[Times, {pass1, pass2}], -1][[1]];
+			matrices = RotateLeft[matrices, temp -1];
+			If[pass2[[temp]] === 1 || pass2[[temp]] === 3,
+				matrices = Trans /@ Join[{matrices[[1]]}, Reverse[matrices[[2;;]] ]]; 
+			];
+			Tr @ Dot[Sequence @@ matrices]
+		];
 (*Formating*)
 	Format[Trans[x_]] := x^T;
 	Format[Bar[x_]] := OverBar @ x;
@@ -58,7 +76,9 @@ Clear[Matrix];
 	Format[Matrix[x__][h1_[i1_], h2_[i2_]] ] := Subscript[Dot[x], i1, i2];
 	
 
+(*###########################################*)
 (*----------Gauge group definitions----------*)
+(*###########################################*)
 (*Association with all information on the gauge groups: fields, couplings etc.*)
 gaugeGroups = <||>;
 
