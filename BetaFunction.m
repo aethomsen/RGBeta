@@ -60,7 +60,7 @@ YukawaBeta[n_, coupling_] :=
 
 QuarticBeta[n_, coupling_] := 
 	Block[{beta},
-		If[n > 2, 
+		If[n > 1, 
 			Print["Yukawa beta function unknown at that loop order"];
 			Return[Null];
 		];
