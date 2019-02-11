@@ -245,26 +245,4 @@ Lam[a_, b_, c_, d_] :=
 
 
 
-(*
-Lam2[] := Lam2[] = 
-	Module[{l},
-		Sum[SdelS[l[Fields][[1]], e, phs1] SdelS[l[Fields][[2]], f, phs2] SdelS[l[Fields][[3]], g, phs3] SdelS[l[Fields][[4]], h, phs4]
-				* l[Invariant][phs1, phs2, phs3, phs4] l[Coupling][Sequence @@ l[Indices][phs1, phs2, phs3, phs4]]
-			+If[! l@SelfConjugate,
-				SdelS[Bar@ l[Fields][[1]], e, phs1] SdelS[Bar@ l[Fields][[2]], f, phs2] SdelS[Bar@ l[Fields][[3]], g, phs3] 
-				* SdelS[Bar@ l[Fields][[4]], h, phs4] l[Invariant][phs1, phs2, phs3, phs4] 
-				* l[CouplingBar][Sequence @@ l[Indices][phs1, phs2, phs3, phs4]]
-				,0] 
-			,{l, quartics}] //Sym[e, f, g, h] //Simplify
-	];
-
-Lam[a_, b_, c_, d_] :=
-	Module[{s1, s2, s3, s4},
-		Lam2[] /.{e -> a, f -> b, g -> c, h -> d, phs1 -> s1, phs2 -> s2, phs3 -> s3, phs4 -> s4}  		
-	];
-*)
-
-
-
-
 
