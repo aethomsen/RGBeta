@@ -2,9 +2,10 @@
 (*----------Generic tensor properties----------*)
 (*#############################################*)
 (*del[rep, a, b] is the symbol for Kronecker delta \delta_{a,b} belong to the indices specified by the representation.*)
+(*Intger indices are not taken to be summed as dummy variables.*)
 Clear[del];
 	del /: del[rep_, a___, x_, b___] del[rep_, c___, x_, d___] := del[rep, c, a, b, d];
-	del /: Power[del[rep_, a_, b_], 2] := Dim[rep];
+	del /: Power[del[rep_, a___, b___], 2] := Dim[rep];
 	del[rep_, a_, a_] := Dim[rep];
 
 (*Default properties for anti-symmetric inavariants.*)
@@ -123,5 +124,34 @@ U1Group[group_Symbol, OptionsPattern[{Field -> A[group], Coupling -> g[group]}] 
 		projection := With[{V = OptionValue @ Field}, SdelV[V, #1, v1] SdelV[V, #2, v2] &]; 
 		AppendTo[gaugeGroups, group -> <|Field -> OptionValue[Field], Coupling -> OptionValue[Coupling], Projector -> projection|>];
 	];	
-	
+
+(*Initialization for an SO(n) gauge group.*)
+SOGroup[group_Symbol, n_Integer, OptionsPattern[{Field -> A[group], Coupling -> g[group]}] ] := 
+	Block[{projection},		
+		(*Fundamental*)
+		Dim[group[fund]] = n;
+		TraceNormalization[group[fund]] = 1/2;
+		(*Casimir2[group[fund]] = (n^2 - 1) / (2 n);*)
+		(*Fierz identitiy*)
+		TGen /: TGen[group[fund], A_, a_, b_] TGen[group[fund], A_, c_, d_] = TraceNormalization[group[fund]] / 2 *
+			(del[group[fund], a, d] del[group[fund], c, b] - del[group[fund], a, c] del[group[fund], b, d]);
+		
+		(*Adjoint*)
+		Dim[group[adj]] = n (n - 1) / 2;
+		(*TraceNormalization[group[adj]] = n;
+		Casimir2[group[adj]] = n;*)
+		
+		(*Sets up the gauge fields and 2-point projection*)
+		CreateVector[OptionValue[Field], group];
+		projection := With[{V = OptionValue @ Field, gStruct = del[group[adj], v1, v2] / Dim @ group[adj]}, 
+			SdelV[V, #1, v1] SdelV[V, #2, v2] gStruct &]; 
+		AppendTo[gaugeGroups, group -> <|Field -> OptionValue[Field], Coupling -> OptionValue[Coupling], Projector -> projection|>];
+	];
+
+
+
+
+
+
+
 	
