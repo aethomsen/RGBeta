@@ -5,12 +5,12 @@ SdelF /: SdelF[field1_, ind_, f_] SdelF[field2_, ind_, g_] := 0;
 SdelV /: SdelV[field1_, ind_, f_] SdelV[field2_, ind_, g_] := 0;
 
 (*Associationwith all information on the scalar fields: representations, etc.*)
-scalars = <||>;
+$scalars = <||>;
 (*Initiates a scalar field*)
 Options[CreateScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}};
 CreateScalar[field_, OptionsPattern[] ] :=
 	Block[{rep},
-		AppendTo[scalars, field -> <|GaugeRep -> OptionValue[GaugeRep], FlavorIndices -> OptionValue[FlavorIndices],
+		AppendTo[$scalars, field -> <|GaugeRep -> OptionValue[GaugeRep], FlavorIndices -> OptionValue[FlavorIndices],
 			SelfConjugate -> OptionValue[SelfConjugate]|>];
 		If[OptionValue[SelfConjugate],
 			SdelS/: SdelS[field, ind_, s1_] SdelS[field, ind_, s2_] = 1 
@@ -25,12 +25,12 @@ CreateScalar[field_, OptionsPattern[] ] :=
 	];
 
 (*Associationwith all information on the fermion fields: representations etc.*)
-fermions = <||>;
+$fermions = <||>;
 (*Initiates a fermion field*)	
 Options[CreateFermion] = {GaugeRep -> {}, FlavorIndices -> {}};
 CreateFermion[field_, OptionsPattern[] ] :=
 	Block[{rep},
-		AppendTo[fermions, field -> <|GaugeRep -> OptionValue[GaugeRep], FlavorIndices -> OptionValue[FlavorIndices]|>]; 
+		AppendTo[$fermions, field -> <|GaugeRep -> OptionValue[GaugeRep], FlavorIndices -> OptionValue[FlavorIndices]|>]; 
 		SdelF/: SdelF[field, ind_, f1_] SdelF[Bar[field], ind_, f2_] = 
 			Product[del[rep, f1, f2], {rep, OptionValue[GaugeRep]}]
 			* Product[del[rep, f1, f2], {rep, OptionValue[FlavorIndices]}];
@@ -49,19 +49,19 @@ CreateVector[name_, group_] :=
 G2[A_, B_, power_: 1] := 
 	Module[{gauge, v1, v2},
 		Sum[
-			SdelV[gaugeGroups[gauge, Field], A, v1] SdelV[gaugeGroups[gauge, Field], B, v2] 
-				*Power[gaugeGroups[gauge, Coupling], 2 power] del[gauge[adj], v1, v2]  
-		,{gauge, Keys @ gaugeGroups}]
+			SdelV[$gaugeGroups[gauge, Field], A, v1] SdelV[$gaugeGroups[gauge, Field], B, v2] 
+				*Power[$gaugeGroups[gauge, Coupling], 2 power] del[gauge[adj], v1, v2]  
+		,{gauge, Keys @ $gaugeGroups}]
 	];
 	
 (*Defining the gauge generators for the left-handed spinors, \bar{\psi} T^A \psi.*)
 TfLeft[A_, i_, j_] := 
 	Module[{ferm, rep, gRep1, gRep2, f1, f2, v}, 
 		Sum[
-			SdelF[Bar @ ferm, i, f1] SdelF[ferm, j, f2] * Product[del[rep, f1, f2], {rep, fermions[ferm, FlavorIndices]}]
-			* Sum[SdelV[gaugeGroups[Head @ gRep1, Field], A, v] TGen[gRep1, v, f1, f2] * Product[del[gRep2, f1, f2],
-				{gRep2, DeleteCases[fermions[ferm, GaugeRep], gRep1]}],{gRep1, fermions[ferm, GaugeRep]}] 
-		,{ferm, Keys @ fermions}]
+			SdelF[Bar @ ferm, i, f1] SdelF[ferm, j, f2] * Product[del[rep, f1, f2], {rep, $fermions[ferm, FlavorIndices]}]
+			* Sum[SdelV[$gaugeGroups[Head @ gRep1, Field], A, v] TGen[gRep1, v, f1, f2] * Product[del[gRep2, f1, f2],
+				{gRep2, DeleteCases[$fermions[ferm, GaugeRep], gRep1]}],{gRep1, $fermions[ferm, GaugeRep]}] 
+		,{ferm, Keys @ $fermions}]
 	];
 (*And for the Majorana-spinor*)
 Tf[A_, i_, j_] := {{TfLeft[A, i, j], 0}, {0, -TfLeft[A, j, i]}};
@@ -72,26 +72,26 @@ Ts[A_, a_, b_] :=
 	Module[{scal, rep, gRep1, gRep2, s1, s2, v}, 
 		Sum[
 			AntiSym[a, b][SdelS[Bar @ scal, a, s1] SdelS[scal, b, s2]]  
-			* Product[del[rep, s1, s2], {rep, scalars[scal, FlavorIndices]}]
-			* Sum[SdelV[gaugeGroups[Head @ gRep1, Field], A, v] TGen[gRep1, v, s1, s2] * Product[del[gRep2, s1, s2],
-				{gRep2, DeleteCases[scalars[scal, GaugeRep], gRep1]}],{gRep1, scalars[scal, GaugeRep]}] 
-		,{scal, Keys @ scalars}]
+			* Product[del[rep, s1, s2], {rep, $scalars[scal, FlavorIndices]}]
+			* Sum[SdelV[$gaugeGroups[Head @ gRep1, Field], A, v] TGen[gRep1, v, s1, s2] * Product[del[gRep2, s1, s2],
+				{gRep2, DeleteCases[$scalars[scal, GaugeRep], gRep1]}],{gRep1, $scalars[scal, GaugeRep]}] 
+		,{scal, Keys @ $scalars}]
 	];
 
 (*Defining the gauge structure constant multiplied with G^-2*)
 FGauge[A_, B_, C_] := 
 	Module[{gauge, v1, v2, v3},
 		Sum[
-			SdelV[gaugeGroups[gauge, Field], A, v1] SdelV[gaugeGroups[gauge, Field], B, v2] SdelV[gaugeGroups[gauge, Field], C, v3]
-				* Power[gaugeGroups[gauge, Coupling], -2] fStruct[gauge, v1, v2, v3]  
-		,{gauge, Keys @ gaugeGroups}]
+			SdelV[$gaugeGroups[gauge, Field], A, v1] SdelV[$gaugeGroups[gauge, Field], B, v2] SdelV[$gaugeGroups[gauge, Field], C, v3]
+				* Power[$gaugeGroups[gauge, Coupling], -2] fStruct[gauge, v1, v2, v3]  
+		,{gauge, Keys @ $gaugeGroups}]
 	];
 
 (*####################################*)
 (*----------Yukawa couplings----------*)
 (*####################################*)
 (*Associationwith all information on the Yukawa couplings.*)
-yukawas = <||>;
+$yukawas = <||>;
 (*Function for defining the Yukawa couplings of the theory*)
 Options[AddYukawa] = {OverallFactor -> 1, Chirality -> Left, InvarianceCheck -> False};
 AddYukawa::chirality = "The chirality `1` is invalid: Left or Right expected. Returning Null"; 
@@ -110,7 +110,7 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Func
 			Return @ Null;
 		];
 		(*Constructs the coupling structure*)
-		If[!scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization *= 1/Sqrt[2];];
+		If[!$scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization *= 1/Sqrt[2];];
 		With[{n = normalization, g0 = g},
 			If[Length @ coupling <= 2,
 				yuk = n Matrix[g0]@ ## &;
@@ -133,7 +133,7 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Func
 					Print[coupling,"---Gauge invarinace check inconclusive for the ", group @ Field, " field:"];
 					Print["0 = ", temp];
 				];
-			,{group, gaugeGroups}];
+			,{group, $gaugeGroups}];
 		];
 		
 		(*Defines the projection operator for extracting out the particular Yukawa coupling.*)
@@ -148,7 +148,7 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Func
 		];
 		
 		(*Adds the Yukawa coupling to the association*)
-		AppendTo[yukawas, coupling -> 
+		AppendTo[$yukawas, coupling -> 
 			<|Chirality -> OptionValue @ Chirality,
 			Coupling -> yuk,
 			CouplingBar -> yukbar, 
@@ -156,20 +156,21 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Func
 			Indices -> indices,
 			Invariant -> groupInvariant,
 			Projector -> projection|>];
+		AppendTo[$couplings, coupling -> Yukawa];
 	];
 
 Yuk[a_, i_, j_] :=
 	Module[{f1, f2, yu, s1},
 		Sum[SdelS[yu[Fields][[1]], a, s1] SdelF[yu[Fields][[2]], i, f1] SdelF[yu[Fields][[3]], j, f2]
 				* yu[Invariant][s1, f1, f2] yu[Coupling][Sequence @@ yu[Indices][s1, f1, f2]]  
-			,{yu, yukawas}] //Sym[i, j]
+			,{yu, $yukawas}] //Sym[i, j]
 	];
 
 YukBar[a_, i_, j_] :=
 	Module[{f1, f2, yu, s1},
 		Sum[SdelS[Bar @ yu[Fields][[1]], a, s1] SdelF[Bar @ yu[Fields][[2]], i, f1] SdelF[Bar @ yu[Fields][[3]], j, f2]
 				* yu[Invariant][s1, f1, f2] yu[CouplingBar][Sequence @@ yu[Indices][s1, f1, f2]]  
-			,{yu, yukawas}] //Sym[i, j]
+			,{yu, $yukawas}] //Sym[i, j]
 	];
 
 y[a_, i_, j_] := {{Yuk[a, i, j], 0}, {0, YukBar[a, i, j]}};
@@ -180,14 +181,14 @@ yt[a_, i_, j_] := {{YukBar[a, i, j], 0}, {0, Yuk[a, i, j]}};
 (*----------Quartic couplings----------*)
 (*#####################################*)
 (*Associationwith all information on the quartic couplings.*)
-quartics = <||>;
+$quartics = <||>;
 (*Function for defining the Yukawa couplings of the theory*)
 Options[AddQuartic] = {OverallFactor -> 1, SelfConjugate -> True, InvarianceCheck -> False}; 
 AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, indices_Function, groupInvariant_Function, OptionsPattern[]] :=
 	Block[{group, invariance, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
 		normalization = 24 OptionValue[OverallFactor];
 		Do[
-			If[!scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization *= 1/Sqrt[2];];
+			If[!$scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization *= 1/Sqrt[2];];
 		,{phi, {phi1, phi2, phi3, phi4}}];
 		With[{n = normalization},
 			If[Length @ coupling <= 2,
@@ -211,7 +212,7 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, indices_Function, groupInva
 					Print[coupling,"---Gauge invarinace check inconclusive for the ", group @ Field, " field:"];
 					Print["0 = ", temp//S];
 				];
-			,{group, gaugeGroups}];
+			,{group, $gaugeGroups}];
 		];
 		
 		(*Defines the projection operator for extracting out the particular quartic coupling.*)
@@ -222,7 +223,7 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, indices_Function, groupInva
 			* SdelS[Bar@phi4, #4, s4] groupInvariant[s1, s2, s3, s4] &];
 		
 		(*Adds the quartic coupling to the association*)
-		AppendTo[quartics, coupling -> 
+		AppendTo[$quartics, coupling -> 
 			<|Coupling -> lam,
 			CouplingBar -> lambar,
 			Fields -> {phi1, phi2, phi3, phi4},
@@ -230,6 +231,7 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, indices_Function, groupInva
 			Invariant -> groupInvariant,
 			Projector -> projection,
 			SelfConjugate -> OptionValue[SelfConjugate]|>];
+		AppendTo[$couplings, coupling -> Quartic];
 	];
 
 Lam[a_, b_, c_, d_] :=
@@ -240,7 +242,7 @@ Lam[a_, b_, c_, d_] :=
 				SdelS[Bar@ l[Fields][[1]], a, s1] SdelS[Bar@ l[Fields][[2]], b, s2] SdelS[Bar@ l[Fields][[3]], c, s3] 
 				* SdelS[Bar@ l[Fields][[4]], d, s4] l[Invariant][s1, s2, s3, s4] l[CouplingBar][Sequence @@ l[Indices][s1, s2, s3, s4]]
 				,0] 
-			,{l, quartics}] //Sym[a, b, c, d]
+			,{l, $quartics}] //Sym[a, b, c, d]
 	];
 
 

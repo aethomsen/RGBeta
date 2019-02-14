@@ -2,10 +2,9 @@
 (*----------Generic tensor properties----------*)
 (*#############################################*)
 (*del[rep, a, b] is the symbol for Kronecker delta \delta_{a,b} belong to the indices specified by the representation.*)
-(*Intger indices are not taken to be summed as dummy variables.*)
 Clear[del];
 	del /: del[rep_, a___, x_, b___] del[rep_, c___, x_, d___] := del[rep, c, a, b, d];
-	del /: Power[del[rep_, a___, b___], 2] := Dim[rep];
+	del /: Power[del[rep_, a_, b_], 2] := Dim[rep];
 	del[rep_, a_, a_] := Dim[rep];
 
 (*Default properties for anti-symmetric inavariants.*)
@@ -81,10 +80,10 @@ Clear[Matrix];
 (*----------Gauge group definitions----------*)
 (*###########################################*)
 (*Association with all information on the gauge groups: fields, couplings etc.*)
-gaugeGroups = <||>;
+$gaugeGroups = <||>;
 
 (*Initialization for an SU(n) gauge group.*)
-SUGroup[group_Symbol, n_Integer, OptionsPattern[{Field -> A[group], Coupling -> g[group]}] ] := 
+SUGroup[coupling_Symbol, group_Symbol, n_Integer, OptionsPattern[{Field -> A[group]}] ] := 
 	Block[{projection},		
 		(*Fundamental*)
 		Dim[group[fund]] = n;
@@ -107,11 +106,15 @@ SUGroup[group_Symbol, n_Integer, OptionsPattern[{Field -> A[group], Coupling -> 
 		CreateVector[OptionValue[Field], group];
 		projection := With[{V = OptionValue @ Field, gStruct = del[group[adj], v1, v2] / Dim @ group[adj]}, 
 			SdelV[V, #1, v1] SdelV[V, #2, v2] gStruct &]; 
-		AppendTo[gaugeGroups, group -> <|Field -> OptionValue[Field], Coupling -> OptionValue[Coupling], Projector -> projection|>];
+		AppendTo[$gaugeGroups, group -> 
+			<|Field -> OptionValue[Field], 
+			Coupling -> coupling, 
+			Projector -> projection|>];
+		AppendTo[$couplings, coupling -> group];
 	];
 
 (*Initialization for a U(1) gauge group.*)	
-U1Group[group_Symbol, OptionsPattern[{Field -> A[group], Coupling -> g[group]}] ] := 
+U1Group[coupling_Symbol, group_Symbol, OptionsPattern[{Field -> A[group]}] ] := 
 	Block[{projection},
 		del[group[_],___] = 1;
 		Dim[group[x_]] = x;
@@ -122,11 +125,15 @@ U1Group[group_Symbol, OptionsPattern[{Field -> A[group], Coupling -> g[group]}] 
 		(*Sets up the gauge fields and 2-point projection*)
 		CreateVector[OptionValue[Field], group];
 		projection := With[{V = OptionValue @ Field}, SdelV[V, #1, v1] SdelV[V, #2, v2] &]; 
-		AppendTo[gaugeGroups, group -> <|Field -> OptionValue[Field], Coupling -> OptionValue[Coupling], Projector -> projection|>];
+		AppendTo[$gaugeGroups, group -> 
+			<|Field -> OptionValue[Field],
+			Coupling -> coupling, 
+			Projector -> projection|>];
+		AppendTo[$couplings, coupling -> group];
 	];	
 
 (*Initialization for an SO(n) gauge group.*)
-SOGroup[group_Symbol, n_Integer, OptionsPattern[{Field -> A[group], Coupling -> g[group]}] ] := 
+SOGroup[coupling_Symbol, group_Symbol, n_Integer, OptionsPattern[{Field -> A[group]}] ] := 
 	Block[{projection},		
 		(*Fundamental*)
 		Dim[group[fund]] = n;
@@ -145,7 +152,11 @@ SOGroup[group_Symbol, n_Integer, OptionsPattern[{Field -> A[group], Coupling -> 
 		CreateVector[OptionValue[Field], group];
 		projection := With[{V = OptionValue @ Field, gStruct = del[group[adj], v1, v2] / Dim @ group[adj]}, 
 			SdelV[V, #1, v1] SdelV[V, #2, v2] gStruct &]; 
-		AppendTo[gaugeGroups, group -> <|Field -> OptionValue[Field], Coupling -> OptionValue[Coupling], Projector -> projection|>];
+		AppendTo[$gaugeGroups, group ->
+			<|Field -> OptionValue[Field], 
+			Coupling -> coupling, 
+			Projector -> projection|>];
+		AppendTo[$couplings, coupling -> group];
 	];
 
 

@@ -32,6 +32,52 @@ Tdot[a_] = a;
 (*##################################*)
 (*----------Beta functions----------*)
 (*##################################*)
+(*Global couplings variable*)
+$couplings = <||>;
+
+(*Function returns the beta function of the given coupling and loop order*)
+BetaFunction::gaugeLoops = "The gauge beta function is only implemented to 3 loops."
+BetaFunction::yukawaLoops = "The Yukawa beta function is only implemented to 2 loops."
+BetaFunction::quarticLoops = "The quartic beta function is only implemented to 1 loops."
+BetaFunction::unkown = "The coupling `1` has not been defined."
+BetaFunction[coupling_Symbol, loop_Integer] := 
+	Block[{beta},
+		Switch[$couplings @ coupling
+		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
+			If[loop > 3, 
+				Message[BetaFunction::gaugeLoops];
+				Return[Null];
+			];
+			
+			beta = Ttimes[GaugeTensors[loop], G2[B, C, 3/2], $gaugeGroups[$couplings @ coupling, Projector][C, A] ] /. gaugeCoefficients;
+		,Yukawa,
+			If[loop > 2, 
+				Message[BetaFunction::yukawaLoops];
+				Return[Null];
+			];
+			
+			Switch[$yukawas[coupling, Chirality]
+			,Left,
+				tensor = YukawaTensors[loop][[1, 1]];
+			,Right,
+				tensor = YukawaTensors[loop][[2, 2]];
+			];
+			
+			beta = tensor $yukawas[coupling, Projector][a, i, j] /. yukawaCoefficients // Expand;
+		,Quartic,
+			If[loop > 1, 
+				Message[BetaFunction::quarticLoops];
+				Return[Null];
+			];
+			
+			beta = QuarticTensors[loop] $quartics[coupling, Projector][a, b, c, d] /. quarticCoefficients // Expand;
+		,_,
+			Message[BetaFunction::unkown, coupling];
+			Return[Null];
+		];
+		
+		Return @ beta;
+	];
 
 (*Function for finalizing a betafunction, bringing it from a nice compact output to a form more suitable for 
 further Mathematica manipulations. Can also be used to specify particular cases for coupling matrices.*)
@@ -48,44 +94,6 @@ Finalize[expr_, OptionsPattern[{Parametrizations -> {} }] ] :=
 			Matrix[Sequence @@ Reverse[Trans /@ List@ y]][b[f2], a[f1]];
 		Matrix[y__][a_[f1], b_[f2]] := Dot[y];
 		out
-	];
-
-GaugeBeta[n_, group_] := 
-	Block[{beta},
-		If[n > 3, 
-			Print["Gauge beta function unknown at that loop order"];
-			Return[Null];
-		];
-		beta = Ttimes[GaugeTensors[n], G2[B, C, 3/2], gaugeGroups[group, Projector][C, A] ] /. gaugeCoefficients;
-		Return @ beta;
-	];
-	
-YukawaBeta[n_, coupling_] := 
-	Block[{beta, tensor},
-		If[n > 2, 
-			Print["Yukawa beta function unknown at that loop order"];
-			Return[Null];
-		];
-		Switch[yukawas[coupling, Chirality]
-		,Left,
-			tensor = YukawaTensors[n][[1, 1]];
-		,Right,
-			tensor = YukawaTensors[n][[2, 2]];
-		];
-		
-		beta = tensor yukawas[coupling, Projector][a, i, j] /. yukawaCoefficients // Expand;
-		Return @ beta;
-	];
-
-QuarticBeta[n_, coupling_] := 
-	Block[{beta},
-		If[n > 1, 
-			Print["Yukawa beta function unknown at that loop order"];
-			Return[Null];
-		];
-		
-		beta = QuarticTensors[n] quartics[coupling, Projector][a, b, c, d] /. quarticCoefficients // Expand;
-		Return @ beta;
 	];
 
 
