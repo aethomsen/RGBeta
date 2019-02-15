@@ -44,7 +44,7 @@ BetaTerm::yukawaLoops = "The Yukawa beta function is only implemented to 2 loops
 BetaTerm::quarticLoops = "The quartic beta function is only implemented to 1 loops."
 BetaTerm::unkown = "The coupling `1` has not been defined."
 BetaTerm[coupling_Symbol, loop_Integer] :=
-	Block[{beta},
+	Module[{beta},
 		Switch[$couplings @ coupling
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
 			If[loop > 3, 
@@ -84,7 +84,7 @@ BetaTerm[coupling_Symbol, loop_Integer] :=
 
 BetaFunction::unkown = "The coupling `1` has not been defined."
 BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[{RescaledCouplings -> True, FourDimensions -> True}] ] :=
-	Block[{coef = 4 Pi, firstTerm = 0},
+	Module[{coef = 4 Pi, firstTerm = 0, l},
 		If[Head @ $couplings @ coupling === Missing, 
 			Message[BetaFunction::unkown, coupling];
 			Return @ Null;

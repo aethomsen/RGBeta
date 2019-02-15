@@ -45,6 +45,42 @@ CreateVector[name_, group_] :=
 (*###################################*)
 (*----------Gauge couplings----------*)
 (*###################################*)
+(*Association with all information on the gauge groups: fields, couplings etc.*)
+$gaugeGroups = <||>;
+
+(*Function for adding gauge groups to the model*)
+AddGaugeGroup::unkown = "`1` is not a reckognized Lie group"
+AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[{Field -> A[groupName]}]] :=
+	Block[{projector},
+		Switch[lieGroup
+		,SU,
+			DefineSUGroup[groupName, n];
+		,SO,
+			DefineSOGroup[groupName, n];
+		,U,
+			If[n =!= 1,
+				Message[AddGaugeGroup::unkown, lieGroup[n] ];
+				Return @ Null;
+			];
+			DefineU1Group[groupName];
+		,_,
+			Message[AddGaugeGroup::unkown, lieGroup[n] ];
+			Return @ Null;
+		];
+		
+		(*Sets up the gauge fields and 2-point projection*)
+		CreateVector[OptionValue @ Field, groupName];
+		projector = With[{V = OptionValue @ Field, gStruct = del[groupName[adj], v1, v2] / Dim @ groupName[adj]}, 
+			SdelV[V, #1, v1] SdelV[V, #2, v2] gStruct &]; 
+		AppendTo[$gaugeGroups, groupName -> 
+			<|Field -> OptionValue @ Field, 
+			Coupling -> coupling, 
+			Projector -> projector|>];
+		AppendTo[$couplings, coupling -> groupName];
+	];
+
+
+
 (*The gauge coupling matrix G^2_{AB}*)
 G2[A_, B_, power_: 1] := 
 	Module[{gauge, v1, v2},
