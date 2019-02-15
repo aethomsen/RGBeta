@@ -64,8 +64,8 @@ TfLeft[A_, i_, j_] :=
 		,{ferm, Keys @ $fermions}]
 	];
 (*And for the Majorana-spinor*)
-Tf[A_, i_, j_] := {{TfLeft[A, i, j], 0}, {0, -TfLeft[A, j, i]}};
-Tft[A_, i_, j_] := {{-TfLeft[A, j, i], 0}, {0, TfLeft[A, i, j]}};  
+Tferm[A_, i_, j_] := {{TfLeft[A, i, j], 0}, {0, -TfLeft[A, j, i]}};
+TfermTil[A_, i_, j_] := {{-TfLeft[A, j, i], 0}, {0, TfLeft[A, i, j]}};  
 
 (*Defining the anti-symmetric gauge generators for the scalars*)
 Ts[A_, a_, b_] := 
@@ -159,22 +159,22 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Func
 		AppendTo[$couplings, coupling -> Yukawa];
 	];
 
-Yuk[a_, i_, j_] :=
+YukawaLeft[a_, i_, j_] :=
 	Module[{f1, f2, yu, s1},
 		Sum[SdelS[yu[Fields][[1]], a, s1] SdelF[yu[Fields][[2]], i, f1] SdelF[yu[Fields][[3]], j, f2]
 				* yu[Invariant][s1, f1, f2] yu[Coupling][Sequence @@ yu[Indices][s1, f1, f2]]  
 			,{yu, $yukawas}] //Sym[i, j]
 	];
 
-YukBar[a_, i_, j_] :=
+YukawaRight[a_, i_, j_] :=
 	Module[{f1, f2, yu, s1},
 		Sum[SdelS[Bar @ yu[Fields][[1]], a, s1] SdelF[Bar @ yu[Fields][[2]], i, f1] SdelF[Bar @ yu[Fields][[3]], j, f2]
 				* yu[Invariant][s1, f1, f2] yu[CouplingBar][Sequence @@ yu[Indices][s1, f1, f2]]  
 			,{yu, $yukawas}] //Sym[i, j]
 	];
 
-y[a_, i_, j_] := {{Yuk[a, i, j], 0}, {0, YukBar[a, i, j]}};
-yt[a_, i_, j_] := {{YukBar[a, i, j], 0}, {0, Yuk[a, i, j]}};
+Yuk[a_, i_, j_] := {{YukawaLeft[a, i, j], 0}, {0, YukawaRight[a, i, j]}};
+YukTil[a_, i_, j_] := {{YukawaRight[a, i, j], 0}, {0, YukawaLeft[a, i, j]}};
 
 
 (*#####################################*)

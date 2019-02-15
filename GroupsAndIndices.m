@@ -38,10 +38,18 @@ Clear[fStruct];
 		Casimir2@ group[adj] CasimirSig[group, List@A, List@B];
 	fStruct[group_, a___, x_, b___, x_, c___] := 0;
 
+(*Adds case to the system built in function Tr and Dot, to deal with substituting couplings for 0.*)
+Unprotect[Tr, Dot];
+	Dot[___, 0, ___] = 0;
+	Tr[0] = 0;
+Protect[Tr, Dot];
+
 Clear[Bar];
-	Bar[Bar[x_]] := x;	
+	Bar[Bar[x_]] = x;
+	Bar[0] = 0;	
 Clear[Trans];
 	Trans[Trans[x_]] := x;
+	Trans[0] = 0;
 (*Matrix head for symbolic matrix manipulations*)
 Clear[Matrix];
 	Matrix /: del[ind_, a___, x_, b___] Matrix[m__][c___, ind_[x_], d___] := Matrix[m][c, ind[a, b], d];
@@ -53,6 +61,7 @@ Clear[Matrix];
 	Matrix /: Matrix[m1__][b_, a_] Matrix[m2__][b_, c_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][a, c];
 	Matrix[m__][] := m;
 	Matrix[m__][Null] := m;
+	Matrix[___, 0, ___][___] = 0;
 	(*Matrix[m__][a_, a_] := Tr @ Dot[m];*)
 	Matrix[m__][a_, a_] :=
 		Block[{matrices, pass1, pass2, temp},

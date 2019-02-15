@@ -2,6 +2,9 @@
 << FieldsAndCouplings`
 << Tensors`
 
+(*#####################################*)
+(*----------Utility functions----------*)
+(*#####################################*)
 (*Symmetrizing in indices*)
 Sym[i1_, i2_][expr_] := expr /2 + ReplaceAll[expr, {i1 -> i2, i2 -> i1}] /2 ;
 AntiSym[i1_, i2_][expr_] := expr /2 - ReplaceAll[expr, {i1 -> i2, i2 -> i1}] /2 ;
@@ -36,23 +39,23 @@ Tdot[a_] = a;
 $couplings = <||>;
 
 (*Function returns the beta function of the given coupling and loop order*)
-BetaFunction::gaugeLoops = "The gauge beta function is only implemented to 3 loops."
-BetaFunction::yukawaLoops = "The Yukawa beta function is only implemented to 2 loops."
-BetaFunction::quarticLoops = "The quartic beta function is only implemented to 1 loops."
-BetaFunction::unkown = "The coupling `1` has not been defined."
-BetaFunction[coupling_Symbol, loop_Integer] := 
+BetaTerm::gaugeLoops = "The gauge beta function is only implemented to 3 loops."
+BetaTerm::yukawaLoops = "The Yukawa beta function is only implemented to 2 loops."
+BetaTerm::quarticLoops = "The quartic beta function is only implemented to 1 loops."
+BetaTerm::unkown = "The coupling `1` has not been defined."
+BetaTerm[coupling_Symbol, loop_Integer] :=
 	Block[{beta},
 		Switch[$couplings @ coupling
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
 			If[loop > 3, 
-				Message[BetaFunction::gaugeLoops];
+				Message[BetaTerm::gaugeLoops];
 				Return[Null];
 			];
 			
 			beta = Ttimes[GaugeTensors[loop], G2[B, C, 3/2], $gaugeGroups[$couplings @ coupling, Projector][C, A] ] /. gaugeCoefficients;
 		,Yukawa,
 			If[loop > 2, 
-				Message[BetaFunction::yukawaLoops];
+				Message[BetaTerm::yukawaLoops];
 				Return[Null];
 			];
 			
@@ -66,17 +69,31 @@ BetaFunction[coupling_Symbol, loop_Integer] :=
 			beta = tensor $yukawas[coupling, Projector][a, i, j] /. yukawaCoefficients // Expand;
 		,Quartic,
 			If[loop > 1, 
-				Message[BetaFunction::quarticLoops];
+				Message[BetaTerm::quarticLoops];
 				Return[Null];
 			];
 			
 			beta = QuarticTensors[loop] $quartics[coupling, Projector][a, b, c, d] /. quarticCoefficients // Expand;
-		,_,
-			Message[BetaFunction::unkown, coupling];
+		,_Missing,
+			Message[BetaTerm::unkown, coupling];
 			Return[Null];
 		];
 		
 		Return @ beta;
+	];
+
+BetaFunction::unkown = "The coupling `1` has not been defined."
+BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[{RescaledCouplings -> True, FourDimensions -> True}] ] :=
+	Block[{coef = 4 Pi, firstTerm = 0},
+		If[Head @ $couplings @ coupling === Missing, 
+			Message[BetaFunction::unkown, coupling];
+			Return @ Null;
+		];
+		
+		If[OptionValue @ RescaledCouplings, coef = 1; ];
+		If[OptionValue @ FourDimensions, firstTerm = 1; ];
+		
+		Sum[ Power[coef, -2 l] BetaTerm[coupling, l], {l, firstTerm, loop}]
 	];
 
 (*Function for finalizing a betafunction, bringing it from a nice compact output to a form more suitable for 
@@ -100,7 +117,6 @@ Finalize[expr_, OptionsPattern[{Parametrizations -> {} }] ] :=
 (*#####################################*)
 (*----------Beta Coefficients----------*)
 (*#####################################*)
-
 quarticCoefficients = {
 	(* 1-loop *)
 	B[3, 1, 1] ->  36,
