@@ -124,7 +124,7 @@ GaugeTensors[0] :=
 
 (*Gauge tensors at 1-loop order*)
 GaugeTensors[1] := GaugeTensors[1] = 
-	Block[{bg, n},
+	Module[{bg, n},
 		bg[1, 1] := C2G[A, B];
 		bg[1, 2] := S2F[A, B];
 		bg[1, 3] := S2S[A, B];
@@ -133,7 +133,7 @@ GaugeTensors[1] := GaugeTensors[1] =
 	
 (*Gauge tensors at 2-loop order*)	
 GaugeTensors[2] := GaugeTensors[2] =
-	Block[{bg, n},
+	Module[{bg, n},
 		bg[2, 1] := S2FC2F[A, B];
 		bg[2, 2] := S2SC2S[A, B];
 		bg[2, 3] := Ttimes[C2G[A, A1], G2[A1, B1], C2G[B1, B]];
@@ -146,7 +146,7 @@ GaugeTensors[2] := GaugeTensors[2] =
 
 (*Gauge tensors at 3-loop order*)	
 GaugeTensors[3] := GaugeTensors[3] =
-	Block[{bg, n},
+	Module[{bg, n},
 		(*y^0 terms*)
 		bg[3, 1] := Tr@Tdot[Tferm[B, l, i], Tferm[A, i, j], C2F[j, k], C2F[k, l]];
 		bg[3, 2] := Ttimes[Ts[B, d, a], Ts[A, a, b], C2S[b, c], C2S[c, d]];
@@ -195,13 +195,13 @@ GaugeTensors[3] := GaugeTensors[3] =
 (*##################################*)
 (*Yukawa tensors at 0-loop order*)
 YukawaTensors[0] :=
-	Block[{},
+	Module[{},
 		- \[Epsilon] / 2 Yuk[a, i, j]
 	];
 
 (*Yukawa tensors at 1-loop order*)
 YukawaTensors[1] := YukawaTensors[1] = 
-	Block[{bYuk, n},
+	Module[{bYuk, n},
 		bYuk[1, 1] := Yuk[b, i, j] C2S[a, b] // Expand;
 		bYuk[1, 2] := Tdot[C2Ft[i, k], Yuk[a, k, j]] // Sym[i, j];
 		bYuk[1, 3] := Tdot[Yuk[b, i, k1], YukTil[a, k1, k2], Yuk[b, k2, j]];
@@ -211,8 +211,8 @@ YukawaTensors[1] := YukawaTensors[1] =
 	];
 
 (*Yukawa tensors at 2-loop order*)
-YukawaTensors[2] := YukawaTensors[2] = 
-	Block[{bYuk, n},
+YukawaTensors[2] := (*YukawaTensors[2] =*) 
+	Module[{bYuk, n},
 		(* y^1 terms*)
 		bYuk[2, 1] := Ttimes[Yuk[c, i, j], C2S[c, b], C2S[b, a]];
 		bYuk[2, 2] := Tdot[C2Ft[i, k], Yuk[b, k, j]] C2S[b, a] // Expand // Sym[i, j];
@@ -251,7 +251,7 @@ YukawaTensors[2] := YukawaTensors[2] =
 		bYuk[2, 33] := Tdot[Yuk[a, i, k], Y2FY2St[k, j]] // Sym[i, j];
 		
 		Monitor[
-			Sum[B[2, 2, n] bYuk[2, n], {n, 23}]
+			Sum[B[2, 2, n] bYuk[2, n], {n, 33}]
 		,StringForm["Evaluating term `` / 33", n]]
 	];
 
@@ -267,7 +267,7 @@ QuarticTensors[0] :=
 
 (*Quartic tensors at 1-loop order*)
 QuarticTensors[1] := QuarticTensors[1] = 
-	Block[{bl, n},
+	Module[{bl, n},
 		bl[1, 1] := Ttimes[TsG2[A1, a, b1], TsG2[A2, b1, b], Ts[A1, c, b2], Ts[A2, b2, d]] // Sym[b, c, d];
 		bl[1, 2] := C2S[a, e] Lam[e, b, c, d] // Expand // Sym4[a, b, c, d];
 		bl[1, 3] := Lam[a, b, e, f] Lam[e, f, c, d] // Expand // Sym[b, c, d];

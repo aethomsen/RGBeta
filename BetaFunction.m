@@ -98,15 +98,15 @@ BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[{RescaledCouplings ->
 
 (*Function for finalizing a betafunction, bringing it from a nice compact output to a form more suitable for 
 further Mathematica manipulations. Can also be used to specify particular cases for coupling matrices.*)
-Finalize[expr_, OptionsPattern[{Parametrizations -> {} }] ] :=
+Finalize[expr_, OptionsPattern[{Parametrizations -> {}}] ] :=
 	Internal`InheritedBlock[{out, Bar, Trans, Matrix},
 		out = expr /. OptionValue @ Parametrizations;
-		Bar[a_List] := Bar /@ a;
-		Bar[Times[a__]] := Bar /@ Times[a];
-		Bar[Plus[a__]] := Bar /@ Plus[a];
-		Bar[a_Symbol] := Conjugate @ a;
-		Bar[a_] /; NumberQ[a] := Conjugate @ a;
-		Trans[a_List] /; MatrixQ[a] === True := Transpose @ a;  
+			Bar[a_List] := Bar /@ a;
+			Bar[Times[a__]] := Bar /@ Times[a];
+			Bar[Plus[a__]] := Bar /@ Plus[a];
+			Bar[a_Symbol] := Conjugate @ a;
+			Bar[a_] /; NumberQ[a] := Conjugate @ a;
+			Trans[a_List] /; MatrixQ[a] === True := Transpose @ a;
 		Matrix[y__][a_[f1_], b_[f2_]] /; !OrderedQ[{f1, f2}] :=
 			Matrix[Sequence @@ Reverse[Trans /@ List@ y]][b[f2], a[f1]];
 		Matrix[y__][a_[f1], b_[f2]] := Dot[y];

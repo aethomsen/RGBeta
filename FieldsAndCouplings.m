@@ -7,8 +7,8 @@ SdelV /: SdelV[field1_, ind_, f_] SdelV[field2_, ind_, g_] := 0;
 (*Associationwith all information on the scalar fields: representations, etc.*)
 $scalars = <||>;
 (*Initiates a scalar field*)
-Options[CreateScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}};
-CreateScalar[field_, OptionsPattern[] ] :=
+Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}};
+AddScalar[field_, OptionsPattern[] ] :=
 	Block[{rep},
 		AppendTo[$scalars, field -> <|GaugeRep -> OptionValue[GaugeRep], FlavorIndices -> OptionValue[FlavorIndices],
 			SelfConjugate -> OptionValue[SelfConjugate]|>];
@@ -27,8 +27,8 @@ CreateScalar[field_, OptionsPattern[] ] :=
 (*Associationwith all information on the fermion fields: representations etc.*)
 $fermions = <||>;
 (*Initiates a fermion field*)	
-Options[CreateFermion] = {GaugeRep -> {}, FlavorIndices -> {}};
-CreateFermion[field_, OptionsPattern[] ] :=
+Options[AddFermion] = {GaugeRep -> {}, FlavorIndices -> {}};
+AddFermion[field_, OptionsPattern[] ] :=
 	Block[{rep},
 		AppendTo[$fermions, field -> <|GaugeRep -> OptionValue[GaugeRep], FlavorIndices -> OptionValue[FlavorIndices]|>]; 
 		SdelF/: SdelF[field, ind_, f1_] SdelF[Bar[field], ind_, f2_] = 
@@ -37,7 +37,7 @@ CreateFermion[field_, OptionsPattern[] ] :=
 	];
 
 (*Initiates a vector field*)	
-CreateVector[name_, group_] :=
+AddVector[name_, group_] :=
 	Block[{},
 		SdelV/: SdelV[name, ind_, v1_] SdelV[name, ind_, v2_] = del[group[adj], v1, v2];
 	];
@@ -69,7 +69,7 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[{
 		];
 		
 		(*Sets up the gauge fields and 2-point projection*)
-		CreateVector[OptionValue @ Field, groupName];
+		AddVector[OptionValue @ Field, groupName];
 		projector = With[{V = OptionValue @ Field, gStruct = del[groupName[adj], v1, v2] / Dim @ groupName[adj]}, 
 			SdelV[V, #1, v1] SdelV[V, #2, v2] gStruct &]; 
 		AppendTo[$gaugeGroups, groupName -> 
@@ -92,11 +92,13 @@ G2[A_, B_, power_: 1] :=
 	
 (*Defining the gauge generators for the left-handed spinors, \bar{\psi} T^A \psi.*)
 TfLeft[A_, i_, j_] := 
-	Module[{ferm, rep, gRep1, gRep2, f1, f2, v}, 
+	Module[{ferm, group, rep, gRep1, gRep2, f1, f2, v}, 
 		Sum[
 			SdelF[Bar @ ferm, i, f1] SdelF[ferm, j, f2] * Product[del[rep, f1, f2], {rep, $fermions[ferm, FlavorIndices]}]
-			* Sum[SdelV[$gaugeGroups[Head @ gRep1, Field], A, v] TGen[gRep1, v, f1, f2] * Product[del[gRep2, f1, f2],
-				{gRep2, DeleteCases[$fermions[ferm, GaugeRep], gRep1]}],{gRep1, $fermions[ferm, GaugeRep]}] 
+			* Sum[group = Head@ If[Head@ gRep1 === Bar, gRep1[[1]], gRep1]; 
+					SdelV[$gaugeGroups[group, Field], A, v] TGen[gRep1, v, f1, f2] 
+					* Product[del[gRep2, f1, f2], {gRep2, DeleteCases[$fermions[ferm, GaugeRep], gRep1]}], 
+				{gRep1, $fermions[ferm, GaugeRep]}] 
 		,{ferm, Keys @ $fermions}]
 	];
 (*And for the Majorana-spinor*)
@@ -105,12 +107,14 @@ TfermTil[A_, i_, j_] := {{-TfLeft[A, j, i], 0}, {0, TfLeft[A, i, j]}};
 
 (*Defining the anti-symmetric gauge generators for the scalars*)
 Ts[A_, a_, b_] := 
-	Module[{scal, rep, gRep1, gRep2, s1, s2, v}, 
+	Module[{scal, group, rep, gRep1, gRep2, s1, s2, v}, 
 		Sum[
 			AntiSym[a, b][SdelS[Bar @ scal, a, s1] SdelS[scal, b, s2]]  
 			* Product[del[rep, s1, s2], {rep, $scalars[scal, FlavorIndices]}]
-			* Sum[SdelV[$gaugeGroups[Head @ gRep1, Field], A, v] TGen[gRep1, v, s1, s2] * Product[del[gRep2, s1, s2],
-				{gRep2, DeleteCases[$scalars[scal, GaugeRep], gRep1]}],{gRep1, $scalars[scal, GaugeRep]}] 
+			* Sum[group = Head@ If[Head@ gRep1 === Bar, gRep1[[1]], gRep1];
+					SdelV[$gaugeGroups[group, Field], A, v] TGen[gRep1, v, s1, s2] 
+					* Product[del[gRep2, s1, s2], {gRep2, DeleteCases[$scalars[scal, GaugeRep], gRep1]}],
+				{gRep1, $scalars[scal, GaugeRep]}] 
 		,{scal, Keys @ $scalars}]
 	];
 
@@ -132,7 +136,7 @@ $yukawas = <||>;
 Options[AddYukawa] = {OverallFactor -> 1, Chirality -> Left, InvarianceCheck -> False};
 AddYukawa::chirality = "The chirality `1` is invalid: Left or Right expected. Returning Null"; 
 AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Function, OptionsPattern[]] :=
-	Block[{g, group, invariance, normalization, projection, symmetryFactor, temp, test, yuk, yukbar, y}, 
+	Block[{g, group, normalization, projection, symmetryFactor, temp, test, yuk, yukbar, y}, 
 		normalization = 2 OptionValue @ OverallFactor;
 		
 		(*If the chirality is right handed, the coupling is written with the barred fields*)
@@ -221,7 +225,7 @@ $quartics = <||>;
 (*Function for defining the Yukawa couplings of the theory*)
 Options[AddQuartic] = {OverallFactor -> 1, SelfConjugate -> True, InvarianceCheck -> False}; 
 AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, indices_Function, groupInvariant_Function, OptionsPattern[]] :=
-	Block[{group, invariance, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
+	Block[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
 		normalization = 24 OptionValue[OverallFactor];
 		Do[
 			If[!$scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization *= 1/Sqrt[2];];
