@@ -68,7 +68,7 @@ BetaTerm[coupling_Symbol, loop_Integer] :=
 			
 			beta = tensor $yukawas[coupling, Projector][a, i, j] /. yukawaCoefficients // Expand // Expand;
 		,Quartic,
-			If[loop > 1, 
+			If[loop > 2, 
 				Message[BetaTerm::quarticLoops];
 				Return[Null];
 			];

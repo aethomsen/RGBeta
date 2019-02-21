@@ -121,7 +121,7 @@ Tferm[A_, i_, j_] := {{TfLeft[A, i, j], 0}, {0, -TfLeft[A, j, i]}};
 TfermTil[A_, i_, j_] := {{-TfLeft[A, j, i], 0}, {0, TfLeft[A, i, j]}};  
 
 (*Defining the anti-symmetric gauge generators for the scalars*)
-Ts[A_, a_, b_] := 
+Tscal[A_, a_, b_] := 
 	Module[{scal, group, rep, gRep1, gRep2, s1, s2, v}, 
 		Sum[
 			AntiSym[a, b][SdelS[Bar @ scal, a, s1] SdelS[scal, b, s2]]  
@@ -210,7 +210,7 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 			y = With[{y1 = yuk, ind = Sequence@@ OptionValue[CouplingIndices][s, f1, f2], 
 				gi = OptionValue[GroupInvariant][s, f1, f2]},
 				Sym[#2, #3][y1[ind] SdelS[phi, #1, s] SdelF[psi1, #2, f1] SdelF[psi2, #3, f2] gi ] &];
-			test = TfLeft[A, k, i] y[a, k ,j] + y[a, i, k] TfLeft[A, k, j] + y[b, i, j] Ts[A, b, a] //Expand;
+			test = TfLeft[A, k, i] y[a, k ,j] + y[a, i, k] TfLeft[A, k, j] + y[b, i, j] Tscal[A, b, a] //Expand;
 			test *= SdelS[Bar@phi, a, scal] SdelF[Bar@psi1, i, ferm1] SdelF[Bar@psi2, j, ferm2] //Expand;
 			Do[
 				temp = test SdelV[group @ Field, A, vec1] //Expand;
@@ -314,8 +314,8 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 			lambda = With[{l1 = lam, ind = Sequence@@ OptionValue @ CouplingIndices[s1, s2, s3, s4], 
 				gi = OptionValue[GroupInvariant][s1, s2, s3, s4]},
 				Sym[#1, #2, #3, #4][l1[ind] SdelS[phi1, #1, s1] SdelS[phi2, #2, s2] SdelS[phi3, #3, s3] SdelS[phi4, #4, s4] gi] &];
-			test = Ts[A, a, e] lambda[e, b, c, d] + Ts[A, b, e] lambda[a, e, c, d] 
-				+ Ts[A, c, e] lambda[a, b, e, d] + Ts[A, d, e] lambda[a, b, c, e]//Expand;
+			test = Tscal[A, a, e] lambda[e, b, c, d] + Tscal[A, b, e] lambda[a, e, c, d] 
+				+ Tscal[A, c, e] lambda[a, b, e, d] + Tscal[A, d, e] lambda[a, b, c, e]//Expand;
 			test = test SdelS[Bar@phi1, a, scal1] SdelS[Bar@phi2, b, scal2] SdelS[Bar@phi3, c, scal3] SdelS[Bar@phi4, d, scal4] //Expand;
 			Do[
 				temp = test SdelV[group @ Field, A, vec1] //Expand;
