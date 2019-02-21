@@ -8,7 +8,7 @@ SdelV /: SdelV[field1_, ind_, f_] SdelV[field2_, ind_, g_] := 0;
 $scalars = <||>;
 (*Initiates a scalar field*)
 Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}};
-AddScalar[field_, OptionsPattern[] ] :=
+AddScalar[field_String, OptionsPattern[] ] :=
 	Block[{rep},
 		AppendTo[$scalars, field -> <|GaugeRep -> OptionValue[GaugeRep], FlavorIndices -> OptionValue[FlavorIndices],
 			SelfConjugate -> OptionValue[SelfConjugate]|>];
@@ -28,7 +28,7 @@ AddScalar[field_, OptionsPattern[] ] :=
 $fermions = <||>;
 (*Initiates a fermion field*)	
 Options[AddFermion] = {GaugeRep -> {}, FlavorIndices -> {}};
-AddFermion[field_, OptionsPattern[] ] :=
+AddFermion[field_String, OptionsPattern[] ] :=
 	Block[{rep},
 		AppendTo[$fermions, field -> <|GaugeRep -> OptionValue[GaugeRep], FlavorIndices -> OptionValue[FlavorIndices]|>]; 
 		SdelF/: SdelF[field, ind_, f1_] SdelF[Bar[field], ind_, f2_] = 
@@ -37,7 +37,7 @@ AddFermion[field_, OptionsPattern[] ] :=
 	];
 
 (*Initiates a vector field*)	
-AddVector[name_, group_] :=
+AddVector[name_String, group_] :=
 	Block[{},
 		SdelV/: SdelV[name, ind_, v1_] SdelV[name, ind_, v2_] = del[group[adj], v1, v2];
 	];
@@ -49,9 +49,22 @@ AddVector[name_, group_] :=
 $gaugeGroups = <||>;
 
 (*Function for adding gauge groups to the model*)
-AddGaugeGroup::unkown = "`1` is not a reckognized Lie group"
-AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[{Field -> A[groupName]}]] :=
-	Block[{projector},
+AddGaugeGroup::unkown = "`1` is not a reckognized Lie group."
+AddGaugeGroup::nonstring = "Use a string for the field or leave it as the default value."
+AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[{Field -> Automatic}]] :=
+	Block[{projector, fieldName},
+		(*Sets the field name*)
+		Switch[OptionValue @ Field
+		,Automatic,
+			fieldName = "A_" <> ToString @ groupName;
+		,_String,
+			fieldName = OptionValue @ Field;
+		,_,
+			Message[AddGaugeGroup::nonstring];
+			Return @ Null;
+		];
+		
+		(*Sets up the group symbols*)
 		Switch[lieGroup
 		,SU,
 			DefineSUGroup[groupName, n];
@@ -69,11 +82,13 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[{
 		];
 		
 		(*Sets up the gauge fields and 2-point projection*)
-		AddVector[OptionValue @ Field, groupName];
-		projector = With[{V = OptionValue @ Field, gStruct = del[groupName[adj], v1, v2] / Dim @ groupName[adj]}, 
+		AddVector[fieldName, groupName];
+		projector = With[{V = fieldName, gStruct = del[groupName[adj], v1, v2] / Dim @ groupName[adj]}, 
 			SdelV[V, #1, v1] SdelV[V, #2, v2] gStruct &]; 
+		
+		(*Adds the group information and the coupling to the repsective lists*)
 		AppendTo[$gaugeGroups, groupName -> 
-			<|Field -> OptionValue @ Field, 
+			<|Field -> fieldName, 
 			Coupling -> coupling, 
 			Projector -> projector|>];
 		AppendTo[$couplings, coupling -> groupName];
@@ -133,24 +148,38 @@ FGauge[A_, B_, C_] :=
 (*Associationwith all information on the Yukawa couplings.*)
 $yukawas = <||>;
 (*Function for defining the Yukawa couplings of the theory*)
-Options[AddYukawa] = {OverallFactor -> 1, Chirality -> Left, CheckInvariance -> False};
+Options[AddYukawa] = {CouplingIndices -> (Null &),
+	GroupInvariant -> (1 &),
+	Chirality -> Left, 
+	CheckInvariance -> False};
 AddYukawa::chirality = "The chirality `1` is invalid: Left or Right expected."; 
 AddYukawa::unkown = "`1` does not match any of the `2`s.";
-AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Function, OptionsPattern[]] :=
+AddYukawa::nonfunction = "The value given in `1` is not a function."; 
+AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 	Block[{g, group, normalization, projection, symmetryFactor, temp, test, yuk, yukbar, y}, 
 		(*Tests if the fields have been defined*)
-		If[!MemberQ[Keys@ $scalars, phi /. Bar[x_] -> x],
+		If[!MemberQ[Keys @ $scalars, phi /. Bar[x_] -> x],
 			Message[AddYukawa::unkown, phi /. Bar[x_] -> x, "scalar"];
-			Return[Null];
+			Return @ Null;
 		];
 		If[!MemberQ[Keys@ $fermions, psi1],
 			Message[AddYukawa::unkown, psi1, "fermion"];
-			Return[Null];
+			Return @ Null;
 		];
 		If[!MemberQ[Keys@ $fermions, psi2],
 			Message[AddYukawa::unkown, psi2, "fermion"];
-			Return[Null];
+			Return @ Null;
 		];
+
+		(*Tests if the fields have been defined*)
+		If[! Head @ OptionValue @ CouplingIndices === Function,
+			Message[AddYukawa::nonfunction, CouplingIndices];
+			Return @ Null;
+		]; 
+		If[! Head @ OptionValue @ GroupInvariant === Function,
+			Message[AddYukawa::nonfunction, GroupInvariant];
+			Return @ Null;
+		]; 
 		
 		(*If the chirality is right handed, the coupling is written with the barred fields*)
 		Switch[OptionValue @ Chirality
@@ -164,7 +193,7 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Func
 		];
 		
 		(*Constructs the coupling structure*)
-		normalization = 2 OptionValue @ OverallFactor;
+		normalization = 2;
 		If[!$scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization *= 1/Sqrt[2];];
 		With[{n = normalization, g0 = g},
 			If[Length @ coupling <= 2,
@@ -178,7 +207,8 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Func
 		
 		(*Tests whether the Yukawa coupling satisfy gauge invariance*)
 		If[OptionValue @ CheckInvariance,
-			y = With[{y1 = yuk, ind = Sequence@@ indices[s, f1, f2], gi = groupInvariant[s, f1, f2]},
+			y = With[{y1 = yuk, ind = Sequence@@ OptionValue[CouplingIndices][s, f1, f2], 
+				gi = OptionValue[GroupInvariant][s, f1, f2]},
 				Sym[#2, #3][y1[ind] SdelS[phi, #1, s] SdelF[psi1, #2, f1] SdelF[psi2, #3, f2] gi ] &];
 			test = TfLeft[A, k, i] y[a, k ,j] + y[a, i, k] TfLeft[A, k, j] + y[b, i, j] Ts[A, b, a] //Expand;
 			test *= SdelS[Bar@phi, a, scal] SdelF[Bar@psi1, i, ferm1] SdelF[Bar@psi2, j, ferm2] //Expand;
@@ -195,11 +225,13 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Func
 		symmetryFactor = If[psi1 === psi2, 2, 1];
 		Switch[OptionValue @ Chirality
 		,Left,
-			projection = With[{c = normalization/2 /symmetryFactor / Expand @ Power[OptionValue[OverallFactor] groupInvariant[a,b,c], 2] },
-			c SdelS[Bar@phi, #1, s] SdelF[Bar@psi1, #2, f1] SdelF[Bar@psi2, #3, f2] groupInvariant[s, f1, f2] &];	
+			projection = With[{c = normalization/2 /symmetryFactor 
+				/ Expand @ Power[OptionValue[GroupInvariant][a,b,c], 2] },
+			c SdelS[Bar@phi, #1, s] SdelF[Bar@psi1, #2, f1] SdelF[Bar@psi2, #3, f2] OptionValue[GroupInvariant][s, f1, f2] &];	
 		,Right,
-			projection = With[{c = normalization/2 /symmetryFactor / Expand @ Power[OptionValue[OverallFactor] groupInvariant[a,b,c], 2] },
-			c SdelS[phi, #1, s] SdelF[psi1, #2, f1] SdelF[psi2, #3, f2] groupInvariant[s, f1, f2] &];
+			projection = With[{c = normalization/2 /symmetryFactor 
+				/ Expand @ Power[OptionValue[GroupInvariant][a,b,c], 2] },
+			c SdelS[phi, #1, s] SdelF[psi1, #2, f1] SdelF[psi2, #3, f2] OptionValue[GroupInvariant][s, f1, f2] &];
 		];
 		
 		(*Adds the Yukawa coupling to the association*)
@@ -208,8 +240,8 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Func
 			Coupling -> yuk,
 			CouplingBar -> yukbar, 
 			Fields -> {phi, psi1, psi2},
-			Indices -> indices,
-			Invariant -> groupInvariant,
+			Indices -> OptionValue @ CouplingIndices,
+			Invariant -> OptionValue @ GroupInvariant,
 			Projector -> projection|>];
 		AppendTo[$couplings, coupling -> Yukawa];
 	];
@@ -239,8 +271,12 @@ YukTil[a_, i_, j_] := {{YukawaRight[a, i, j], 0}, {0, YukawaLeft[a, i, j]}};
 $quartics = <||>;
 (*Function for defining the Yukawa couplings of the theory*)
 AddQuartic::unkown = "`1` does not match any of the scalars.";
-Options[AddQuartic] = {OverallFactor -> 1, SelfConjugate -> True, InvarianceCheck -> False}; 
-AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, indices_Function, groupInvariant_Function, OptionsPattern[]] :=
+AddQuartic::nonfunction = "The value given in `1` is not a function.";
+Options[AddQuartic] = {CouplingIndices -> (Null &),
+	GroupInvariant -> (1 &),
+	SelfConjugate -> True, 
+	InvarianceCheck -> False}; 
+AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 	Block[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
 		(*Tests if the fields have been defined*)
 		Do[
@@ -250,7 +286,17 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, indices_Function, groupInva
 			];
 		,{temp, {phi1, phi2, phi3, phi4}}];
 		
-		normalization = 24 OptionValue[OverallFactor];
+		(*Tests if the fields have been defined*)
+		If[! Head @ OptionValue @ CouplingIndices === Function,
+			Message[AddQuartic::nonfunction, CouplingIndices];
+			Return @ Null;
+		]; 
+		If[! Head @ OptionValue @ GroupInvariant === Function,
+			Message[AddQuartic::nonfunction, GroupInvariant];
+			Return @ Null;
+		]; 
+		
+		normalization = 24;
 		Do[
 			If[!$scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization *= 1/Sqrt[2];];
 		,{phi, {phi1, phi2, phi3, phi4}}];
@@ -265,7 +311,8 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, indices_Function, groupInva
 		];
 		(*Tests whether the Yukawa coupling satisfy gauge invariance*)
 		If[OptionValue @ InvarianceCheck,
-			lambda = With[{l1 = lam, ind = Sequence@@ indices[s1, s2, s3, s4], gi = groupInvariant[s1, s2, s3, s4]},
+			lambda = With[{l1 = lam, ind = Sequence@@ OptionValue @ CouplingIndices[s1, s2, s3, s4], 
+				gi = OptionValue[GroupInvariant][s1, s2, s3, s4]},
 				Sym[#1, #2, #3, #4][l1[ind] SdelS[phi1, #1, s1] SdelS[phi2, #2, s2] SdelS[phi3, #3, s3] SdelS[phi4, #4, s4] gi] &];
 			test = Ts[A, a, e] lambda[e, b, c, d] + Ts[A, b, e] lambda[a, e, c, d] 
 				+ Ts[A, c, e] lambda[a, b, e, d] + Ts[A, d, e] lambda[a, b, c, e]//Expand;
@@ -281,20 +328,19 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, indices_Function, groupInva
 		
 		(*Defines the projection operator for extracting out the particular quartic coupling.*)
 		symmetryFactor = 24 / Length @ DeleteDuplicates @ Permutations @ {phi1, phi2, phi3, phi4};	
-		projection = With[{c = normalization /24 /symmetryFactor 
-			/ Expand @ Power[OptionValue[OverallFactor] groupInvariant[a, b, c, d], 2] },
+		projection = With[{c = normalization /24 /symmetryFactor / Expand @ Power[OptionValue[GroupInvariant][a, b, c, d], 2] },
 			c SdelS[Bar@phi1, #1, s1] SdelS[Bar@phi2, #2, s2] SdelS[Bar@phi3, #3, s3] 
-			* SdelS[Bar@phi4, #4, s4] groupInvariant[s1, s2, s3, s4] &];
+			* SdelS[Bar@phi4, #4, s4] OptionValue[GroupInvariant][s1, s2, s3, s4] &];
 		
 		(*Adds the quartic coupling to the association*)
 		AppendTo[$quartics, coupling -> 
 			<|Coupling -> lam,
 			CouplingBar -> lambar,
 			Fields -> {phi1, phi2, phi3, phi4},
-			Indices -> indices,
-			Invariant -> groupInvariant,
+			Indices -> OptionValue @ CouplingIndices,
+			Invariant -> OptionValue @ GroupInvariant,
 			Projector -> projection,
-			SelfConjugate -> OptionValue[SelfConjugate]|>];
+			SelfConjugate -> OptionValue @ SelfConjugate|>];
 		AppendTo[$couplings, coupling -> Quartic];
 	];
 
