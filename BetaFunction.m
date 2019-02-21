@@ -66,14 +66,14 @@ BetaTerm[coupling_Symbol, loop_Integer] :=
 				tensor = YukawaTensors[loop][[2, 2]];
 			];
 			
-			beta = tensor $yukawas[coupling, Projector][a, i, j] /. yukawaCoefficients // Expand;
+			beta = tensor $yukawas[coupling, Projector][a, i, j] /. yukawaCoefficients // Expand // Expand;
 		,Quartic,
 			If[loop > 1, 
 				Message[BetaTerm::quarticLoops];
 				Return[Null];
 			];
 			
-			beta = QuarticTensors[loop] $quartics[coupling, Projector][a, b, c, d] /. quarticCoefficients // Expand;
+			beta = QuarticTensors[loop] $quartics[coupling, Projector][a, b, c, d] /. quarticCoefficients // Expand // Expand;
 		,_Missing,
 			Message[BetaTerm::unkown, coupling];
 			Return[Null];

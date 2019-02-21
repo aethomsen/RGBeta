@@ -95,7 +95,7 @@ Clear[Matrix];
 (*----------Gauge group definitions----------*)
 (*###########################################*)
 (*Initialization for an SU(n) Lie group.*)
-DefineSUGroup[group_Symbol, n_Integer] :=
+DefineSUGroup[group_Symbol, n_] :=
 	Block[{},
 		(*Fundamental*)
 		Dim[group[fund]] = n;
@@ -104,6 +104,20 @@ DefineSUGroup[group_Symbol, n_Integer] :=
 		(*Fierz identitiy*)
 		TGen /: TGen[group[fund], A_, a_, b_] TGen[group[fund], A_, c_, d_] = TraceNormalization[group[fund]] *
 			(del[group[fund], a, d] del[group[fund], c, b] - del[group[fund], a, b] del[group[fund], c, d] / n);
+				
+		(*Symmetric*)
+		Dim[group[sym]] = n (n +1) /2;
+		del[group[sym], a_, b_] = del[group@ fund, i1[a], i1[b]] del[group@ fund, i2[a], i2[b] ] / 2 + 
+			del[group@ fund, i1[a], i2[b] ] del[group@ fund, i2[a], i1[b] ] / 2;
+		TGen[group[sym], A_, a_, b_] = TGen[group@ fund, A, i1[a], i1[b]] del[group@ fund, i2[a], i2[b] ] + 
+			del[group@ fund, i1[a], i2[b] ] TGen[group@ fund, A, i2[a], i1[b] ];  
+		
+		(*Anti-Symmetric*)
+		Dim[group[sym]] = n (n -1) /2;
+		del[group[asym], a_, b_] = del[group@ fund, i1[a], i1[b]] del[group@ fund, i2[a], i2[b] ] /2 - 
+			del[group@ fund, i1[a], i2[b] ] del[group@ fund, i2[a], i1[b] ] / 2;
+		TGen[group[asym], A_, a_, b_] = TGen[group@ fund, A, i1[a], i1[b]] del[group@ fund, i2[a], i2[b] ] - 
+			del[group@ fund, i1[a], i2[b] ] TGen[group@ fund, A, i2[a], i1[b] ];  
 		
 		(*Adjoint*)
 		Dim[group[adj]] = n^2 - 1;
@@ -122,7 +136,7 @@ DefineU1Group[group_Symbol] :=
 	];
 
 (*Initialization for an SO(n) gauge group.*)
-DefineSOGroup[group_Symbol, n_Integer] := 
+DefineSOGroup[group_Symbol, n_] := 
 	Block[{projection},		
 		(*Fundamental*)
 		Dim[group[fund]] = n;

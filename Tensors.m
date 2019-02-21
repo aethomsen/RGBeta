@@ -211,7 +211,7 @@ YukawaTensors[1] := YukawaTensors[1] =
 	];
 
 (*Yukawa tensors at 2-loop order*)
-YukawaTensors[2] := (*YukawaTensors[2] =*) 
+YukawaTensors[2] := YukawaTensors[2] = 
 	Module[{bYuk, n},
 		(* y^1 terms*)
 		bYuk[2, 1] := Ttimes[Yuk[c, i, j], C2S[c, b], C2S[b, a]];

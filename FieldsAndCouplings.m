@@ -133,11 +133,24 @@ FGauge[A_, B_, C_] :=
 (*Associationwith all information on the Yukawa couplings.*)
 $yukawas = <||>;
 (*Function for defining the Yukawa couplings of the theory*)
-Options[AddYukawa] = {OverallFactor -> 1, Chirality -> Left, InvarianceCheck -> False};
-AddYukawa::chirality = "The chirality `1` is invalid: Left or Right expected. Returning Null"; 
+Options[AddYukawa] = {OverallFactor -> 1, Chirality -> Left, CheckInvariance -> False};
+AddYukawa::chirality = "The chirality `1` is invalid: Left or Right expected."; 
+AddYukawa::unkown = "`1` does not match any of the `2`s.";
 AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Function, OptionsPattern[]] :=
 	Block[{g, group, normalization, projection, symmetryFactor, temp, test, yuk, yukbar, y}, 
-		normalization = 2 OptionValue @ OverallFactor;
+		(*Tests if the fields have been defined*)
+		If[!MemberQ[Keys@ $scalars, phi /. Bar[x_] -> x],
+			Message[AddYukawa::unkown, phi /. Bar[x_] -> x, "scalar"];
+			Return[Null];
+		];
+		If[!MemberQ[Keys@ $fermions, psi1],
+			Message[AddYukawa::unkown, psi1, "fermion"];
+			Return[Null];
+		];
+		If[!MemberQ[Keys@ $fermions, psi2],
+			Message[AddYukawa::unkown, psi2, "fermion"];
+			Return[Null];
+		];
 		
 		(*If the chirality is right handed, the coupling is written with the barred fields*)
 		Switch[OptionValue @ Chirality
@@ -149,7 +162,9 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Func
 			Message[AddYukawa::chirality, OptionValue @ Chirality];
 			Return @ Null;
 		];
+		
 		(*Constructs the coupling structure*)
+		normalization = 2 OptionValue @ OverallFactor;
 		If[!$scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization *= 1/Sqrt[2];];
 		With[{n = normalization, g0 = g},
 			If[Length @ coupling <= 2,
@@ -162,11 +177,11 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, indices_Function, groupInvariant_Func
 		];
 		
 		(*Tests whether the Yukawa coupling satisfy gauge invariance*)
-		If[OptionValue @ InvarianceCheck,
+		If[OptionValue @ CheckInvariance,
 			y = With[{y1 = yuk, ind = Sequence@@ indices[s, f1, f2], gi = groupInvariant[s, f1, f2]},
 				Sym[#2, #3][y1[ind] SdelS[phi, #1, s] SdelF[psi1, #2, f1] SdelF[psi2, #3, f2] gi ] &];
-			test = TfLeft[A, k, i] y[a, k ,j] + y[a, i, k] TfLeft[A, k, j] + y[b, i, j] Ts[A, b, a]//Expand;
-			test = test SdelS[Bar@phi, a, scal] SdelF[Bar@psi1, i, ferm1] SdelF[Bar@psi2, j, ferm2] //Expand;
+			test = TfLeft[A, k, i] y[a, k ,j] + y[a, i, k] TfLeft[A, k, j] + y[b, i, j] Ts[A, b, a] //Expand;
+			test *= SdelS[Bar@phi, a, scal] SdelF[Bar@psi1, i, ferm1] SdelF[Bar@psi2, j, ferm2] //Expand;
 			Do[
 				temp = test SdelV[group @ Field, A, vec1] //Expand;
 				If [temp =!= 0, 
@@ -223,9 +238,18 @@ YukTil[a_, i_, j_] := {{YukawaRight[a, i, j], 0}, {0, YukawaLeft[a, i, j]}};
 (*Associationwith all information on the quartic couplings.*)
 $quartics = <||>;
 (*Function for defining the Yukawa couplings of the theory*)
+AddQuartic::unkown = "`1` does not match any of the scalars.";
 Options[AddQuartic] = {OverallFactor -> 1, SelfConjugate -> True, InvarianceCheck -> False}; 
 AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, indices_Function, groupInvariant_Function, OptionsPattern[]] :=
 	Block[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
+		(*Tests if the fields have been defined*)
+		Do[
+			If[!MemberQ[Keys@ $scalars, temp /. Bar[x_] -> x],
+				Message[AddQuartic::unkown, temp /. Bar[x_] -> x];
+				Return[Null];
+			];
+		,{temp, {phi1, phi2, phi3, phi4}}];
+		
 		normalization = 24 OptionValue[OverallFactor];
 		Do[
 			If[!$scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization *= 1/Sqrt[2];];
