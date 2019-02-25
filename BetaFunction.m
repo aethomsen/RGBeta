@@ -44,7 +44,7 @@ BetaTerm::yukawaLoops = "The Yukawa beta function is only implemented to 2 loops
 BetaTerm::quarticLoops = "The quartic beta function is only implemented to 2 loops."
 BetaTerm::unkown = "The coupling `1` has not been defined."
 BetaTerm[coupling_Symbol, loop_Integer] :=
-	Module[{beta, tensor, A, B, C, a, i, j, b, c, d},
+	Module[{beta, tensor, C},
 		Switch[$couplings @ coupling
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
 			If[loop > 3, 
@@ -52,7 +52,7 @@ BetaTerm[coupling_Symbol, loop_Integer] :=
 				Return[Null];
 			];
 			
-			beta = Ttimes[GaugeTensors[loop], G2[B, C, 3/2], $gaugeGroups[$couplings @ coupling, Projector][C, A] ] /. gaugeCoefficients;
+			beta = Ttimes[GaugeTensors[loop], G2[$B, C, 3/2], $gaugeGroups[$couplings @ coupling, Projector][C, $A] ] /. gaugeCoefficients;
 		,Yukawa,
 			If[loop > 2, 
 				Message[BetaTerm::yukawaLoops];
@@ -66,14 +66,14 @@ BetaTerm[coupling_Symbol, loop_Integer] :=
 				tensor = YukawaTensors[loop][[2, 2]];
 			];
 			
-			beta = tensor $yukawas[coupling, Projector][a, i, j] /. yukawaCoefficients // Expand // Expand;
+			beta = tensor $yukawas[coupling, Projector][$a, $i, $j] /. yukawaCoefficients // Expand // Expand;
 		,Quartic,
 			If[loop > 2, 
 				Message[BetaTerm::quarticLoops];
 				Return[Null];
 			];
 			
-			beta = QuarticTensors[loop] $quartics[coupling, Projector][a, b, c, d] /. quarticCoefficients // Expand // Expand;
+			beta = QuarticTensors[loop] $quartics[coupling, Projector][$a, $b, $c, $d] /. quarticCoefficients // Expand // Expand;
 		,_Missing,
 			Message[BetaTerm::unkown, coupling];
 			Return[Null];

@@ -10,8 +10,11 @@ $scalars = <||>;
 Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}, Mass -> 0};
 AddScalar[field_String, OptionsPattern[] ] :=
 	Block[{rep, massTerm = 1},
-		AppendTo[$scalars, field -> <|GaugeRep -> OptionValue[GaugeRep], FlavorIndices -> OptionValue[FlavorIndices],
-			SelfConjugate -> OptionValue[SelfConjugate]|>];
+		AppendTo[$scalars, field -> <|
+			GaugeRep -> OptionValue[GaugeRep], 
+			FlavorIndices -> OptionValue[FlavorIndices],
+			SelfConjugate -> OptionValue[SelfConjugate], 
+			Mass -> OptionValue @ Mass|>];
 		If[OptionValue @ Mass =!= 0,
 			massTerm = UnitStep[t - OptionValue @ Mass];
 		];
@@ -37,7 +40,10 @@ AddFermion[field_String, OptionsPattern[] ] :=
 		If[OptionValue @ Mass =!= 0,
 			massTerm = UnitStep[t - OptionValue @ Mass];
 		];
-		AppendTo[$fermions, field -> <|GaugeRep -> OptionValue[GaugeRep], FlavorIndices -> OptionValue[FlavorIndices]|>]; 
+		AppendTo[$fermions, field -> <|
+			GaugeRep -> OptionValue[GaugeRep], 
+			FlavorIndices -> OptionValue[FlavorIndices], 
+			Mass -> OptionValue @ Mass|>]; 
 		SdelF/: SdelF[field, ind_, f1_] SdelF[Bar[field], ind_, f2_] = massTerm 
 			* Product[del[rep, f1, f2], {rep, OptionValue[GaugeRep]}]
 			* Product[del[rep, f1, f2], {rep, OptionValue[FlavorIndices]}];
