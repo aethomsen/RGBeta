@@ -7,18 +7,22 @@ SdelV /: SdelV[field1_, ind_, f_] SdelV[field2_, ind_, g_] := 0;
 (*Associationwith all information on the scalar fields: representations, etc.*)
 $scalars = <||>;
 (*Initiates a scalar field*)
-Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}};
+Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}, Mass -> 0};
 AddScalar[field_String, OptionsPattern[] ] :=
-	Block[{rep},
+	Block[{rep, massTerm = 1},
 		AppendTo[$scalars, field -> <|GaugeRep -> OptionValue[GaugeRep], FlavorIndices -> OptionValue[FlavorIndices],
 			SelfConjugate -> OptionValue[SelfConjugate]|>];
+		If[OptionValue @ Mass =!= 0,
+			massTerm = UnitStep[t - OptionValue @ Mass];
+		];
+		
 		If[OptionValue[SelfConjugate],
-			SdelS/: SdelS[field, ind_, s1_] SdelS[field, ind_, s2_] = 1 
+			SdelS/: SdelS[field, ind_, s1_] SdelS[field, ind_, s2_] = 1 * massTerm 
 				* Product[del[rep, s1, s2], {rep, OptionValue[GaugeRep]}]
 				* Product[del[rep, s1, s2], {rep, OptionValue[FlavorIndices]}];
 			Bar[field] = field;
 		,
-			SdelS/: SdelS[field, ind_, s1_] SdelS[Bar[field], ind_, s2_] = 2 
+			SdelS/: SdelS[field, ind_, s1_] SdelS[Bar[field], ind_, s2_] = 2 * massTerm
 				* Product[del[rep, s1, s2], {rep, OptionValue[GaugeRep]}]
 				* Product[del[rep, s1, s2], {rep, OptionValue[FlavorIndices]}];
 		];
@@ -27,12 +31,15 @@ AddScalar[field_String, OptionsPattern[] ] :=
 (*Associationwith all information on the fermion fields: representations etc.*)
 $fermions = <||>;
 (*Initiates a fermion field*)	
-Options[AddFermion] = {GaugeRep -> {}, FlavorIndices -> {}};
+Options[AddFermion] = {GaugeRep -> {}, FlavorIndices -> {}, Mass -> 0};
 AddFermion[field_String, OptionsPattern[] ] :=
-	Block[{rep},
+	Block[{massTerm = 1, rep},
+		If[OptionValue @ Mass =!= 0,
+			massTerm = UnitStep[t - OptionValue @ Mass];
+		];
 		AppendTo[$fermions, field -> <|GaugeRep -> OptionValue[GaugeRep], FlavorIndices -> OptionValue[FlavorIndices]|>]; 
-		SdelF/: SdelF[field, ind_, f1_] SdelF[Bar[field], ind_, f2_] = 
-			Product[del[rep, f1, f2], {rep, OptionValue[GaugeRep]}]
+		SdelF/: SdelF[field, ind_, f1_] SdelF[Bar[field], ind_, f2_] = massTerm 
+			* Product[del[rep, f1, f2], {rep, OptionValue[GaugeRep]}]
 			* Product[del[rep, f1, f2], {rep, OptionValue[FlavorIndices]}];
 	];
 
@@ -193,7 +200,7 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 		];
 		
 		(*Constructs the coupling structure*)
-		normalization = 2;
+		normalization = 2; (*To account for the symmetrization in Yukawa[a, i, j]*)
 		If[!$scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization *= 1/Sqrt[2];];
 		With[{n = normalization, g0 = g},
 			If[Length @ coupling <= 2,
@@ -296,7 +303,7 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 			Return @ Null;
 		]; 
 		
-		normalization = 24;
+		normalization = 24; (*To account for the symmetrization in Lam[a, b, c, d]*)
 		Do[
 			If[!$scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization *= 1/Sqrt[2];];
 		,{phi, {phi1, phi2, phi3, phi4}}];

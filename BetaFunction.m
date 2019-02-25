@@ -41,10 +41,10 @@ $couplings = <||>;
 (*Function returns the beta function of the given coupling and loop order*)
 BetaTerm::gaugeLoops = "The gauge beta function is only implemented to 3 loops."
 BetaTerm::yukawaLoops = "The Yukawa beta function is only implemented to 2 loops."
-BetaTerm::quarticLoops = "The quartic beta function is only implemented to 1 loops."
+BetaTerm::quarticLoops = "The quartic beta function is only implemented to 2 loops."
 BetaTerm::unkown = "The coupling `1` has not been defined."
 BetaTerm[coupling_Symbol, loop_Integer] :=
-	Module[{beta},
+	Module[{beta, tensor, A, B, C, a, i, j, b, c, d},
 		Switch[$couplings @ coupling
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
 			If[loop > 3, 
@@ -113,6 +113,29 @@ Finalize[expr_, OptionsPattern[{Parametrizations -> {}}] ] :=
 		out
 	];
 
+(*Function to check the projected value of a coupling*)
+ProjectionCheck::unkown = "The coupling `1` has not been defined."
+ProjectionCheck[coupling_Symbol] :=
+	Module[{cop, tensor, A, B, a, i, j, b, c, d},
+		Switch[$couplings @ coupling
+		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
+			cop = Ttimes[G2[A, B, 1/2], $gaugeGroups[$couplings @ coupling, Projector][B, A] ] // Expand;
+		,Yukawa,			
+			Switch[$yukawas[coupling, Chirality]
+			,Left,
+				tensor = Yuk[a, i, j][[1, 1]];
+			,Right,
+				tensor = Yuk[a, i, j][[2, 2]];
+			];
+			cop = tensor $yukawas[coupling, Projector][a, i, j] // Expand // Expand;
+		,Quartic,
+			cop = Lam[a, b, c, d] $quartics[coupling, Projector][a, b, c, d] // Expand // Expand;
+		,_Missing,
+			Message[ProjectionCheck::unkown, coupling];
+			Return @ Null;
+		];
+		Return @ cop;
+	];
 
 (*#####################################*)
 (*----------Beta Coefficients----------*)

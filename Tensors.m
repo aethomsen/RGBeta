@@ -284,7 +284,7 @@ QuarticTensors[1] := QuarticTensors[1] =
 	];
 
 
-(*Quartic tensors at 1-loop order*)
+(*Quartic tensors at 2-loop order*)
 QuarticTensors[2] := QuarticTensors[2] = 
 	Module[{bl, n},
 		(* y^0, lam^0 terms*)

@@ -12,6 +12,13 @@ Clear[del];
 	del[rep_, a_, a_] = Dim[rep];
 	del[Bar[rep_], a_, b_] = del[rep, a, b];
 
+(*del for taking specific index*)
+Clear[delIndex];
+	delIndex /: del[rep_, a___, x_Symbol, b___] delIndex[rep_, c___, x_Symbol, d___] = delIndex[rep, c, a, b, d];
+	delIndex /: delIndex[rep_, a___, x_Symbol, b___] delIndex[rep_, c___, x_Symbol, d___] = delIndex[rep, c, a, b, d];
+	delIndex /: Power[delIndex[rep_, a_, b_], 2] = 1;
+	delIndex[rep_, a_Integer, b_Integer] := KroneckerDelta[a, b];
+
 (*Default properties for anti-symmetric inavariants.*)
 Clear[eps];
 	eps /: del[rep_, a___, x_, b___] eps[rep_, c___, x_, d___] := eps[rep, c, a, b, d];
@@ -60,7 +67,7 @@ Clear[Trans];
 Clear[Matrix];
 	Matrix /: del[ind_, a___, x_, b___] Matrix[m__][c___, ind_[x_], d___] := Matrix[m][c, ind[a, b], d];
 	Matrix /: Matrix[m1__][a_] Matrix[m2__][a_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][a];
-	Matrix /: Matrix[m1__][b_] Matrix[m2__][b_, c_] := Matrix[m1, Sequence @@ Reverse[Trans /@ List@m2]][c];
+	Matrix /: Matrix[m1__][b_] Matrix[m2__][b_, c_] := Matrix[Sequence @@ Reverse[Trans /@ List@m2], m1][c];
 	Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][b_] := Matrix[m1, m2][a];
 	Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][b_, c_] := Matrix[m1, m2][a, c];
 	Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][c_, b_] := Matrix[m1, Sequence @@ Reverse[Trans /@ List@m2]][a, c];
@@ -104,7 +111,7 @@ DefineSUGroup[group_Symbol, n_] :=
 		(*Fierz identitiy*)
 		TGen /: TGen[group[fund], A_, a_, b_] TGen[group[fund], A_, c_, d_] = TraceNormalization[group[fund]] *
 			(del[group[fund], a, d] del[group[fund], c, b] - del[group[fund], a, b] del[group[fund], c, d] / n);
-				
+		
 		(*Symmetric*)
 		Dim[group[sym]] = n (n +1) /2;
 		del[group[sym], a_, b_] = del[group@ fund, i1[a], i1[b]] del[group@ fund, i2[a], i2[b] ] / 2 + 
