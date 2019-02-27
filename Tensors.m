@@ -304,7 +304,7 @@ QuarticTensors[2] := QuarticTensors[2] =
 		bl[2, 13] := Ttimes[Tscal[A1, $a, b1], Lam[b1, b2, b3, b4], TsG2[A1, $b, b2], Lam[b3, b4, $c, $d]] // Sym[$a, $b, $c, $d];
 		bl[2, 14] := Ttimes[Lam[$a, $b, b1, b2], C2S[b2, b3], Lam[b3, b1, $c, $d]] // Sym[$b, $c, $d];
 		bl[2, 15] := Ttimes[C2S[$a, b1], Lam[b1, $b, b2, b3], Lam[b2, b3, $c, $d]]  // Sym[$a, $b, $c, $d];
-		bl[2, 16] := Ttimes[Lam2[$a, b1], Lam[b1,$ b, $c, $d]]  // Sym4[$a, $b, $c, $d];
+		bl[2, 16] := Ttimes[Lam2[$a, b1], Lam[b1,$b, $c, $d]]  // Sym4[$a, $b, $c, $d];
 		bl[2, 17] := Ttimes[Lam[$a, b1, b2, b3], Lam[$b, b4, b2, b3], Lam[b1, b4, $c, $d]] // Sym[$a, $b, $c, $d];
 		bl[2, 18] := Ttimes[Lam[$a, $b, b1, b2], Lam[b1, b2, b3, b4], Lam[b3, b4, $c, $d]] // Sym[$b, $c, $d];
 		(*y^2 terms*)

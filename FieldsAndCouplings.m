@@ -341,9 +341,11 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 		
 		(*Defines the projection operator for extracting out the particular quartic coupling.*)
 		symmetryFactor = 24 / Length @ DeleteDuplicates @ Permutations @ {phi1, phi2, phi3, phi4};	
-		projection = With[{c = normalization /24 /symmetryFactor / Expand @ Power[OptionValue[GroupInvariant][a, b, c, d], 2] },
-			c SdelS[Bar@phi1, #1, s1] SdelS[Bar@phi2, #2, s2] SdelS[Bar@phi3, #3, s3] 
-			* SdelS[Bar@phi4, #4, s4] OptionValue[GroupInvariant][s1, s2, s3, s4] &];
+		projection = With[{c = normalization /24 /symmetryFactor / Expand[OptionValue[GroupInvariant][a, b, c, d] 
+				* (OptionValue[GroupInvariant][a, b, c, d] /. TGen[rep_, A_, a_, b_] -> TGen[Bar @ rep, A, a, b])],
+				gInv = OptionValue[GroupInvariant][s1, s2, s3, s4] /. TGen[rep_, A_, a_, b_] -> TGen[Bar @ rep, A, a, b] },
+			c SdelS[Bar@phi1, #1, s1] SdelS[Bar@phi2, #2, s2] SdelS[Bar@phi3, #3, s3] * SdelS[Bar@phi4, #4, s4] gInv &
+			];
 		
 		(*Adds the quartic coupling to the association*)
 		AppendTo[$quartics, coupling -> 
