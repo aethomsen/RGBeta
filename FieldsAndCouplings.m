@@ -236,15 +236,15 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 		
 		(*Defines the projection operator for extracting out the particular Yukawa coupling.*)
 		symmetryFactor = If[psi1 === psi2, 2, 1];
-		Switch[OptionValue @ Chirality
-		,Left,
-			projection = With[{c = normalization/2 /symmetryFactor 
-				/ Expand @ Power[OptionValue[GroupInvariant][a,b,c], 2] },
-			c SdelS[Bar@phi, #1, s] SdelF[Bar@psi1, #2, f1] SdelF[Bar@psi2, #3, f2] OptionValue[GroupInvariant][s, f1, f2] &];	
-		,Right,
-			projection = With[{c = normalization/2 /symmetryFactor 
-				/ Expand @ Power[OptionValue[GroupInvariant][a,b,c], 2] },
-			c SdelS[phi, #1, s] SdelF[psi1, #2, f1] SdelF[psi2, #3, f2] OptionValue[GroupInvariant][s, f1, f2] &];
+		projection = With[{c = normalization/2 /symmetryFactor/ Expand[OptionValue[GroupInvariant][a,b,c] 
+				*(OptionValue[GroupInvariant][a,b,c] /. TGen[rep_, A_, a_, b_] -> TGen[Bar @ rep, A, a, b])], 
+				gInv = OptionValue[GroupInvariant][s, f1, f2] /. TGen[rep_, A_, a_, b_] -> TGen[Bar @ rep, A, a, b]}, 
+			Switch[OptionValue @ Chirality
+			,Left,
+				c SdelS[Bar@ phi, #1, s] SdelF[Bar@ psi1, #2, f1] SdelF[Bar@ psi2, #3, f2] gInv &	
+			,Right,
+				c SdelS[phi, #1, s] SdelF[psi1, #2, f1] SdelF[psi2, #3, f2] gInv &
+			]
 		];
 		
 		(*Adds the Yukawa coupling to the association*)
