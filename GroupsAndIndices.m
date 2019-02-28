@@ -2,25 +2,21 @@
 (*----------Generic tensor properties----------*)
 (*#############################################*)
 (*Dim[rep] is the dimension of a given representation*)
-Clear[Dim];
 	Dim[Bar[rep_]] := Dim[rep];
 
 (*del[rep, a, b] is the symbol for Kronecker delta \delta_{a,b} belong to the indices specified by the representation.*)
-Clear[del];
 	del /: del[rep_, a___, x_, b___] del[rep_, c___, x_, d___] := del[rep, c, a, b, d];
 	del /: Power[del[rep_, a_, b_], 2] := Dim[rep];
 	del[rep_, a_, a_] = Dim[rep];
 	del[Bar[rep_], a_, b_] = del[rep, a, b];
 
 (*del for taking specific index*)
-Clear[delIndex];
 	delIndex /: del[rep_, a___, x_Symbol, b___] delIndex[rep_, c___, x_Symbol, d___] = delIndex[rep, c, a, b, d];
 	delIndex /: delIndex[rep_, a___, x_Symbol, b___] delIndex[rep_, c___, x_Symbol, d___] = delIndex[rep, c, a, b, d];
 	delIndex /: Power[delIndex[rep_, a_, b_], 2] = 1;
 	delIndex[rep_, a_Integer, b_Integer] := KroneckerDelta[a, b];
 
 (*Default properties for anti-symmetric inavariants.*)
-Clear[eps];
 	eps /: del[rep_, a___, x_, b___] eps[rep_, c___, x_, d___] := eps[rep, c, a, b, d];
 	eps /: eps[rep_ ,a_, b_] eps[rep_ ,b_, c_] := -del[rep, a, c];
 	eps /: eps[rep_ ,a_, b_] eps[rep_ ,c_, b_] := del[rep, a, c];
@@ -29,13 +25,12 @@ Clear[eps];
 	eps[rep_, a_, a_] := 0;
 
 (*Default group generator properties.*)
-Clear[TGen];
-	TGen /: del[rep_, a___, x_, b___] TGen[rep_, A_, c___, x_, d___] := TGen[rep, A, c, a, b, d];
-	TGen /: del[group_[adj], A___, X_, B___] TGen[group_[rep_], X_, c__] := TGen[group[rep], A, B, c];
-	TGen /: TGen[rep_, A_, a_, b_] TGen[rep_, A_, b_, c_] := Casimir2[rep] del[rep, a, c];
-	TGen /: TGen[rep_, A_, a_, b_] TGen[rep_, B_, b_, a_] := TraceNormalization[rep] del[Head[rep][adj], A, B];
-	TGen[rep_, A_, a_, a_] = 0;
-	TGen[Bar[rep_], A_, a_, b_ ] = - TGen[rep, A, b, a]; 
+	tGen /: del[rep_, a___, x_, b___] tGen[rep_, A_, c___, x_, d___] := tGen[rep, A, c, a, b, d];
+	tGen /: del[group_[adj], A___, X_, B___] tGen[group_[rep_], X_, c__] := tGen[group[rep], A, B, c];
+	tGen /: tGen[rep_, A_, a_, b_] tGen[rep_, A_, b_, c_] := Casimir2[rep] del[rep, a, c];
+	tGen /: tGen[rep_, A_, a_, b_] tGen[rep_, B_, b_, a_] := TraceNormalization[rep] del[Head[rep][adj], A, B];
+	tGen[rep_, A_, a_, a_] = 0;
+	tGen[Bar[rep_], A_, a_, b_ ] = - tGen[rep, A, b, a]; 
 	
 (*Default structure constant properties.*)
 CasimirSig[group_, a_, b_] := 
@@ -45,7 +40,6 @@ CasimirSig[group_, a_, b_] :=
 		ind2 = Complement[b, common][[1]];
 		Signature[DeleteCases[a, ind1]] Signature[DeleteCases[b, ind2]] del[group[adj], ind1, ind2]
 	];
-Clear[fStruct];
 	fStruct /: del[group_[adj], A___, X_, B___] fStruct[group_, C___, X_, D___] := fStruct[group, C, A, B, D];
 	fStruct /: fStruct[group_, A___] fStruct[group_, B___] /; Length @ Intersection[List @A, List @B] === 2 := 
 		Casimir2@ group[adj] CasimirSig[group, List@A, List@B];
@@ -57,14 +51,12 @@ Unprotect[Tr, Dot];
 	Tr[0] = 0;
 Protect[Tr, Dot];
 
-Clear[Bar];
+(*Complex conjugation and transposition of matrices*)
 	Bar[Bar[x_]] = x;
 	Bar[0] = 0;	
-Clear[Trans];
 	Trans[Trans[x_]] := x;
 	Trans[0] = 0;
 (*Matrix head for symbolic matrix manipulations*)
-Clear[Matrix];
 	Matrix /: del[ind_, a___, x_, b___] Matrix[m__][c___, ind_[x_], d___] := Matrix[m][c, ind[a, b], d];
 	Matrix /: Matrix[m1__][a_] Matrix[m2__][a_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][a];
 	Matrix /: Matrix[m1__][b_] Matrix[m2__][b_, c_] := Matrix[Sequence @@ Reverse[Trans /@ List@m2], m1][c];
@@ -109,22 +101,22 @@ DefineSUGroup[group_Symbol, n_] :=
 		TraceNormalization[group[fund]] = 1/2;
 		Casimir2[group[fund]] = (n^2 - 1) / (2 n);
 		(*Fierz identitiy*)
-		TGen /: TGen[group[fund], A_, a_, b_] TGen[group[fund], A_, c_, d_] = TraceNormalization[group[fund]] *
+		tGen /: tGen[group[fund], A_, a_, b_] tGen[group[fund], A_, c_, d_] = TraceNormalization[group[fund]] *
 			(del[group[fund], a, d] del[group[fund], c, b] - del[group[fund], a, b] del[group[fund], c, d] / n);
 		
 		(*Symmetric*)
 		Dim[group[sym]] = n (n +1) /2;
 		del[group[sym], a_, b_] = del[group@ fund, i1[a], i1[b]] del[group@ fund, i2[a], i2[b] ] / 2 + 
 			del[group@ fund, i1[a], i2[b] ] del[group@ fund, i2[a], i1[b] ] / 2;
-		TGen[group[sym], A_, a_, b_] = TGen[group@ fund, A, i1[a], i1[b]] del[group@ fund, i2[a], i2[b] ] + 
-			del[group@ fund, i1[a], i2[b] ] TGen[group@ fund, A, i2[a], i1[b] ];  
+		tGen[group[sym], A_, a_, b_] = tGen[group@ fund, A, i1[a], i1[b]] del[group@ fund, i2[a], i2[b] ] + 
+			del[group@ fund, i1[a], i2[b] ] tGen[group@ fund, A, i2[a], i1[b] ];  
 		
 		(*Anti-Symmetric*)
 		Dim[group[sym]] = n (n -1) /2;
 		del[group[asym], a_, b_] = del[group@ fund, i1[a], i1[b]] del[group@ fund, i2[a], i2[b] ] /2 - 
 			del[group@ fund, i1[a], i2[b] ] del[group@ fund, i2[a], i1[b] ] / 2;
-		TGen[group[asym], A_, a_, b_] = TGen[group@ fund, A, i1[a], i1[b]] del[group@ fund, i2[a], i2[b] ] - 
-			del[group@ fund, i1[a], i2[b] ] TGen[group@ fund, A, i2[a], i1[b] ];  
+		tGen[group[asym], A_, a_, b_] = tGen[group@ fund, A, i1[a], i1[b]] del[group@ fund, i2[a], i2[b] ] - 
+			del[group@ fund, i1[a], i2[b] ] tGen[group@ fund, A, i2[a], i1[b] ];  
 		
 		(*Adjoint*)
 		Dim[group[adj]] = n^2 - 1;
@@ -137,7 +129,7 @@ DefineU1Group[group_Symbol] :=
 	Block[{},
 		del[group[_],___] = 1;
 		Dim[group[x_]] = 1 (* x *);
-		TGen[group[x_],___] = x; 
+		tGen[group[x_],___] = x; 
 		Dim[group[adj]] = 1; 
 		fStruct[group, __] = 0; 
 	];
@@ -150,7 +142,7 @@ DefineSOGroup[group_Symbol, n_] :=
 		TraceNormalization[group[fund]] = 1/2;
 		(*Casimir2[group[fund]] = (n^2 - 1) / (2 n);*)
 		(*Fierz identitiy*)
-		TGen /: TGen[group[fund], A_, a_, b_] TGen[group[fund], A_, c_, d_] = TraceNormalization[group[fund]] / 2 *
+		tGen /: tGen[group[fund], A_, a_, b_] tGen[group[fund], A_, c_, d_] = TraceNormalization[group[fund]] / 2 *
 			(del[group[fund], a, d] del[group[fund], c, b] - del[group[fund], a, c] del[group[fund], b, d]);
 		
 		(*Adjoint*)
