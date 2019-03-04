@@ -9,7 +9,6 @@ Anders Eller Thomsen
 *)
 (*################################################################*)
 
-
 BeginPackage["RGBeta`"]
 
 (*################################################################*)
@@ -75,13 +74,14 @@ TraceNormalization::usage =
 Trans::usage = 
 	"Trans[coupling] represents the transposed quantity of a coupling with two indices."
 
-
+(*##############################################*)
+(*---------------Loads components---------------*)
+(*##############################################*) 
 Begin["`Private`"] (* Begin Private Context *) 
 	$RGBetaVersion = "RGBeta 0.1";
-	Print @ $RGBetaVersion;
-	Print @ "By Anders Eller Thomsen"
+	Print[$RGBetaVersion, " by Anders Eller Thomsen"];
 	
-	dir = DirectoryName[$InputFileName];
+	dir = DirectoryName @ $InputFileName;
 	Block[{$Path = {dir}},
 		<< GroupsAndIndices`;
 	];

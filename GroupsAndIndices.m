@@ -93,6 +93,50 @@ Protect[Tr, Dot];
 (*###########################################*)
 (*----------Gauge group definitions----------*)
 (*###########################################*)
+(*Initialization for an SO(n) gauge group.*)
+DefineSOGroup[group_Symbol, n_] := 
+	Block[{projection},		
+		(*Fundamental*)
+		Dim[group[fund]] = n;
+		TraceNormalization[group[fund]] = 1/2;
+		Casimir2[group[fund]] = n (n - 1) / (4 n);
+		(*Fierz identitiy*)
+		tGen /: tGen[group[fund], A_, a_, b_] tGen[group[fund], A_, c_, d_] = TraceNormalization[group[fund]] / 2 *
+			(del[group[fund], a, d] del[group[fund], c, b] - del[group[fund], a, c] del[group[fund], b, d]);
+		
+		(*Symmetric traceless*)
+		Dim[group[S2]] = (n - 1) (n + 2) / 2 ;
+		TraceNormalization[group[S2]] = (n + 2) / 2;
+		Casimir2[group[S2]] =  n / 2;  
+		
+		(*Adjoint*)
+		Dim[group[adj]] = n (n - 1) / 2;
+		TraceNormalization[group[adj]] = (n - 2) / 2;
+		Casimir2[group[adj]] = (n - 2) / 2;
+	];
+
+(*Initialization for an Sp(n) gauge group.*)
+DefineSpGroup[group_Symbol, n_] := 
+	Block[{projection},		
+		(*Fundamental*)
+		Dim[group[fund]] = n;
+		TraceNormalization[group[fund]] = 1/2;
+		Casimir2[group[fund]] = n (n + 1) / (4 n);
+		(*Fierz identitiy*)
+		tGen /: tGen[group[fund], A_, a_, b_] tGen[group[fund], A_, c_, d_] = TraceNormalization[group[fund]] / 2 *
+			(del[group[fund], a, d] del[group[fund], c, b] - eps[group[fund], a, c] eps[group[fund], b, d]);
+		
+		(*Antisymmetric "traceless"*)
+		Dim[group[A2]] = (n - 2) (n + 1) / 2 ;
+		TraceNormalization[group[A2]] = (n - 2) / 2;
+		Casimir2[group[A2]] =  n / 2;  
+		
+		(*Adjoint*)
+		Dim[group[adj]] = n (n + 1) / 2;
+		TraceNormalization[group[adj]] = (n + 2) / 2;
+		Casimir2[group[adj]] = (n + 2) / 2;
+	];
+
 (*Initialization for an SU(n) Lie group.*)
 DefineSUGroup[group_Symbol, n_] :=
 	Block[{},
@@ -105,18 +149,14 @@ DefineSUGroup[group_Symbol, n_] :=
 			(del[group[fund], a, d] del[group[fund], c, b] - del[group[fund], a, b] del[group[fund], c, d] / n);
 		
 		(*Symmetric*)
-		Dim[group[sym]] = n (n +1) /2;
-		del[group[sym], a_, b_] = del[group@ fund, i1[a], i1[b]] del[group@ fund, i2[a], i2[b] ] / 2 + 
-			del[group@ fund, i1[a], i2[b] ] del[group@ fund, i2[a], i1[b] ] / 2;
-		tGen[group[sym], A_, a_, b_] = tGen[group@ fund, A, i1[a], i1[b]] del[group@ fund, i2[a], i2[b] ] + 
-			del[group@ fund, i1[a], i2[b] ] tGen[group@ fund, A, i2[a], i1[b] ];  
+		Dim[group[S2]] = n (n +1) /2;
+		TraceNormalization[group[S2]] = (n + 2) / 2;
+		Casimir2[group[S2]] =  (n - 1) (n + 2) / n;
 		
 		(*Anti-Symmetric*)
-		Dim[group[sym]] = n (n -1) /2;
-		del[group[asym], a_, b_] = del[group@ fund, i1[a], i1[b]] del[group@ fund, i2[a], i2[b] ] /2 - 
-			del[group@ fund, i1[a], i2[b] ] del[group@ fund, i2[a], i1[b] ] / 2;
-		tGen[group[asym], A_, a_, b_] = tGen[group@ fund, A, i1[a], i1[b]] del[group@ fund, i2[a], i2[b] ] - 
-			del[group@ fund, i1[a], i2[b] ] tGen[group@ fund, A, i2[a], i1[b] ];  
+		Dim[group[A2]] = n (n -1) /2;
+		TraceNormalization[group[A2]] = (n - 2) / 2;
+		Casimir2[group[A2]] =  (n - 2) (n + 1) / n;  
 		
 		(*Adjoint*)
 		Dim[group[adj]] = n^2 - 1;
@@ -127,32 +167,12 @@ DefineSUGroup[group_Symbol, n_] :=
 (*Initialization for a U(1) gauge group.*)	
 DefineU1Group[group_Symbol] := 
 	Block[{},
-		del[group[_],___] = 1;
-		Dim[group[x_]] = 1 (* x *);
-		tGen[group[x_],___] = x; 
+		del[group[_], ___] = 1;
+		Dim[group[x_]] = 1;
+		tGen[group[x_], ___] = x; 
 		Dim[group[adj]] = 1; 
 		fStruct[group, __] = 0; 
 	];
-
-(*Initialization for an SO(n) gauge group.*)
-DefineSOGroup[group_Symbol, n_] := 
-	Block[{projection},		
-		(*Fundamental*)
-		Dim[group[fund]] = n;
-		TraceNormalization[group[fund]] = 1/2;
-		(*Casimir2[group[fund]] = (n^2 - 1) / (2 n);*)
-		(*Fierz identitiy*)
-		tGen /: tGen[group[fund], A_, a_, b_] tGen[group[fund], A_, c_, d_] = TraceNormalization[group[fund]] / 2 *
-			(del[group[fund], a, d] del[group[fund], c, b] - del[group[fund], a, c] del[group[fund], b, d]);
-		
-		(*Adjoint*)
-		Dim[group[adj]] = n (n - 1) / 2;
-		(*TraceNormalization[group[adj]] = n;
-		Casimir2[group[adj]] = n;*)
-	];
-
-
-
 
 
 
