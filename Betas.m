@@ -1,6 +1,3 @@
-(*<< GroupsAndIndices`
-<< FieldsAndCouplings`
-<< Tensors`*)
 Begin["Betas`"]
 
 (*#####################################*)
