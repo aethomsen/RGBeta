@@ -52,7 +52,8 @@ BetaTerm[coupling_Symbol, loop_Integer] :=
 				Return[Null];
 			];
 			
-			beta = Ttimes[GaugeTensors[loop], G2[$B, C, 3/2], $gaugeGroups[$couplings @ coupling, Projector][C, $A] ] /. gaugeCoefficients;
+			beta = Ttimes[GaugeTensors[loop], G2[$B, C, 3/2], $gaugeGroups[$couplings @ coupling, Projector][C, $A] 
+				] /. $gaugeCoefficients;
 		,Yukawa,
 			If[loop > 2, 
 				Message[BetaTerm::yukawaLoops];
@@ -66,14 +67,14 @@ BetaTerm[coupling_Symbol, loop_Integer] :=
 				tensor = YukawaTensors[loop][[2, 2]];
 			];
 			
-			beta = tensor $yukawas[coupling, Projector][$a, $i, $j] /. yukawaCoefficients // Expand // Expand;
+			beta = tensor $yukawas[coupling, Projector][$a, $i, $j] /. $yukawaCoefficients // Expand // Expand;
 		,Quartic,
 			If[loop > 2, 
 				Message[BetaTerm::quarticLoops];
 				Return[Null];
 			];
 			
-			beta = QuarticTensors[loop] $quartics[coupling, Projector][$a, $b, $c, $d] /. quarticCoefficients // Expand // Expand;
+			beta = QuarticTensors[loop] $quartics[coupling, Projector][$a, $b, $c, $d] /. $quarticCoefficients // Expand // Expand;
 		,_Missing,
 			Message[BetaTerm::unkown, coupling];
 			Return[Null];
@@ -149,7 +150,7 @@ Protect[$a, $b, $c, $d, $i, $j, $A, $B];
 (*#####################################*)
 (*----------Beta Coefficients----------*)
 (*#####################################*)
-quarticCoefficients = {
+$quarticCoefficients = {
 	(* 1-loop *)
 	B[3, 1, 1] -> 36,
 	B[3, 1, 2] -> -12,
@@ -192,7 +193,7 @@ quarticCoefficients = {
 	B[3, 2, 33] -> 24
 }; 
 
-yukawaCoefficients = {
+$yukawaCoefficients = {
 	(* 1-loop *)
 	B[2, 1, 1] -> 0,
 	B[2, 1, 2] -> -6,
@@ -235,7 +236,7 @@ yukawaCoefficients = {
 	B[2, 2, 33] -> -3/4
 };
 
-gaugeCoefficients = {
+$gaugeCoefficients = {
 	(* 1-loop *)
 	B[1, 1, 1] -> -11/3,
 	B[1, 1, 2] -> 1/3,
@@ -283,3 +284,5 @@ gaugeCoefficients = {
 	B[1, 3, 32] -> 3/16,
 	B[1, 3, 33] -> -1/16
 };
+
+Protect[$gaugeCoefficients, $quarticCoefficients, $yukawaCoefficients];

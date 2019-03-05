@@ -1,8 +1,9 @@
+(*Begin["FieldsAndCouplings`"]*)
+
 (*Structure deltas*)
-Clear[SdelS, SdelF, SdelV]
-SdelS /: SdelS[field1_, ind_, f_] SdelS[field2_, ind_, g_] := 0; 
-SdelF /: SdelF[field1_, ind_, f_] SdelF[field2_, ind_, g_] := 0;
-SdelV /: SdelV[field1_, ind_, f_] SdelV[field2_, ind_, g_] := 0;
+sDelS /: sDelS[field1_, ind_, f_] sDelS[field2_, ind_, g_] := 0; 
+sDelF /: sDelF[field1_, ind_, f_] sDelF[field2_, ind_, g_] := 0;
+sDelV /: sDelV[field1_, ind_, f_] sDelV[field2_, ind_, g_] := 0;
 
 (*Associationwith all information on the scalar fields: representations, etc.*)
 $scalars = <||>;
@@ -20,12 +21,12 @@ AddScalar[field_String, OptionsPattern[] ] :=
 		];
 		
 		If[OptionValue[SelfConjugate],
-			SdelS/: SdelS[field, ind_, s1_] SdelS[field, ind_, s2_] = 1 * massTerm 
+			sDelS/: sDelS[field, ind_, s1_] sDelS[field, ind_, s2_] = 1 * massTerm 
 				* Product[del[rep, s1, s2], {rep, OptionValue[GaugeRep]}]
 				* Product[del[rep, s1, s2], {rep, OptionValue[FlavorIndices]}];
 			Bar[field] = field;
 		,
-			SdelS/: SdelS[field, ind_, s1_] SdelS[Bar[field], ind_, s2_] = 2 * massTerm
+			sDelS/: sDelS[field, ind_, s1_] sDelS[Bar[field], ind_, s2_] = 2 * massTerm
 				* Product[del[rep, s1, s2], {rep, OptionValue[GaugeRep]}]
 				* Product[del[rep, s1, s2], {rep, OptionValue[FlavorIndices]}];
 		];
@@ -44,7 +45,7 @@ AddFermion[field_String, OptionsPattern[] ] :=
 			GaugeRep -> OptionValue[GaugeRep], 
 			FlavorIndices -> OptionValue[FlavorIndices], 
 			Mass -> OptionValue @ Mass|>]; 
-		SdelF/: SdelF[field, ind_, f1_] SdelF[Bar[field], ind_, f2_] = massTerm 
+		sDelF/: sDelF[field, ind_, f1_] sDelF[Bar[field], ind_, f2_] = massTerm 
 			* Product[del[rep, f1, f2], {rep, OptionValue[GaugeRep]}]
 			* Product[del[rep, f1, f2], {rep, OptionValue[FlavorIndices]}];
 	];
@@ -52,7 +53,7 @@ AddFermion[field_String, OptionsPattern[] ] :=
 (*Initiates a vector field*)	
 AddVector[name_String, group_] :=
 	Block[{},
-		SdelV/: SdelV[name, ind_, v1_] SdelV[name, ind_, v2_] = del[group[adj], v1, v2];
+		sDelV/: sDelV[name, ind_, v1_] sDelV[name, ind_, v2_] = del[group[adj], v1, v2];
 	];
 
 (*###################################*)
@@ -79,11 +80,13 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[{
 		
 		(*Sets up the group symbols*)
 		Switch[lieGroup
-		,SU,
-			DefineSUGroup[groupName, n];
-		,SO,
+		,Global`SO,
 			DefineSOGroup[groupName, n];
-		,U,
+		,Global`Sp,
+			DefineSpGroup[groupName, n];
+		,Global`SU,
+			DefineSUGroup[groupName, n];
+		,Global`U,
 			If[n =!= 1,
 				Message[AddGaugeGroup::unkown, lieGroup[n] ];
 				Return @ Null;
@@ -97,7 +100,7 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[{
 		(*Sets up the gauge fields and 2-point projection*)
 		AddVector[fieldName, groupName];
 		projector = With[{V = fieldName, gStruct = del[groupName[adj], v1, v2] / Dim @ groupName[adj]}, 
-			SdelV[V, #1, v1] SdelV[V, #2, v2] gStruct &]; 
+			sDelV[V, #1, v1] sDelV[V, #2, v2] gStruct &]; 
 		
 		(*Adds the group information and the coupling to the repsective lists*)
 		AppendTo[$gaugeGroups, groupName -> 
@@ -113,7 +116,7 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[{
 G2[A_, B_, power_: 1] := 
 	Module[{gauge, v1, v2},
 		Sum[
-			SdelV[$gaugeGroups[gauge, Field], A, v1] SdelV[$gaugeGroups[gauge, Field], B, v2] 
+			sDelV[$gaugeGroups[gauge, Field], A, v1] sDelV[$gaugeGroups[gauge, Field], B, v2] 
 				*Power[$gaugeGroups[gauge, Coupling], 2 power] del[gauge[adj], v1, v2]  
 		,{gauge, Keys @ $gaugeGroups}]
 	];
@@ -122,9 +125,9 @@ G2[A_, B_, power_: 1] :=
 TfLeft[A_, i_, j_] := 
 	Module[{ferm, group, rep, gRep1, gRep2, f1, f2, v}, 
 		Sum[
-			SdelF[Bar @ ferm, i, f1] SdelF[ferm, j, f2] * Product[del[rep, f1, f2], {rep, $fermions[ferm, FlavorIndices]}]
+			sDelF[Bar @ ferm, i, f1] sDelF[ferm, j, f2] * Product[del[rep, f1, f2], {rep, $fermions[ferm, FlavorIndices]}]
 			* Sum[group = Head@ If[Head@ gRep1 === Bar, gRep1[[1]], gRep1]; 
-					SdelV[$gaugeGroups[group, Field], A, v] tGen[gRep1, v, f1, f2] 
+					sDelV[$gaugeGroups[group, Field], A, v] tGen[gRep1, v, f1, f2] 
 					* Product[del[gRep2, f1, f2], {gRep2, DeleteCases[$fermions[ferm, GaugeRep], gRep1]}], 
 				{gRep1, $fermions[ferm, GaugeRep]}] 
 		,{ferm, Keys @ $fermions}]
@@ -137,10 +140,10 @@ TfermTil[A_, i_, j_] := {{-TfLeft[A, j, i], 0}, {0, TfLeft[A, i, j]}};
 Tscal[A_, a_, b_] := 
 	Module[{scal, group, rep, gRep1, gRep2, s1, s2, v}, 
 		Sum[
-			AntiSym[a, b][SdelS[Bar @ scal, a, s1] SdelS[scal, b, s2]]  
+			AntiSym[a, b][sDelS[Bar @ scal, a, s1] sDelS[scal, b, s2]]  
 			* Product[del[rep, s1, s2], {rep, $scalars[scal, FlavorIndices]}]
 			* Sum[group = Head@ If[Head@ gRep1 === Bar, gRep1[[1]], gRep1];
-					SdelV[$gaugeGroups[group, Field], A, v] tGen[gRep1, v, s1, s2] 
+					sDelV[$gaugeGroups[group, Field], A, v] tGen[gRep1, v, s1, s2] 
 					* Product[del[gRep2, s1, s2], {gRep2, DeleteCases[$scalars[scal, GaugeRep], gRep1]}],
 				{gRep1, $scalars[scal, GaugeRep]}] 
 		,{scal, Keys @ $scalars}]
@@ -150,7 +153,7 @@ Tscal[A_, a_, b_] :=
 FGauge[A_, B_, C_] := 
 	Module[{gauge, v1, v2, v3},
 		Sum[
-			SdelV[$gaugeGroups[gauge, Field], A, v1] SdelV[$gaugeGroups[gauge, Field], B, v2] SdelV[$gaugeGroups[gauge, Field], C, v3]
+			sDelV[$gaugeGroups[gauge, Field], A, v1] sDelV[$gaugeGroups[gauge, Field], B, v2] sDelV[$gaugeGroups[gauge, Field], C, v3]
 				* Power[$gaugeGroups[gauge, Coupling], -2] fStruct[gauge, v1, v2, v3]  
 		,{gauge, Keys @ $gaugeGroups}]
 	];
@@ -222,11 +225,11 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 		If[OptionValue @ CheckInvariance,
 			y = With[{y1 = yuk, ind = Sequence@@ OptionValue[CouplingIndices][s, f1, f2], 
 				gi = OptionValue[GroupInvariant][s, f1, f2]},
-				Sym[#2, #3][y1[ind] SdelS[phi, #1, s] SdelF[psi1, #2, f1] SdelF[psi2, #3, f2] gi ] &];
+				Sym[#2, #3][y1[ind] sDelS[phi, #1, s] sDelF[psi1, #2, f1] sDelF[psi2, #3, f2] gi ] &];
 			test = TfLeft[A, k, i] y[a, k ,j] + y[a, i, k] TfLeft[A, k, j] + y[b, i, j] Tscal[A, b, a] //Expand;
-			test *= SdelS[Bar@phi, a, scal] SdelF[Bar@psi1, i, ferm1] SdelF[Bar@psi2, j, ferm2] //Expand;
+			test *= sDelS[Bar@phi, a, scal] sDelF[Bar@psi1, i, ferm1] sDelF[Bar@psi2, j, ferm2] //Expand;
 			Do[
-				temp = test SdelV[group @ Field, A, vec1] //Expand;
+				temp = test sDelV[group @ Field, A, vec1] //Expand;
 				If [temp =!= 0, 
 					Print[coupling,"---Gauge invarinace check inconclusive for the ", group @ Field, " field:"];
 					Print["0 = ", temp];
@@ -241,9 +244,9 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 				gInv = OptionValue[GroupInvariant][s, f1, f2] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]}, 
 			Switch[OptionValue @ Chirality
 			,Left,
-				c SdelS[Bar@ phi, #1, s] SdelF[Bar@ psi1, #2, f1] SdelF[Bar@ psi2, #3, f2] gInv &	
+				c sDelS[Bar@ phi, #1, s] sDelF[Bar@ psi1, #2, f1] sDelF[Bar@ psi2, #3, f2] gInv &	
 			,Right,
-				c SdelS[phi, #1, s] SdelF[psi1, #2, f1] SdelF[psi2, #3, f2] gInv &
+				c sDelS[phi, #1, s] sDelF[psi1, #2, f1] sDelF[psi2, #3, f2] gInv &
 			]
 		];
 		
@@ -261,14 +264,14 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 
 YukawaLeft[a_, i_, j_] :=
 	Module[{f1, f2, yu, s1},
-		Sum[SdelS[yu[Fields][[1]], a, s1] SdelF[yu[Fields][[2]], i, f1] SdelF[yu[Fields][[3]], j, f2]
+		Sum[sDelS[yu[Fields][[1]], a, s1] sDelF[yu[Fields][[2]], i, f1] sDelF[yu[Fields][[3]], j, f2]
 				* yu[Invariant][s1, f1, f2] yu[Coupling][Sequence @@ yu[Indices][s1, f1, f2]]  
 			,{yu, $yukawas}] //Sym[i, j]
 	];
 
 YukawaRight[a_, i_, j_] :=
 	Module[{f1, f2, yu, s1},
-		Sum[SdelS[Bar @ yu[Fields][[1]], a, s1] SdelF[Bar @ yu[Fields][[2]], i, f1] SdelF[Bar @ yu[Fields][[3]], j, f2]
+		Sum[sDelS[Bar @ yu[Fields][[1]], a, s1] sDelF[Bar @ yu[Fields][[2]], i, f1] sDelF[Bar @ yu[Fields][[3]], j, f2]
 				* yu[Invariant][s1, f1, f2] yu[CouplingBar][Sequence @@ yu[Indices][s1, f1, f2]]  
 			,{yu, $yukawas}] //Sym[i, j]
 	];
@@ -326,12 +329,12 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 		If[OptionValue @ InvarianceCheck,
 			lambda = With[{l1 = lam, ind = Sequence@@ OptionValue @ CouplingIndices[s1, s2, s3, s4], 
 				gi = OptionValue[GroupInvariant][s1, s2, s3, s4]},
-				Sym[#1, #2, #3, #4][l1[ind] SdelS[phi1, #1, s1] SdelS[phi2, #2, s2] SdelS[phi3, #3, s3] SdelS[phi4, #4, s4] gi] &];
+				Sym[#1, #2, #3, #4][l1[ind] sDelS[phi1, #1, s1] sDelS[phi2, #2, s2] sDelS[phi3, #3, s3] sDelS[phi4, #4, s4] gi] &];
 			test = Tscal[A, a, e] lambda[e, b, c, d] + Tscal[A, b, e] lambda[a, e, c, d] 
 				+ Tscal[A, c, e] lambda[a, b, e, d] + Tscal[A, d, e] lambda[a, b, c, e]//Expand;
-			test = test SdelS[Bar@phi1, a, scal1] SdelS[Bar@phi2, b, scal2] SdelS[Bar@phi3, c, scal3] SdelS[Bar@phi4, d, scal4] //Expand;
+			test = test sDelS[Bar@phi1, a, scal1] sDelS[Bar@phi2, b, scal2] sDelS[Bar@phi3, c, scal3] sDelS[Bar@phi4, d, scal4] //Expand;
 			Do[
-				temp = test SdelV[group @ Field, A, vec1] //Expand;
+				temp = test sDelV[group @ Field, A, vec1] //Expand;
 				If [temp =!= 0, 
 					Print[coupling,"---Gauge invarinace check inconclusive for the ", group @ Field, " field:"];
 					Print["0 = ", temp//S];
@@ -344,7 +347,7 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 		projection = With[{c = normalization /24 /symmetryFactor / Expand[OptionValue[GroupInvariant][a, b, c, d] 
 				* (OptionValue[GroupInvariant][a, b, c, d] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b])],
 				gInv = OptionValue[GroupInvariant][s1, s2, s3, s4] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b] },
-			c SdelS[Bar@phi1, #1, s1] SdelS[Bar@phi2, #2, s2] SdelS[Bar@phi3, #3, s3] * SdelS[Bar@phi4, #4, s4] gInv &
+			c sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[Bar@phi3, #3, s3] * sDelS[Bar@phi4, #4, s4] gInv &
 			];
 		
 		(*Adds the quartic coupling to the association*)
@@ -361,15 +364,15 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 
 Lam[a_, b_, c_, d_] :=
 	Module[{l, s1, s2, s3, s4},
-		Sum[SdelS[l[Fields][[1]], a, s1] SdelS[l[Fields][[2]], b, s2] SdelS[l[Fields][[3]], c, s3] SdelS[l[Fields][[4]], d, s4]
+		Sum[sDelS[l[Fields][[1]], a, s1] sDelS[l[Fields][[2]], b, s2] sDelS[l[Fields][[3]], c, s3] sDelS[l[Fields][[4]], d, s4]
 				* l[Invariant][s1, s2, s3, s4] l[Coupling][Sequence @@ l[Indices][s1, s2, s3, s4]]
 			+If[! l@SelfConjugate,
-				SdelS[Bar@ l[Fields][[1]], a, s1] SdelS[Bar@ l[Fields][[2]], b, s2] SdelS[Bar@ l[Fields][[3]], c, s3] 
-				* SdelS[Bar@ l[Fields][[4]], d, s4] l[Invariant][s1, s2, s3, s4] l[CouplingBar][Sequence @@ l[Indices][s1, s2, s3, s4]]
+				sDelS[Bar@ l[Fields][[1]], a, s1] sDelS[Bar@ l[Fields][[2]], b, s2] sDelS[Bar@ l[Fields][[3]], c, s3] 
+				* sDelS[Bar@ l[Fields][[4]], d, s4] l[Invariant][s1, s2, s3, s4] l[CouplingBar][Sequence @@ l[Indices][s1, s2, s3, s4]]
 				,0] 
 			,{l, $quartics}] //Sym[a, b, c, d]
 	];
 
 
-
+(*End[]*)
 

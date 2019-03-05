@@ -1,3 +1,4 @@
+(*Begin["GroupsAndIndices`"]*)
 (*#############################################*)
 (*----------Generic tensor properties----------*)
 (*#############################################*)
@@ -94,7 +95,7 @@ Protect[Tr, Dot];
 (*----------Gauge group definitions----------*)
 (*###########################################*)
 (*Initialization for an SO(n) gauge group.*)
-DefineSOGroup[group_Symbol, n_] := 
+DefineSOGroup[group_Symbol, n_Integer|n_Symbol] := 
 	Block[{projection},		
 		(*Fundamental*)
 		Dim[group[fund]] = n;
@@ -116,7 +117,7 @@ DefineSOGroup[group_Symbol, n_] :=
 	];
 
 (*Initialization for an Sp(n) gauge group.*)
-DefineSpGroup[group_Symbol, n_] := 
+DefineSpGroup[group_Symbol, n_Integer|n_Symbol] := 
 	Block[{projection},		
 		(*Fundamental*)
 		Dim[group[fund]] = n;
@@ -138,7 +139,7 @@ DefineSpGroup[group_Symbol, n_] :=
 	];
 
 (*Initialization for an SU(n) Lie group.*)
-DefineSUGroup[group_Symbol, n_] :=
+DefineSUGroup[group_Symbol, n_Integer|n_Symbol] :=
 	Block[{},
 		(*Fundamental*)
 		Dim[group[fund]] = n;
@@ -174,6 +175,8 @@ DefineU1Group[group_Symbol] :=
 		fStruct[group, __] = 0; 
 	];
 
+
+(*End[]*)
 
 
 
