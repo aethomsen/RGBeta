@@ -1,4 +1,5 @@
-(*Begin["GroupsAndIndices`"]*)
+Begin["GroupsAndIndices`"]
+
 (*#############################################*)
 (*----------Generic tensor properties----------*)
 (*#############################################*)
@@ -84,9 +85,9 @@ Protect[Tr, Dot];
 			Tr @ Dot[Sequence @@ matrices]
 		];
 (*Formating*)
-	Format[Trans[x_]] := x^T;
+	Format[Trans[x_]] := x^Global`T;
 	Format[Bar[x_]] := OverBar @ x;
-	Format[Trans[Bar[x_]] ] := x^Style[\[Dagger], Bold, 12];
+	Format[Trans[Bar[x_]] ] := x^Style[Global`\[Dagger], Bold, 12];
 	Format[Matrix[x__][h1_[i1_] ] ]:= Subscript[Dot[x], i1];
 	Format[Matrix[x__][h1_[i1_], h2_[i2_]] ] := Subscript[Dot[x], i1, i2];
 	
@@ -176,7 +177,7 @@ DefineU1Group[group_Symbol] :=
 	];
 
 
-(*End[]*)
+End[]
 
 
 

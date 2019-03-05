@@ -1,3 +1,5 @@
+Begin["Tensors`"]
+
 sig1 = {{0, 1}, {1, 0}};
 
 (*Gauge coupling multiplied on generators*)
@@ -132,7 +134,7 @@ GaugeTensors[1] := GaugeTensors[1] =
 		bg[1, 1] := C2G[$A, $B];
 		bg[1, 2] := S2F[$A, $B];
 		bg[1, 3] := S2S[$A, $B];
-		Sum[B[1, 1, n] bg[1, n], {n, 3}]
+		Sum[Bcoef[1, 1, n] bg[1, n], {n, 3}]
 	];
 	
 (*Gauge tensors at 2-loop order*)	
@@ -145,7 +147,7 @@ GaugeTensors[2] := GaugeTensors[2] =
 		bg[2, 5] := Ttimes[C2G[$A, A1], G2[A1, B1], S2S[B1, $B]];
 		bg[2, 6] := S2FY2F[$A, $B];
 		bg[2, 7] := S2SY2S[$A, $B];
-		Sum[B[1, 2, n] bg[2, n], {n, 7}]
+		Sum[Bcoef[1, 2, n] bg[2, n], {n, 7}]
 	];
 
 (*Gauge tensors at 3-loop order*)	
@@ -189,7 +191,7 @@ GaugeTensors[3] := GaugeTensors[3] =
 		bg[3, 33] := Ttimes[Tscal[$B, d, a], Tscal[$A, a, b], Y2S[b, c], Y2S[c, d]];
 		
 		Monitor[
-			Sum[B[1, 3, n] bg[3, n], {n, 33}]
+			Sum[Bcoef[1, 3, n] bg[3, n], {n, 33}]
 		,StringForm["Evaluating term `` / 33", n]]
 	];
 
@@ -211,7 +213,7 @@ YukawaTensors[1] := YukawaTensors[1] =
 		bYuk[1, 3] := Tdot[Yuk[b, $i, k1], YukTil[$a, k1, k2], Yuk[b, k2, $j]];
 		bYuk[1, 4] := Tdot[Y2F[$i, k1], Yuk[$a, k1, $j]] // Sym[$i, $j];
 		bYuk[1, 5] := Yuk[b, $i, $j] Y2S[b, $a] // Expand;
-		Sum[B[2, 1, n] bYuk[1, n], {n, 5}]
+		Sum[Bcoef[2, 1, n] bYuk[1, n], {n, 5}]
 	];
 
 (*Yukawa tensors at 2-loop order*)
@@ -255,7 +257,7 @@ YukawaTensors[2] := YukawaTensors[2] =
 		bYuk[2, 33] := Tdot[Yuk[$a, $i, k], Y2FY2St[k, $j]] // Sym[$i, $j];
 		
 		Monitor[
-			Sum[B[2, 2, n] bYuk[2, n], {n, 33}]
+			Sum[Bcoef[2, 2, n] bYuk[2, n], {n, 33}]
 		,StringForm["Evaluating term `` / 33", n]]
 	];
 
@@ -279,7 +281,7 @@ QuarticTensors[1] := QuarticTensors[1] =
 		bl[1, 5] := Tr @ Tdot[Yuk[$a, k4, k1], YukTil[$b, k1, k2], Yuk[$c, k2, k3], YukTil[$d, k3, k4]] // Sym[$b, $c, $d];
 		
 		Monitor[
-			Sum[B[3, 1, n] bl[1, n], {n, 5}]
+			Sum[Bcoef[3, 1, n] bl[1, n], {n, 5}]
 		,StringForm["Evaluating term `` / 5", n]]
 	];
 
@@ -336,13 +338,11 @@ QuarticTensors[2] := QuarticTensors[2] =
 			Y2F[k4, k5]] // Sym[$a, $b, $c, $d];
 		
 		Monitor[
-			Sum[B[3, 2, n] bl[2, n], {n, 33}]
+			Sum[Bcoef[3, 2, n] bl[2, n], {n, 33}]
 		,StringForm["Evaluating term `` / 33", n]]
 	];
 
-
-
-
+End[]
 
 
 

@@ -1,4 +1,4 @@
-(*Begin["FieldsAndCouplings`"]*)
+Begin["FieldsAndCouplings`"]
 
 (*Structure deltas*)
 sDelS /: sDelS[field1_, ind_, f_] sDelS[field2_, ind_, g_] := 0; 
@@ -80,13 +80,13 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[{
 		
 		(*Sets up the group symbols*)
 		Switch[lieGroup
-		,Global`SO,
+		,SO,
 			DefineSOGroup[groupName, n];
-		,Global`Sp,
+		,Sp,
 			DefineSpGroup[groupName, n];
-		,Global`SU,
+		,SU,
 			DefineSUGroup[groupName, n];
-		,Global`U,
+		,U,
 			If[n =!= 1,
 				Message[AddGaugeGroup::unkown, lieGroup[n] ];
 				Return @ Null;
@@ -109,8 +109,6 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[{
 			Projector -> projector|>];
 		AppendTo[$couplings, coupling -> groupName];
 	];
-
-
 
 (*The gauge coupling matrix G^2_{AB}*)
 G2[A_, B_, power_: 1] := 
@@ -374,5 +372,5 @@ Lam[a_, b_, c_, d_] :=
 	];
 
 
-(*End[]*)
+End[]
 
