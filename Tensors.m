@@ -3,16 +3,16 @@ Begin["Tensors`"]
 sig1 = {{0, 1}, {1, 0}};
 
 (*Gauge coupling multiplied on generators*)
-TfG2[A_, i_, j_] := Module[{B}, Tferm[B, i, j] G2[A, B] // Expand]
-TfG2t[A_, i_, j_] := Module[{B}, TfermTil[B, i, j] G2[A, B] // Expand]
-TsG2[A_, a_, b_] := Module[{B}, Tscal[B, a, b] G2[A, B] // Expand]
+TfG2[A_, i_, j_] := Module[{B}, Tferm[B, i, j] G2Matrix[A, B] // Expand]
+TfG2t[A_, i_, j_] := Module[{B}, TfermTil[B, i, j] G2Matrix[A, B] // Expand]
+TsG2[A_, a_, b_] := Module[{B}, Tscal[B, a, b] G2Matrix[A, B] // Expand]
 
 (*######################################*)
 (*----------2-point structures----------*)
 (*######################################*)
 (*1-loop*)
 C2G[A_, B_] := Module[{C1, C2, D1, D2},
-		Ttimes[FGauge[A, C1, D1], G2[C1, C2], G2[D1, D2], FGauge[B, C2, D2]]
+		Ttimes[FGauge[A, C1, D1], G2Matrix[C1, C2], G2Matrix[D1, D2], FGauge[B, C2, D2]]
 	]; 
 S2F[A_, B_] := Module[{i, j},
 		Tr[Tferm[A, i, j].Tferm[B, j, i]] // Expand
@@ -125,7 +125,7 @@ FourGLam[a_, b_, c_, d_] := Module[{A1, A2, b1, b2},
 (*Gauge tensors at 0-loop order*)
 GaugeTensors[0] :=
 	Block[{},
-		- \[Epsilon] / 2 G2[$A, $B, -1]
+		- \[Epsilon] / 2 G2Matrix[$A, $B, -1]
 	];
 
 (*Gauge tensors at 1-loop order*)
@@ -142,9 +142,9 @@ GaugeTensors[2] := GaugeTensors[2] =
 	Module[{bg, n, A1, B1},
 		bg[2, 1] := S2FC2F[$A, $B];
 		bg[2, 2] := S2SC2S[$A, $B];
-		bg[2, 3] := Ttimes[C2G[$A, A1], G2[A1, B1], C2G[B1, $B]];
-		bg[2, 4] := Ttimes[C2G[$A, A1], G2[A1, B1], S2F[B1, $B]];
-		bg[2, 5] := Ttimes[C2G[$A, A1], G2[A1, B1], S2S[B1, $B]];
+		bg[2, 3] := Ttimes[C2G[$A, A1], G2Matrix[A1, B1], C2G[B1, $B]];
+		bg[2, 4] := Ttimes[C2G[$A, A1], G2Matrix[A1, B1], S2F[B1, $B]];
+		bg[2, 5] := Ttimes[C2G[$A, A1], G2Matrix[A1, B1], S2S[B1, $B]];
 		bg[2, 6] := S2FY2F[$A, $B];
 		bg[2, 7] := S2SY2S[$A, $B];
 		Sum[Bcoef[1, 2, n] bg[2, n], {n, 7}]
@@ -162,14 +162,14 @@ GaugeTensors[3] := GaugeTensors[3] =
 		bg[3, 6] := Ttimes[Tscal[$B, c, a], Tscal[$A, a, b], C2SS2F[b, c]];
 		bg[3, 7] := Tr@Tdot[Tferm[$B, k, i], Tferm[$A, i, j], C2FS2S[j, k]];
 		bg[3, 8] := Ttimes[Tscal[$B, c, a], Tscal[$A, a, b], C2SS2S[b, c]];		
-		bg[3, 9] := Ttimes[S2FC2F[$A, C1], G2[C1, C2], C2G[C2, $B]];
-		bg[3, 10] := Ttimes[S2SC2S[$A, C1], G2[C1, C2], C2G[C2, $B]];
-		bg[3, 11] := Ttimes[C2G[$A, C1], G2[C1, C2], C2G[C2, C3], G2[C3, C4], C2G[C4, $B]];
-		bg[3, 12] := Ttimes[C2G[$A, C1], G2[C1, C2], S2F[C2, C3], G2[C3, C4], S2F[C4, $B]];
-		bg[3, 13] := Ttimes[C2G[$A, C1], G2[C1, C2], S2S[C2, C3], G2[C3, C4], S2S[C4, $B]];
-		bg[3, 14] := Ttimes[C2G[$A, C1], G2[C1, C2], C2G[C2, C3], G2[C3, C4], S2F[C4, $B]];
-		bg[3, 15] := Ttimes[C2G[$A, C1], G2[C1, C2], C2G[C2, C3], G2[C3, C4], S2S[C4, $B]];
-		bg[3, 16] := Ttimes[S2F[$A, C1], G2[C1, C2], C2G[C2, C3], G2[C3, C4], S2S[C4, $B]];
+		bg[3, 9] := Ttimes[S2FC2F[$A, C1], G2Matrix[C1, C2], C2G[C2, $B]];
+		bg[3, 10] := Ttimes[S2SC2S[$A, C1], G2Matrix[C1, C2], C2G[C2, $B]];
+		bg[3, 11] := Ttimes[C2G[$A, C1], G2Matrix[C1, C2], C2G[C2, C3], G2Matrix[C3, C4], C2G[C4, $B]];
+		bg[3, 12] := Ttimes[C2G[$A, C1], G2Matrix[C1, C2], S2F[C2, C3], G2Matrix[C3, C4], S2F[C4, $B]];
+		bg[3, 13] := Ttimes[C2G[$A, C1], G2Matrix[C1, C2], S2S[C2, C3], G2Matrix[C3, C4], S2S[C4, $B]];
+		bg[3, 14] := Ttimes[C2G[$A, C1], G2Matrix[C1, C2], C2G[C2, C3], G2Matrix[C3, C4], S2F[C4, $B]];
+		bg[3, 15] := Ttimes[C2G[$A, C1], G2Matrix[C1, C2], C2G[C2, C3], G2Matrix[C3, C4], S2S[C4, $B]];
+		bg[3, 16] := Ttimes[S2F[$A, C1], G2Matrix[C1, C2], C2G[C2, C3], G2Matrix[C3, C4], S2S[C4, $B]];
 		bg[3, 17] := Ttimes[Tscal[$A, a, b], TsG2[C1, b, c], Lam[a, c, d, f], Tscal[$B, d, e], Tscal[C1, e, f]];
 		bg[3, 18] := Ttimes[Tscal[$A, a, b], Lam2[b, c], Tscal[$B, c, a]];
 		(*y^2 terms*)
@@ -178,8 +178,8 @@ GaugeTensors[3] := GaugeTensors[3] =
 		bg[3, 21] := Ttimes[Tscal[$B, c, a], Tscal[$A, a, b], Y2SC2F[b, c]];
 		bg[3, 22] := Tr @ Tdot[Tferm[$B, k, i], Tferm[$A, i, j], Y2FC2St[j, k]];
 		bg[3, 23] := Ttimes[Tscal[$B, d, a], Tscal[$A, a, b], Y2S[b, c], C2S[c, d]];
-		bg[3, 24] := Ttimes[S2FY2F[$A, C1], G2[C1, C2], C2G[C2, $B]];
-		bg[3, 25] := Ttimes[S2SY2S[$A, C1], G2[C1, C2], C2G[C2, $B]];
+		bg[3, 24] := Ttimes[S2FY2F[$A, C1], G2Matrix[C1, C2], C2G[C2, $B]];
+		bg[3, 25] := Ttimes[S2SY2S[$A, C1], G2Matrix[C1, C2], C2G[C2, $B]];
 		(*y^4 terms*)
 		bg[3, 26] := Tr @ Tdot[Yuk[a, f, i], Tferm[$A, i, j], YukTil[a, j, k] Yuk[b, k, l], Tferm[$B, l, e], YukTil[b, e, f]];
 		bg[3, 27] := Ttimes[Tscal[$B, c, a], Tscal[$A, a, b], Y4cS[b, c]];

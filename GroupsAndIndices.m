@@ -3,38 +3,6 @@ Begin["GroupsAndIndices`"]
 (*#############################################*)
 (*----------Generic tensor properties----------*)
 (*#############################################*)
-(*Dim[rep] is the dimension of a given representation*)
-	Dim[Bar[rep_]] := Dim[rep];
-
-(*del[rep, a, b] is the symbol for Kronecker delta \delta_{a,b} belong to the indices specified by the representation.*)
-	del /: del[rep_, a___, x_, b___] del[rep_, c___, x_, d___] := del[rep, c, a, b, d];
-	del /: Power[del[rep_, a_, b_], 2] := Dim[rep];
-	del[rep_, a_, a_] = Dim[rep];
-	del[Bar[rep_], a_, b_] = del[rep, a, b];
-
-(*del for taking specific index*)
-	delIndex /: del[rep_, a___, x_Symbol, b___] delIndex[rep_, c___, x_Symbol, d___] = delIndex[rep, c, a, b, d];
-	delIndex /: delIndex[rep_, a___, x_Symbol, b___] delIndex[rep_, c___, x_Symbol, d___] = delIndex[rep, c, a, b, d];
-	delIndex /: Power[delIndex[rep_, a_, b_], 2] = 1;
-	delIndex[rep_, a_Integer, b_Integer] := KroneckerDelta[a, b];
-
-(*Default properties for anti-symmetric inavariants.*)
-	eps /: del[rep_, a___, x_, b___] eps[rep_, c___, x_, d___] := eps[rep, c, a, b, d];
-	eps /: eps[rep_ ,a_, b_] eps[rep_ ,b_, c_] := -del[rep, a, c];
-	eps /: eps[rep_ ,a_, b_] eps[rep_ ,c_, b_] := del[rep, a, c];
-	eps /: eps[rep_ ,b_, a_] eps[rep_ ,b_, c_] := del[rep, a, c];
-	eps /: Power[eps[rep_, a_, b_], 2] := Dim[rep];
-	eps[rep_, a_, a_] := 0;
-
-(*Default group generator properties.*)
-	tGen /: del[rep_, a___, x_, b___] tGen[rep_, A_, c___, x_, d___] := tGen[rep, A, c, a, b, d];
-	tGen /: del[group_[adj], A___, X_, B___] tGen[group_[rep_], X_, c__] := tGen[group[rep], A, B, c];
-	tGen /: tGen[rep_, A_, a_, b_] tGen[rep_, A_, b_, c_] := Casimir2[rep] del[rep, a, c];
-	tGen /: tGen[rep_, A_, a_, b_] tGen[rep_, B_, b_, a_] := TraceNormalization[rep] del[Head[rep][adj], A, B];
-	tGen[rep_, A_, a_, a_] = 0;
-	tGen[Bar[rep_], A_, a_, b_ ] = - tGen[rep, A, b, a]; 
-	
-(*Default structure constant properties.*)
 CasimirSig[group_, a_, b_] := 
 	Block[{common, ind1, ind2},
 		common = Intersection[a, b];
@@ -42,16 +10,59 @@ CasimirSig[group_, a_, b_] :=
 		ind2 = Complement[b, common][[1]];
 		Signature[DeleteCases[a, ind1]] Signature[DeleteCases[b, ind2]] del[group[adj], ind1, ind2]
 	];
-	fStruct /: del[group_[adj], A___, X_, B___] fStruct[group_, C___, X_, D___] := fStruct[group, C, A, B, D];
-	fStruct /: fStruct[group_, A___] fStruct[group_, B___] /; Length @ Intersection[List @A, List @B] === 2 := 
-		Casimir2@ group[adj] CasimirSig[group, List@A, List@B];
-	fStruct[group_, a___, x_, b___, x_, c___] := 0;
 
+(*An overall function which sets up the properties of symbols wrt. implicit summation. It flushes all previous definitions.*)
+InitializeSymbols[] :=
+	Block[{},
+		(*Dim[rep] is the dimension of a given representation*)
+		Clear @ Dim;
+		Dim[Bar[rep_]] := Dim[rep];
+		
+		(*del[rep, a, b] is the symbol for Kronecker delta \delta_{a,b} belong to the indices specified by the representation.*)
+		Clear @ del;
+		del /: del[rep_, a___, x_, b___] del[rep_, c___, x_, d___] := del[rep, c, a, b, d];
+		del /: Power[del[rep_, a_, b_], 2] := Dim[rep];
+		del[rep_, a_, a_] = Dim[rep];
+		del[Bar[rep_], a_, b_] = del[rep, a, b];
+		
+		(*del for taking specific index*)
+		Clear @ delIndex;
+		delIndex /: del[rep_, a___, x_Symbol, b___] delIndex[rep_, c___, x_Symbol, d___] = delIndex[rep, c, a, b, d];
+		delIndex /: delIndex[rep_, a___, x_Symbol, b___] delIndex[rep_, c___, x_Symbol, d___] = delIndex[rep, c, a, b, d];
+		delIndex /: Power[delIndex[rep_, a_, b_], 2] = 1;
+		delIndex[rep_, a_Integer, b_Integer] := KroneckerDelta[a, b];
+		
+		(*Default properties for anti-symmetric inavariants.*)
+		Clear @ eps;
+		eps /: del[rep_, a___, x_, b___] eps[rep_, c___, x_, d___] := eps[rep, c, a, b, d];
+		eps /: eps[rep_ ,a_, b_] eps[rep_ ,b_, c_] := -del[rep, a, c];
+		eps /: eps[rep_ ,a_, b_] eps[rep_ ,c_, b_] := del[rep, a, c];
+		eps /: eps[rep_ ,b_, a_] eps[rep_ ,b_, c_] := del[rep, a, c];
+		eps /: Power[eps[rep_, a_, b_], 2] := Dim[rep];
+		eps[rep_, a_, a_] := 0;
+	
+		(*Default group generator properties.*)
+		Clear @ tGen;
+		tGen /: del[rep_, a___, x_, b___] tGen[rep_, A_, c___, x_, d___] := tGen[rep, A, c, a, b, d];
+		tGen /: del[group_[adj], A___, X_, B___] tGen[group_[rep_], X_, c__] := tGen[group[rep], A, B, c];
+		tGen /: tGen[rep_, A_, a_, b_] tGen[rep_, A_, b_, c_] := Casimir2[rep] del[rep, a, c];
+		tGen /: tGen[rep_, A_, a_, b_] tGen[rep_, B_, b_, a_] := TraceNormalization[rep] del[Head[rep][adj], A, B];
+		tGen[rep_, A_, a_, a_] = 0;
+		tGen[Bar[rep_], A_, a_, b_ ] = - tGen[rep, A, b, a]; 
+		
+		(*Default structure constant properties.*)
+		Clear @ fStruct;
+		fStruct /: del[group_[adj], A___, X_, B___] fStruct[group_, C___, X_, D___] := fStruct[group, C, A, B, D];
+		fStruct /: fStruct[group_, A___] fStruct[group_, B___] /; Length @ Intersection[List @A, List @B] === 2 := 
+			Casimir2 @ group[adj] CasimirSig[group, List@A, List@B];
+		fStruct[group_, a___, x_, b___, x_, c___] := 0;
+	];
+	
 (*Adds case to the system built in function Tr and Dot, to deal with substituting couplings for 0.*)
-Unprotect[Tr, Dot];
-	Dot[___, 0, ___] = 0;
-	Tr[0] = 0;
-Protect[Tr, Dot];
+	Unprotect[Tr, Dot];
+		Dot[___, 0, ___] = 0;
+		Tr[0] = 0;
+	Protect[Tr, Dot];
 
 (*Complex conjugation and transposition of matrices*)
 	Bar[Bar[x_]] = x;
@@ -84,6 +95,7 @@ Protect[Tr, Dot];
 			];
 			Tr @ Dot[Sequence @@ matrices]
 		];
+		
 (*Formating*)
 	Format[Trans[x_]] := x^Global`T;
 	Format[Bar[x_]] := OverBar @ x;

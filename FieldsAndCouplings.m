@@ -104,14 +104,15 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[{
 		
 		(*Adds the group information and the coupling to the repsective lists*)
 		AppendTo[$gaugeGroups, groupName -> 
-			<|Field -> fieldName, 
-			Coupling -> coupling, 
+			<|Coupling -> coupling,
+			Field -> fieldName, 
+			LieGroup -> lieGroup[n], 
 			Projector -> projector|>];
 		AppendTo[$couplings, coupling -> groupName];
 	];
 
-(*The gauge coupling matrix G^2_{AB}*)
-G2[A_, B_, power_: 1] := 
+(*The general gauge coupling matrix G^2_{AB} used in the computation of the beta function tensors*)
+G2Matrix[A_, B_, power_: 1] := 
 	Module[{gauge, v1, v2},
 		Sum[
 			sDelV[$gaugeGroups[gauge, Field], A, v1] sDelV[$gaugeGroups[gauge, Field], B, v2] 
@@ -130,11 +131,12 @@ TfLeft[A_, i_, j_] :=
 				{gRep1, $fermions[ferm, GaugeRep]}] 
 		,{ferm, Keys @ $fermions}]
 	];
-(*And for the Majorana-spinor*)
+	
+(*The general fermion gauge generators used in the computation of the beta function tensors*)
 Tferm[A_, i_, j_] := {{TfLeft[A, i, j], 0}, {0, -TfLeft[A, j, i]}};
 TfermTil[A_, i_, j_] := {{-TfLeft[A, j, i], 0}, {0, TfLeft[A, i, j]}};  
 
-(*Defining the anti-symmetric gauge generators for the scalars*)
+(*The general scalar gauge generators used in the computation of the beta function tensors*)
 Tscal[A_, a_, b_] := 
 	Module[{scal, group, rep, gRep1, gRep2, s1, s2, v}, 
 		Sum[
@@ -147,7 +149,7 @@ Tscal[A_, a_, b_] :=
 		,{scal, Keys @ $scalars}]
 	];
 
-(*Defining the gauge structure constant multiplied with G^-2*)
+(*The general gauge structure constants G^{-2}_{AD} f^{DBC} used in the computation of the beta function tensors*)
 FGauge[A_, B_, C_] := 
 	Module[{gauge, v1, v2, v3},
 		Sum[
@@ -260,6 +262,7 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 		AppendTo[$couplings, coupling -> Yukawa];
 	];
 
+(*Chiral Yukawa couplings*)
 YukawaLeft[a_, i_, j_] :=
 	Module[{f1, f2, yu, s1},
 		Sum[sDelS[yu[Fields][[1]], a, s1] sDelF[yu[Fields][[2]], i, f1] sDelF[yu[Fields][[3]], j, f2]
@@ -274,6 +277,7 @@ YukawaRight[a_, i_, j_] :=
 			,{yu, $yukawas}] //Sym[i, j]
 	];
 
+(*Genral Yukawa couplings used in the computation of the beta function tensors.*)
 Yuk[a_, i_, j_] := {{YukawaLeft[a, i, j], 0}, {0, YukawaRight[a, i, j]}};
 YukTil[a_, i_, j_] := {{YukawaRight[a, i, j], 0}, {0, YukawaLeft[a, i, j]}};
 
@@ -360,6 +364,7 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 		AppendTo[$couplings, coupling -> Quartic];
 	];
 
+(*Genral quartic coupling used in the computation of the beta function tensors.*)
 Lam[a_, b_, c_, d_] :=
 	Module[{l, s1, s2, s3, s4},
 		Sum[sDelS[l[Fields][[1]], a, s1] sDelS[l[Fields][[2]], b, s2] sDelS[l[Fields][[3]], c, s3] sDelS[l[Fields][[4]], d, s4]
@@ -370,6 +375,47 @@ Lam[a_, b_, c_, d_] :=
 				,0] 
 			,{l, $quartics}] //Sym[a, b, c, d]
 	];
+
+
+
+(*######################################*)
+(*---------------Clean up---------------*)
+(*######################################*)
+(*Function for removing an interaction from the model.*)
+RemoveCoupling::unkown = "The coupling `1` has not been defined."
+RemoveCoupling[coupling_] :=
+	Module[{group, lieG},
+		Switch[$couplings @ coupling
+		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
+			sDelV /: sDelV[$gaugeGroups[$couplings @ coupling, Field], ind_, v1_] * 
+				sDelV[$gaugeGroups[$couplings @ coupling, Field], ind_, v2_] =. ;
+			$gaugeGroups = Delete[$gaugeGroups, Key @ $couplings @ coupling];
+			IntializeSymbols[];
+			Do[
+				lieG = $gaugeGroups[group, LieGroup];
+				Switch[Head @ lieG
+				,SO,
+					DefineSOGroup[group, lieG[[1]] ];
+				,Sp,
+					DefineSpGroup[group, lieG[[1]]];
+				,SU,
+					DefineSUGroup[group, lieG[[1]]];
+				,U,
+					DefineU1Group[group];
+				];
+			,{group, Keys @ $gaugeGroups}];
+		,Yukawa,
+			$yukawas = Delete[$yukawas, Key @ coupling];
+		,Quartic,
+			$quartics = Delete[$quartics, Key @ coupling];
+		,_Missing,
+			Message[RemoveCoupling::unkown, coupling];
+			Return[Null];
+		];
+		$couplings = Delete[$couplings, Key @ coupling];
+	]
+
+
 
 
 End[]

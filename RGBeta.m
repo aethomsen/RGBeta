@@ -78,7 +78,7 @@ tGen::usage =
 	"tGen[rep, A, a, b] represents a group generator of the representation \"rep\" with adjoint index A. a and b are the two indices of rep. "
 
 Chirality::usage = Coupling::usage = CouplingBar::usage = Field::usage = Fields::usage = FlavorIndices::usage = 
-	GaugeRep::usage = Indices::usage = Invariant::usage = Projector::usage = Quartic::usage =
+	GaugeRep::usage = Indices::usage = Invariant::usage = LieGroup::usage = Projector::usage = Quartic::usage =
 	SelfConjugate::usage = Yukawa::usage = 
 	"Key used in global association lists of fields and/or couplings."
 
@@ -142,8 +142,8 @@ Finalize::usage =
 FGauge::usage = 
 	"FGauge[A, B, C] is a function that generates the general gauge structure constants."
 
-G2::usage = 
-	"G2[a, b] is a function that generates the general gauge coupling matrix."
+G2Matrix::usage = 
+	"G2Matrix[a, b] is a function that generates the general gauge coupling matrix."
 
 GaugeTensors::usage = 
 	"GaugeTensors[loop] is a function that computes all the tensor contractions used the general gauge beta function at the given loop order."
@@ -159,6 +159,12 @@ ProjectionCheck::usage =
 
 QuarticTensors::usage = 
 	"QuarticTensors[loop] is a function that computes all the tensor contractions used the general quartic beta function at the given loop order."
+
+RemoveCoupling::usage =
+	"RemoveCoupling[coupling] is a function that removes the coupling and corresponding interactions/gauge group from the model."
+
+InitializeSymbols::usage = 
+	"InitializeSymbols[] is a function which when called flushes all previous definitions for symbol behaviour under implicit summation."
 
 Sym::usage =
 	"Sym[a1, a2, a3, a4][expr] is an internal function for symmetrizing expr over up to four dummy indices."
@@ -211,9 +217,10 @@ Begin["`Private`"] (* Begin Private Context *)
 		<< Tensors`;
 	];
 	
-	(*#######################################################*)
-	(*---------------Protecting global symbols---------------*)
-	(*#######################################################*)
+	(*Initiates tensor dummy notation*)
+	InitializeSymbols[];
+	
+	(*Protects global symbols*)	
 	Protect[$a, $b, $c, $d, $i, $j, $A, $B];
 	Protect[SO, Sp, SU, U];
 	Protect[f1, f2, s1, s2, s3, s4];

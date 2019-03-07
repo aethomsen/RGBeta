@@ -50,7 +50,7 @@ BetaTerm[coupling_Symbol, loop_Integer] :=
 				Return[Null];
 			];
 			
-			beta = Ttimes[GaugeTensors[loop], G2[$B, C, 3/2], $gaugeGroups[$couplings @ coupling, Projector][C, $A] 
+			beta = Ttimes[GaugeTensors[loop], G2Matrix[$B, C, 3/2], $gaugeGroups[$couplings @ coupling, Projector][C, $A] 
 				] /. $gaugeCoefficients;
 		,Yukawa,
 			If[loop > 2, 
@@ -118,7 +118,7 @@ ProjectionCheck[coupling_Symbol] :=
 	Module[{cop, tensor, A, B, a, i, j, b, c, d},
 		Switch[$couplings @ coupling
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
-			cop = Ttimes[G2[A, B, 1/2], $gaugeGroups[$couplings @ coupling, Projector][B, A] ] // Expand;
+			cop = Ttimes[G2Matrix[A, B, 1/2], $gaugeGroups[$couplings @ coupling, Projector][B, A] ] // Expand;
 		,Yukawa,			
 			Switch[$yukawas[coupling, Chirality]
 			,Left,
