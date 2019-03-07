@@ -295,7 +295,7 @@ QuarticTensors[2] := QuarticTensors[2] =
 		bl[2, 3] := Ttimes[TsG2[A1, $a, b1], TsG2[A2, b1, $b], C2G[A2, A3], Tscal[A1, $c, b2], TsG2[A3, b2, $d]] // Sym[$a, $b, $c, $d];
 		bl[2, 4] := Ttimes[TsG2[A1, $a, b1], TsG2[A2, b1, $b], S2S[A2, A3], Tscal[A1, $c, b2], TsG2[A3, b2, $d]] // Sym[$a, $b, $c, $d];
 		bl[2, 5] := Ttimes[TsG2[A1, $a, b1], TsG2[A2, b1, $b], S2F[A2, A3], Tscal[A1, $c, b2], TsG2[A3, b2, $d]] // Sym[$a, $b, $c, $d];
-		bl[2, 6] := Ttimes[FourGLam[$a, b1, b2, $d], Lam[b1, b2, $b, $c]] // Sym[$a, $b, $c, $d];
+		bl[2, 6] := Ttimes[FourGLam[$a, b1, $d, b2], Lam[b1, b2, $b, $c]] // Sym[$a, $b, $c, $d];
 		bl[2, 7] := Ttimes[FourGLam[$a, $b, b1, b2], Lam[b1, b2, $c, $d]] // Sym[$a, $b, $c, $d];
 		bl[2, 8] := Ttimes[Lam[$a, $b, b1, b2], C2S[b1, $c], C2S[b2, $d]] // Sym[$a, $b, $c, $d];
 		bl[2, 9] := Ttimes[C2S[$a, b1], C2S[b1, b2], Lam[b2, $b, $c, $d] ]  // Sym4[$a, $b, $c, $d];
@@ -341,6 +341,7 @@ QuarticTensors[2] := QuarticTensors[2] =
 			Sum[Bcoef[3, 2, n] bl[2, n], {n, 33}]
 		,StringForm["Evaluating term `` / 33", n]]
 	];
+
 
 End[]
 
