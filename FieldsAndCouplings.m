@@ -5,8 +5,6 @@ sDelS /: sDelS[field1_, ind_, f_] sDelS[field2_, ind_, g_] := 0;
 sDelF /: sDelF[field1_, ind_, f_] sDelF[field2_, ind_, g_] := 0;
 sDelV /: sDelV[field1_, ind_, f_] sDelV[field2_, ind_, g_] := 0;
 
-(*Associationwith all information on the scalar fields: representations, etc.*)
-$scalars = <||>;
 (*Initiates a scalar field*)
 Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}, Mass -> 0};
 AddScalar[field_String, OptionsPattern[] ] :=
@@ -17,7 +15,7 @@ AddScalar[field_String, OptionsPattern[] ] :=
 			SelfConjugate -> OptionValue[SelfConjugate], 
 			Mass -> OptionValue @ Mass|>];
 		If[OptionValue @ Mass =!= 0,
-			massTerm = UnitStep[t - OptionValue @ Mass];
+			massTerm = UnitStep[Global`t - OptionValue @ Mass];
 		];
 		
 		If[OptionValue[SelfConjugate],
@@ -30,16 +28,16 @@ AddScalar[field_String, OptionsPattern[] ] :=
 				* Product[del[rep, s1, s2], {rep, OptionValue[GaugeRep]}]
 				* Product[del[rep, s1, s2], {rep, OptionValue[FlavorIndices]}];
 		];
+		
+		FlushBetas[];
 	];
 
-(*Associationwith all information on the fermion fields: representations etc.*)
-$fermions = <||>;
 (*Initiates a fermion field*)	
 Options[AddFermion] = {GaugeRep -> {}, FlavorIndices -> {}, Mass -> 0};
 AddFermion[field_String, OptionsPattern[] ] :=
 	Block[{massTerm = 1, rep},
 		If[OptionValue @ Mass =!= 0,
-			massTerm = UnitStep[t - OptionValue @ Mass];
+			massTerm = UnitStep[Global`t - OptionValue @ Mass];
 		];
 		AppendTo[$fermions, field -> <|
 			GaugeRep -> OptionValue[GaugeRep], 
@@ -48,6 +46,8 @@ AddFermion[field_String, OptionsPattern[] ] :=
 		sDelF/: sDelF[field, ind_, f1_] sDelF[Bar[field], ind_, f2_] = massTerm 
 			* Product[del[rep, f1, f2], {rep, OptionValue[GaugeRep]}]
 			* Product[del[rep, f1, f2], {rep, OptionValue[FlavorIndices]}];
+		
+		FlushBetas[];
 	];
 
 (*Initiates a vector field*)	
@@ -59,9 +59,6 @@ AddVector[name_String, group_] :=
 (*###################################*)
 (*----------Gauge couplings----------*)
 (*###################################*)
-(*Association with all information on the gauge groups: fields, couplings etc.*)
-$gaugeGroups = <||>;
-
 (*Function for adding gauge groups to the model*)
 AddGaugeGroup::unkown = "`1` is not a reckognized Lie group."
 AddGaugeGroup::nonstring = "Use a string for the field or leave it as the default value."
@@ -109,6 +106,8 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[{
 			LieGroup -> lieGroup[n], 
 			Projector -> projector|>];
 		AppendTo[$couplings, coupling -> groupName];
+		
+		FlushBetas[];
 	];
 
 (*The general gauge coupling matrix G^2_{AB} used in the computation of the beta function tensors*)
@@ -161,8 +160,6 @@ FGauge[A_, B_, C_] :=
 (*####################################*)
 (*----------Yukawa couplings----------*)
 (*####################################*)
-(*Associationwith all information on the Yukawa couplings.*)
-$yukawas = <||>;
 (*Function for defining the Yukawa couplings of the theory*)
 Options[AddYukawa] = {CouplingIndices -> (Null &),
 	GroupInvariant -> (1 &),
@@ -260,6 +257,8 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 			Invariant -> OptionValue @ GroupInvariant,
 			Projector -> projection|>];
 		AppendTo[$couplings, coupling -> Yukawa];
+		
+		FlushBetas[];
 	];
 
 (*Chiral Yukawa couplings*)
@@ -285,8 +284,7 @@ YukTil[a_, i_, j_] := {{YukawaRight[a, i, j], 0}, {0, YukawaLeft[a, i, j]}};
 (*#####################################*)
 (*----------Quartic couplings----------*)
 (*#####################################*)
-(*Associationwith all information on the quartic couplings.*)
-$quartics = <||>;
+
 (*Function for defining the Yukawa couplings of the theory*)
 AddQuartic::unkown = "`1` does not match any of the scalars.";
 AddQuartic::nonfunction = "The value given in `1` is not a function.";
@@ -362,6 +360,8 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 			Projector -> projection,
 			SelfConjugate -> OptionValue @ SelfConjugate|>];
 		AppendTo[$couplings, coupling -> Quartic];
+		
+		FlushBetas[];
 	];
 
 (*Genral quartic coupling used in the computation of the beta function tensors.*)
@@ -390,7 +390,7 @@ RemoveCoupling[coupling_] :=
 			sDelV /: sDelV[$gaugeGroups[$couplings @ coupling, Field], ind_, v1_] * 
 				sDelV[$gaugeGroups[$couplings @ coupling, Field], ind_, v2_] =. ;
 			$gaugeGroups = Delete[$gaugeGroups, Key @ $couplings @ coupling];
-			IntializeSymbols[];
+			ReIntializeSymbols[];
 			Do[
 				lieG = $gaugeGroups[group, LieGroup];
 				Switch[Head @ lieG
@@ -413,10 +413,24 @@ RemoveCoupling[coupling_] :=
 			Return[Null];
 		];
 		$couplings = Delete[$couplings, Key @ coupling];
+		FlushBetas[];
 	]
 
-
-
-
+(*Removes all previously stored values for the beta tensors.*)
+FlushBetas[] :=
+	Module[{},
+		Do[
+			GaugeTensors[n] = 0;
+			GaugeTensors[n] =. ;
+		,{n, 0, 3}];
+		Do[
+			QuarticTensors[n] = 0;
+			QuarticTensors[n] =.;
+			YukawaTensors[n] = 0;
+			YukawaTensors[n] =.;
+		,{n, 0, 2}];
+	];
+	
+	
 End[]
 

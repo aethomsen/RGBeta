@@ -33,8 +33,6 @@ Tdot[a_] = a;
 (*##################################*)
 (*----------Beta functions----------*)
 (*##################################*)
-(*Global couplings variable*)
-$couplings = <||>;
 
 (*Function returns the beta function of the given coupling and loop order*)
 BetaTerm::gaugeLoops = "The gauge beta function is only implemented to 3 loops."
@@ -82,7 +80,7 @@ BetaTerm[coupling_Symbol, loop_Integer] :=
 	];
 
 BetaFunction::unkown = "The coupling `1` has not been defined."
-BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[{RescaledCouplings -> True, FourDimensions -> True}] ] :=
+BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[{RescaledCouplings -> False, FourDimensions -> True}] ] :=
 	Module[{coef = 4 Pi, firstTerm = 0, l},
 		If[Head @ $couplings @ coupling === Missing, 
 			Message[BetaFunction::unkown, coupling];

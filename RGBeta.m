@@ -1,7 +1,7 @@
 (*
 ################################################################
-This is RGBeta, Version 0.1. 
-Last modefied 05-03-2019
+This is RGBeta, Version 0.2. 
+Last modefied xx-03-2019
 
 Copyright...
 
@@ -163,8 +163,8 @@ QuarticTensors::usage =
 RemoveCoupling::usage =
 	"RemoveCoupling[coupling] is a function that removes the coupling and corresponding interactions/gauge group from the model."
 
-InitializeSymbols::usage = 
-	"InitializeSymbols[] is a function which when called flushes all previous definitions for symbol behaviour under implicit summation."
+ReInitializeSymbols::usage = 
+	"ReInitializeSymbols[] is a function which when called flushes all previous definitions for symbol behaviour under implicit summation."
 
 Sym::usage =
 	"Sym[a1, a2, a3, a4][expr] is an internal function for symmetrizing expr over up to four dummy indices."
@@ -206,7 +206,7 @@ YukTil::usage =
 (*---------------Loads components---------------*)
 (*##############################################*) 
 Begin["`Private`"] (* Begin Private Context *) 
-	$RGBetaVersion = "RGBeta 0.1";
+	$RGBetaVersion = "RGBeta 0.2";
 	Print[$RGBetaVersion, " by Anders Eller Thomsen"];
 	
 	dir = DirectoryName @ $InputFileName;
@@ -218,8 +218,20 @@ Begin["`Private`"] (* Begin Private Context *)
 	];
 	
 	(*Initiates tensor dummy notation*)
-	InitializeSymbols[];
-	
+	ReInitializeSymbols[];
+	(*Global couplings variable*)
+	$couplings = <||>;
+	(*Association with all information on the gauge groups: fields, couplings etc.*)
+	$gaugeGroups = <||>;
+	(*Associationwith all information on the fermion fields: representations etc.*)
+	$fermions = <||>;
+	(*Associationwith all information on the scalar fields: representations, etc.*)
+	$scalars = <||>;
+	(*Associationwith all information on the quartic couplings.*)
+	$quartics = <||>;
+	(*Associationwith all information on the Yukawa couplings.*)
+	$yukawas = <||>;
+
 	(*Protects global symbols*)	
 	Protect[$a, $b, $c, $d, $i, $j, $A, $B];
 	Protect[SO, Sp, SU, U];

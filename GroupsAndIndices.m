@@ -12,7 +12,7 @@ CasimirSig[group_, a_, b_] :=
 	];
 
 (*An overall function which sets up the properties of symbols wrt. implicit summation. It flushes all previous definitions.*)
-InitializeSymbols[] :=
+ReInitializeSymbols[] :=
 	Block[{},
 		(*Dim[rep] is the dimension of a given representation*)
 		Clear @ Dim;
@@ -82,17 +82,11 @@ InitializeSymbols[] :=
 	Matrix[___, 0, ___][___] = 0;
 	(*Matrix[m__][a_, a_] := Tr @ Dot[m];*)
 	Matrix[m__][a_, a_] :=
-		Block[{matrices, pass1, pass2, temp},
-			matrices = List@m;
-			pass1 = matrices /. {Bar @ x_->x, Trans @ x_ -> x};
-			temp = pass1[[Ordering[pass1, 1][[1]] ]];
-			pass1 = If[# === temp, 1, 0] & /@ pass1; 
-			pass2 = Replace[matrices, {Trans[Bar[_]] -> 2, Trans[_]-> 3, Bar[_] -> 1, _Symbol -> 4}, {1}];
-			temp = Ordering[MapThread[Times, {pass1, pass2}], -1][[1]];
-			matrices = RotateLeft[matrices, temp -1];
-			If[pass2[[temp]] === 1 || pass2[[temp]] === 3,
-				matrices = Trans /@ Join[{matrices[[1]]}, Reverse[matrices[[2;;]] ]]; 
-			];
+		Block[{matrices, permutations},
+			matrices = List @ m;
+			permutations = NestList[RotateLeft, matrices, Length@ matrices];
+			permutations = Join[permutations, Map[Trans, Reverse[permutations, 2], {2}] ]; 
+			matrices = permutations[[Ordering[permutations, 1][[1]] ]];
 			Tr @ Dot[Sequence @@ matrices]
 		];
 		
