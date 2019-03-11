@@ -7,7 +7,7 @@ sDelV /: sDelV[field1_, ind_, f_] sDelV[field2_, ind_, g_] := 0;
 
 (*Initiates a scalar field*)
 Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
-AddScalar[field_String, OptionsPattern[] ] :=
+AddScalar[field_, OptionsPattern[] ] :=
 	Block[{rep, massTerm = 1},
 		AppendTo[$scalars, field -> <|
 			GaugeRep -> OptionValue[GaugeRep], 
@@ -34,7 +34,7 @@ AddScalar[field_String, OptionsPattern[] ] :=
 
 (*Initiates a fermion field*)	
 Options[AddFermion] = {GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
-AddFermion[field_String, OptionsPattern[] ] :=
+AddFermion[field_, OptionsPattern[] ] :=
 	Block[{massTerm = 1, rep},
 		If[OptionValue @ Mass =!= None,
 			massTerm = UnitStep[Global`t - OptionValue @ Mass];
@@ -51,10 +51,11 @@ AddFermion[field_String, OptionsPattern[] ] :=
 	];
 
 (*Initiates a vector field*)	
-AddVector[name_String, group_] :=
+AddVector[name_, group_] :=
 	Block[{},
 		sDelV/: sDelV[name, ind_, v1_] sDelV[name, ind_, v2_] = del[group[adj], v1, v2];
 	];
+
 
 (*###################################*)
 (*----------Gauge couplings----------*)
@@ -68,11 +69,8 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[{
 		Switch[OptionValue @ Field
 		,Automatic,
 			fieldName = "A_" <> ToString @ groupName;
-		,_String,
-			fieldName = OptionValue @ Field;
 		,_,
-			Message[AddGaugeGroup::nonstring];
-			Return @ Null;
+			fieldName = OptionValue @ Field;
 		];
 		
 		(*Sets up the group symbols*)
@@ -262,18 +260,18 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 	];
 
 (*Chiral Yukawa couplings*)
-YukawaLeft[a_, i_, j_] :=
+YukawaLeft[$da_, $di_, $dj_] :=
 	Module[{f1, f2, yu, s1},
-		Sum[sDelS[yu[Fields][[1]], a, s1] sDelF[yu[Fields][[2]], i, f1] sDelF[yu[Fields][[3]], j, f2]
+		Sum[sDelS[yu[Fields][[1]], $da, s1] sDelF[yu[Fields][[2]], $di, f1] sDelF[yu[Fields][[3]], $dj, f2]
 				* yu[Invariant][s1, f1, f2] yu[Coupling][Sequence @@ yu[Indices][s1, f1, f2]]  
-			,{yu, $yukawas}] //Sym[i, j]
+			,{yu, $yukawas}] //Sym[$di, $dj]
 	];
 
-YukawaRight[a_, i_, j_] :=
+YukawaRight[$da_, $di_, $dj_] :=
 	Module[{f1, f2, yu, s1},
-		Sum[sDelS[Bar @ yu[Fields][[1]], a, s1] sDelF[Bar @ yu[Fields][[2]], i, f1] sDelF[Bar @ yu[Fields][[3]], j, f2]
+		Sum[sDelS[Bar @ yu[Fields][[1]], $da, s1] sDelF[Bar @ yu[Fields][[2]], $di, f1] sDelF[Bar @ yu[Fields][[3]], $dj, f2]
 				* yu[Invariant][s1, f1, f2] yu[CouplingBar][Sequence @@ yu[Indices][s1, f1, f2]]  
-			,{yu, $yukawas}] //Sym[i, j]
+			,{yu, $yukawas}] //Sym[$di, $dj]
 	];
 
 (*Genral Yukawa couplings used in the computation of the beta function tensors.*)
@@ -365,15 +363,15 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 	];
 
 (*Genral quartic coupling used in the computation of the beta function tensors.*)
-Lam[a_, b_, c_, d_] :=
+Lam[$da_, $db_, $dc_, $dd_] :=
 	Module[{l, s1, s2, s3, s4},
-		Sum[sDelS[l[Fields][[1]], a, s1] sDelS[l[Fields][[2]], b, s2] sDelS[l[Fields][[3]], c, s3] sDelS[l[Fields][[4]], d, s4]
+		Sum[sDelS[l[Fields][[1]], $da, s1] sDelS[l[Fields][[2]], $db, s2] sDelS[l[Fields][[3]], $dc, s3] sDelS[l[Fields][[4]], $dd, s4]
 				* l[Invariant][s1, s2, s3, s4] l[Coupling][Sequence @@ l[Indices][s1, s2, s3, s4]]
 			+If[! l@SelfConjugate,
-				sDelS[Bar@ l[Fields][[1]], a, s1] sDelS[Bar@ l[Fields][[2]], b, s2] sDelS[Bar@ l[Fields][[3]], c, s3] 
-				* sDelS[Bar@ l[Fields][[4]], d, s4] l[Invariant][s1, s2, s3, s4] l[CouplingBar][Sequence @@ l[Indices][s1, s2, s3, s4]]
+				sDelS[Bar@ l[Fields][[1]], $da, s1] sDelS[Bar@ l[Fields][[2]], $db, s2] sDelS[Bar@ l[Fields][[3]], $dc, s3] 
+				* sDelS[Bar@ l[Fields][[4]], $dd, s4] l[Invariant][s1, s2, s3, s4] l[CouplingBar][Sequence @@ l[Indices][s1, s2, s3, s4]]
 				,0] 
-			,{l, $quartics}] //Sym[a, b, c, d]
+			,{l, $quartics}] //Sym[$da, $db, $dc, $dd]
 	];
 
 
@@ -434,6 +432,10 @@ RemoveField[field_] :=
 				];
 			,{coupling, Keys @ $yukawas}];
 		,f_ /; MemberQ[Keys @ $scalars, f],
+			If[$scalars[field, SelfConjugate],
+				Bar[field] =.;
+			];
+			
 			$scalars = Delete[$scalars, Key @ field];
 			(*Remove yukawa interactions the scalar is involved in*)
 			Do[
