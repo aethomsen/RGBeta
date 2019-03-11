@@ -18,6 +18,10 @@ ReInitializeSymbols[] :=
 		Clear @ Dim;
 		Dim[Bar[rep_]] := Dim[rep];
 		
+		(*Group constants for certain representations.*)
+		Clear @ TraceNormalization;
+		Clear @ Casimir2;
+		
 		(*del[rep, a, b] is the symbol for Kronecker delta \delta_{a,b} belong to the indices specified by the representation.*)
 		Clear @ del;
 		del /: del[rep_, a___, x_, b___] del[rep_, c___, x_, d___] := del[rep, c, a, b, d];
@@ -107,7 +111,7 @@ DefineSOGroup[group_Symbol, n_Integer|n_Symbol] :=
 		(*Fundamental*)
 		Dim[group[fund]] = n;
 		TraceNormalization[group[fund]] = 1/2;
-		Casimir2[group[fund]] = n (n - 1) / (4 n);
+		Casimir2[group[fund]] = (n - 1) / 4;
 		(*Fierz identitiy*)
 		tGen /: tGen[group[fund], A_, a_, b_] tGen[group[fund], A_, c_, d_] = TraceNormalization[group[fund]] / 2 *
 			(del[group[fund], a, d] del[group[fund], c, b] - del[group[fund], a, c] del[group[fund], b, d]);
@@ -129,7 +133,7 @@ DefineSpGroup[group_Symbol, n_Integer|n_Symbol] :=
 		(*Fundamental*)
 		Dim[group[fund]] = n;
 		TraceNormalization[group[fund]] = 1/2;
-		Casimir2[group[fund]] = n (n + 1) / (4 n);
+		Casimir2[group[fund]] = (n + 1) / 4;
 		(*Fierz identitiy*)
 		tGen /: tGen[group[fund], A_, a_, b_] tGen[group[fund], A_, c_, d_] = TraceNormalization[group[fund]] / 2 *
 			(del[group[fund], a, d] del[group[fund], c, b] - eps[group[fund], a, c] eps[group[fund], b, d]);

@@ -6,7 +6,7 @@ sDelF /: sDelF[field1_, ind_, f_] sDelF[field2_, ind_, g_] := 0;
 sDelV /: sDelV[field1_, ind_, f_] sDelV[field2_, ind_, g_] := 0;
 
 (*Initiates a scalar field*)
-Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}, Mass -> 0};
+Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
 AddScalar[field_String, OptionsPattern[] ] :=
 	Block[{rep, massTerm = 1},
 		AppendTo[$scalars, field -> <|
@@ -14,7 +14,7 @@ AddScalar[field_String, OptionsPattern[] ] :=
 			FlavorIndices -> OptionValue[FlavorIndices],
 			SelfConjugate -> OptionValue[SelfConjugate], 
 			Mass -> OptionValue @ Mass|>];
-		If[OptionValue @ Mass =!= 0,
+		If[OptionValue @ Mass =!= None,
 			massTerm = UnitStep[Global`t - OptionValue @ Mass];
 		];
 		
@@ -33,10 +33,10 @@ AddScalar[field_String, OptionsPattern[] ] :=
 	];
 
 (*Initiates a fermion field*)	
-Options[AddFermion] = {GaugeRep -> {}, FlavorIndices -> {}, Mass -> 0};
+Options[AddFermion] = {GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
 AddFermion[field_String, OptionsPattern[] ] :=
 	Block[{massTerm = 1, rep},
-		If[OptionValue @ Mass =!= 0,
+		If[OptionValue @ Mass =!= None,
 			massTerm = UnitStep[Global`t - OptionValue @ Mass];
 		];
 		AppendTo[$fermions, field -> <|
@@ -381,16 +381,96 @@ Lam[a_, b_, c_, d_] :=
 (*######################################*)
 (*---------------Clean up---------------*)
 (*######################################*)
+(*Removes all previously stored values for the beta tensors.*)
+FlushBetas[] :=
+	Module[{},
+		Do[
+			GaugeTensors[n] = 0;
+			GaugeTensors[n] =. ;
+		,{n, 0, 3}];
+		Do[
+			QuarticTensors[n] = 0;
+			QuarticTensors[n] =.;
+			YukawaTensors[n] = 0;
+			YukawaTensors[n] =.;
+		,{n, 0, 2}];
+	];
+
+(*Removes all model information.*)
+ResetModel[] :=
+	Block[{},
+		(*Resets tensor dummy notation*)
+		ReInitializeSymbols[];
+		
+		(*Resets all information of the current model.*)
+		(*Global couplings variable*)
+		$couplings = <||>;
+		(*Association with all information on the gauge groups: fields, couplings etc.*)
+		$gaugeGroups = <||>;
+		(*Associationwith all information on the fermion fields: representations etc.*)
+		$fermions = <||>;
+		(*Associationwith all information on the scalar fields: representations, etc.*)
+		$scalars = <||>;
+		(*Associationwith all information on the quartic couplings.*)
+		$quartics = <||>;
+		(*Associationwith all information on the Yukawa couplings.*)
+		$yukawas = <||>;
+		
+		(*Removes stored computations of the beta tensors.*)
+		FlushBetas[];
+	];
+
+(*Function for removing a scalar or fermion field (and associated Yukawa and quartic couplings) from the model.*)
+RemoveField::unkown = "The field `1` has not been defined."
+RemoveField[field_] :=
+	Module[{coupling},
+		Switch[field
+		,f_ /; MemberQ[Keys @ $fermions, f],
+			$fermions = Delete[$fermions, Key @ field];
+			(*Remove yukawa interactions the fermion is involved in*)
+			Do[
+				If[MemberQ[$yukawas[coupling, Fields][[2;;3]], field],
+					RemoveInteraction[coupling];
+				];
+			,{coupling, Keys @ $yukawas}];
+		,f_ /; MemberQ[Keys @ $scalars, f],
+			$scalars = Delete[$scalars, Key @ field];
+			(*Remove yukawa interactions the scalar is involved in*)
+			Do[
+				If[MemberQ[{#, Bar @ #}& @ $yukawas[coupling, Fields][[1]], field],
+					RemoveInteraction[coupling];
+				];
+			,{coupling, Keys @ $yukawas}];
+			(*Remove quartic interactions the scalar is involved in*)
+			Do[
+				If[MemberQ[$quartics[coupling, Fields], field] || MemberQ[Bar /@ $quartics[coupling, Fields], field],
+					RemoveInteraction[coupling];
+				];
+			,{coupling, Keys @ $quartics}];
+		,_,
+			Message[RemoveField::unkown, field];
+			Return[Null];
+		];
+	];
+(*For simmultaneous removal of multiple fields*)
+RemoveField[field_, fields__] :=
+	Block[{},
+		RemoveField[field];
+		RemoveField[fields];
+	];
+
 (*Function for removing an interaction from the model.*)
-RemoveCoupling::unkown = "The coupling `1` has not been defined."
-RemoveCoupling[coupling_] :=
+RemoveInteraction::unkown = "The coupling `1` has not been defined."
+RemoveInteraction[coupling_] :=
 	Module[{group, lieG},
 		Switch[$couplings @ coupling
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
+			(*For gauge groups the corresponding gauge field is removed.*)
 			sDelV /: sDelV[$gaugeGroups[$couplings @ coupling, Field], ind_, v1_] * 
 				sDelV[$gaugeGroups[$couplings @ coupling, Field], ind_, v2_] =. ;
 			$gaugeGroups = Delete[$gaugeGroups, Key @ $couplings @ coupling];
-			ReIntializeSymbols[];
+			(*The tensor symbols are reset, and reloaded for all other gauge groups.*)
+			ReInitializeSymbols[];
 			Do[
 				lieG = $gaugeGroups[group, LieGroup];
 				Switch[Head @ lieG
@@ -409,28 +489,20 @@ RemoveCoupling[coupling_] :=
 		,Quartic,
 			$quartics = Delete[$quartics, Key @ coupling];
 		,_Missing,
-			Message[RemoveCoupling::unkown, coupling];
+			Message[RemoveInteraction::unkown, coupling];
 			Return[Null];
 		];
 		$couplings = Delete[$couplings, Key @ coupling];
 		FlushBetas[];
-	]
-
-(*Removes all previously stored values for the beta tensors.*)
-FlushBetas[] :=
-	Module[{},
-		Do[
-			GaugeTensors[n] = 0;
-			GaugeTensors[n] =. ;
-		,{n, 0, 3}];
-		Do[
-			QuarticTensors[n] = 0;
-			QuarticTensors[n] =.;
-			YukawaTensors[n] = 0;
-			YukawaTensors[n] =.;
-		,{n, 0, 2}];
 	];
-	
-	
+(*For simmultaneous removal of multiple interactions*)
+RemoveInteraction[coupling_, couplings__] :=
+	Block[{},
+		RemoveInteraction[coupling];
+		RemoveInteraction[couplings];
+	];
+
+
+
 End[]
 

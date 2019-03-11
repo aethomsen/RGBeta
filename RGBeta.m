@@ -160,8 +160,14 @@ ProjectionCheck::usage =
 QuarticTensors::usage = 
 	"QuarticTensors[loop] is a function that computes all the tensor contractions used the general quartic beta function at the given loop order."
 
-RemoveCoupling::usage =
-	"RemoveCoupling[coupling] is a function that removes the coupling and corresponding interactions/gauge group from the model."
+RemoveField::usage =
+	"RemoveField[field, ...] is a function that removes one or more scalar and fermion fields from the model."
+
+RemoveInteraction::usage =
+	"RemoveCoupling[coupling, ...] is a function that removes one or more couplings and corresponding interactions/gauge groups from the model."
+
+ResetModel::usage = 
+	"ResetModel[] resets all tensors and removes all fields and coupling definitions made in the current instance of RGBeta."
 
 ReInitializeSymbols::usage = 
 	"ReInitializeSymbols[] is a function which when called flushes all previous definitions for symbol behaviour under implicit summation."
@@ -209,6 +215,7 @@ Begin["`Private`"] (* Begin Private Context *)
 	$RGBetaVersion = "RGBeta 0.2";
 	Print[$RGBetaVersion, " by Anders Eller Thomsen"];
 	
+	(*Loads package files*)
 	dir = DirectoryName @ $InputFileName;
 	Block[{$Path = {dir}},
 		<< Betas`;
@@ -217,20 +224,8 @@ Begin["`Private`"] (* Begin Private Context *)
 		<< Tensors`;
 	];
 	
-	(*Initiates tensor dummy notation*)
-	ReInitializeSymbols[];
-	(*Global couplings variable*)
-	$couplings = <||>;
-	(*Association with all information on the gauge groups: fields, couplings etc.*)
-	$gaugeGroups = <||>;
-	(*Associationwith all information on the fermion fields: representations etc.*)
-	$fermions = <||>;
-	(*Associationwith all information on the scalar fields: representations, etc.*)
-	$scalars = <||>;
-	(*Associationwith all information on the quartic couplings.*)
-	$quartics = <||>;
-	(*Associationwith all information on the Yukawa couplings.*)
-	$yukawas = <||>;
+	(*Initializes dummy index notation and global model information*)
+	ResetModel[];
 
 	(*Protects global symbols*)	
 	Protect[$a, $b, $c, $d, $i, $j, $A, $B];
