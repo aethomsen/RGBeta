@@ -71,6 +71,20 @@ BetaTerm[coupling_Symbol, loop_Integer] :=
 			];
 			
 			beta = QuarticTensors[loop] $quartics[coupling, Projector][$a, $b, $c, $d] /. $quarticCoefficients // Expand // Expand;
+		,FermionMass,
+			If[loop > 2, 
+				Message[BetaTerm::yukawaLoops];
+				Return[Null];
+			];
+			
+			Switch[$fermionMasses[coupling, Chirality]
+			,Left,
+				tensor = YukawaTensors[loop][[1, 1]];
+			,Right,
+				tensor = YukawaTensors[loop][[2, 2]];
+			];
+			
+			beta = tensor $fermionMasses[coupling, Projector][$a, $i, $j] /. $yukawaCoefficients // Expand // Expand;
 		,_Missing,
 			Message[BetaTerm::unkown, coupling];
 			Return[Null];
@@ -111,8 +125,8 @@ Finalize[expr_, OptionsPattern[{Parametrizations -> {}}] ] :=
 	];
 
 (*Function to check the projected value of a coupling*)
-ProjectionCheck::unkown = "The coupling `1` has not been defined."
-ProjectionCheck[coupling_Symbol] :=
+CheckProjection::unkown = "The coupling `1` has not been defined."
+CheckProjection[coupling_Symbol] :=
 	Module[{cop, tensor, A, B, a, i, j, b, c, d},
 		Switch[$couplings @ coupling
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
@@ -127,8 +141,16 @@ ProjectionCheck[coupling_Symbol] :=
 			cop = tensor $yukawas[coupling, Projector][a, i, j] // Expand // Expand;
 		,Quartic,
 			cop = Lam[a, b, c, d] $quartics[coupling, Projector][a, b, c, d] // Expand // Expand;
+		,FermionMass,
+			Switch[$fermionMasses[coupling, Chirality]
+			,Left,
+				tensor = Yuk[a, i, j][[1, 1]];
+			,Right,
+				tensor = Yuk[a, i, j][[2, 2]];
+			];
+			cop = tensor $fermionMasses[coupling, Projector][a, i, j] // Expand // Expand;
 		,_Missing,
-			Message[ProjectionCheck::unkown, coupling];
+			Message[CheckProjection::unkown, coupling];
 			Return @ Null;
 		];
 		Return @ cop;

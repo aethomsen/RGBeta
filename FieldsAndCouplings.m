@@ -4,6 +4,10 @@ Begin["FieldsAndCouplings`"]
 sDelS /: sDelS[field1_, ind_, f_] sDelS[field2_, ind_, g_] := 0; 
 sDelF /: sDelF[field1_, ind_, f_] sDelF[field2_, ind_, g_] := 0;
 sDelV /: sDelV[field1_, ind_, f_] sDelV[field2_, ind_, g_] := 0;
+(*For masses*)
+sDelS /: sDelS[$vev, ind_, f_] sDelS[$vevSelect, ind_, g_] := 1;
+Bar@ $vev = $vev;
+
 
 (*Initiates a scalar field*)
 Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
@@ -182,7 +186,7 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 			Return @ Null;
 		];
 
-		(*Tests if the fields have been defined*)
+		(*Tests if the invariants and coupling indices are functions*)
 		If[! Head @ OptionValue @ CouplingIndices === Function,
 			Message[AddYukawa::nonfunction, CouplingIndices];
 			Return @ Null;
@@ -259,19 +263,110 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 		FlushBetas[];
 	];
 
+
+(*Function for defining the Yukawa couplings of the theory*)
+Options[AddFermionMass] = {MassIndices -> (Null &),
+	GroupInvariant -> (1 &),
+	Chirality -> Left};
+AddFermionMass::chirality = "The chirality `1` is invalid: Left or Right expected."; 
+AddFermionMass::unkown = "`1` does not match any of the `2`s.";
+AddFermionMass::nonfunction = "The value given in `1` is not a function."; 
+AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] :=
+	Block[{g, group, projection, symmetryFactor, temp, test, yuk, yukbar, y}, 
+		(*Tests if the fields have been defined*)
+		If[!MemberQ[Keys@ $fermions, psi1],
+			Message[AddFermionMass::unkown, psi1, "fermion"];
+			Return @ Null;
+		];
+		If[!MemberQ[Keys@ $fermions, psi2],
+			Message[AddFermionMass::unkown, psi2, "fermion"];
+			Return @ Null;
+		];
+
+		(*Tests if the invariants and coupling indices are functions*)
+		If[! Head @ OptionValue @ MassIndices === Function,
+			Message[AddFermionMass::nonfunction, MassIndices];
+			Return @ Null;
+		]; 
+		If[! Head @ OptionValue @ GroupInvariant === Function,
+			Message[AddFermionMass::nonfunction, GroupInvariant];
+			Return @ Null;
+		]; 
+		
+		(*If the chirality is right handed, the coupling is written with the barred fields*)
+		Switch[OptionValue @ Chirality
+		,Left,
+			g = mass;
+		,Right, 	
+			g = Bar @ mass;
+		,_,
+			Message[AddFermionMass::chirality, OptionValue @ Chirality];
+			Return @ Null;
+		];
+		
+		(*Constructs the coupling structure*)
+		(*The normalization is 2 to account for the symmetrization in Yukawa[a, i, j]*)
+		With[{g0 = g},
+			If[Length @ mass <= 2,
+				yuk = 2 Matrix[g0]@ ## &;
+				yukbar = 2 Matrix[Bar @g0]@ ## &
+			,
+				yuk = 2 * g0 @ ## &;
+				yukbar = 2 Bar[g0]@ ## &
+			];
+		];
+		
+		(*Defines the projection operator for extracting out the particular Yukawa coupling.*)
+		symmetryFactor = If[psi1 === psi2, 2, 1];
+		projection = With[
+			{c = 1 /symmetryFactor/ Expand[OptionValue[GroupInvariant][a,b]	*OptionValue[GroupInvariant][a,b] ], 
+			gInv = OptionValue[GroupInvariant][f1, f2]}, 
+			Switch[OptionValue @ Chirality
+			,Left,
+				c sDelS[$vevSelect, #1, s] sDelF[Bar@ psi1, #2, f1] sDelF[Bar@ psi2, #3, f2] gInv &	
+			,Right,
+				c sDelS[$vevSelect, #1, s] sDelF[psi1, #2, f1] sDelF[psi2, #3, f2] gInv &
+			]
+		];
+		
+		(*Adds the Yukawa coupling to the association*)
+		AppendTo[$fermionMasses, mass -> 
+			<|Chirality -> OptionValue @ Chirality,
+			Coupling -> yuk,
+			CouplingBar -> yukbar, 
+			Fields -> {psi1, psi2},
+			Indices -> OptionValue @ MassIndices,
+			Invariant -> OptionValue @ GroupInvariant,
+			Projector -> projection|>];
+		AppendTo[$couplings, mass -> FermionMass];
+		
+		FlushBetas[];
+	];
+
+
 (*Chiral Yukawa couplings*)
 YukawaLeft[$da_, $di_, $dj_] :=
 	Module[{f1, f2, yu, s1},
-		Sum[sDelS[yu[Fields][[1]], $da, s1] sDelF[yu[Fields][[2]], $di, f1] sDelF[yu[Fields][[3]], $dj, f2]
-				* yu[Invariant][s1, f1, f2] yu[Coupling][Sequence @@ yu[Indices][s1, f1, f2]]  
-			,{yu, $yukawas}] //Sym[$di, $dj]
+		Sym[$di, $dj][
+			Sum[sDelS[yu[Fields][[1]], $da, s1] sDelF[yu[Fields][[2]], $di, f1] sDelF[yu[Fields][[3]], $dj, f2]
+					* yu[Invariant][s1, f1, f2] yu[Coupling][Sequence @@ yu[Indices][s1, f1, f2]]  
+				,{yu, $yukawas}] +
+			Sum[sDelS[$vev, $da, s1] sDelF[yu[Fields][[1]], $di, f1] sDelF[yu[Fields][[2]], $dj, f2]
+					* yu[Invariant][f1, f2] yu[Coupling][Sequence @@ yu[Indices][f1, f2]]  
+				,{yu, $fermionMasses}] 
+		]
 	];
 
 YukawaRight[$da_, $di_, $dj_] :=
 	Module[{f1, f2, yu, s1},
-		Sum[sDelS[Bar @ yu[Fields][[1]], $da, s1] sDelF[Bar @ yu[Fields][[2]], $di, f1] sDelF[Bar @ yu[Fields][[3]], $dj, f2]
-				* yu[Invariant][s1, f1, f2] yu[CouplingBar][Sequence @@ yu[Indices][s1, f1, f2]]  
-			,{yu, $yukawas}] //Sym[$di, $dj]
+		Sym[$di, $dj][
+			Sum[sDelS[Bar @ yu[Fields][[1]], $da, s1] sDelF[Bar @ yu[Fields][[2]], $di, f1] sDelF[Bar @ yu[Fields][[3]], $dj, f2]
+					* yu[Invariant][s1, f1, f2] yu[CouplingBar][Sequence @@ yu[Indices][s1, f1, f2]]  
+				,{yu, $yukawas}] +
+			Sum[sDelS[$vev, $da, s1] sDelF[Bar @ yu[Fields][[1]], $di, f1] sDelF[Bar @ yu[Fields][[2]], $dj, f2]
+				* yu[Invariant][f1, f2] yu[CouplingBar][Sequence @@ yu[Indices][f1, f2]]  
+			,{yu, $fermionMasses}]
+		] 
 	];
 
 (*Genral Yukawa couplings used in the computation of the beta function tensors.*)
@@ -413,6 +508,8 @@ ResetModel[] :=
 		$quartics = <||>;
 		(*Associationwith all information on the Yukawa couplings.*)
 		$yukawas = <||>;
+		(*Associationwith all information on the fermion masses.*)
+		$fermionMasses = <||>;
 		
 		(*Removes stored computations of the beta tensors.*)
 		FlushBetas[];

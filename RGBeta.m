@@ -14,11 +14,14 @@ BeginPackage["RGBeta`"]
 (*################################################################*)
 (*----------Defines symbols and functions used by RGBeta----------*)
 (*################################################################*)  
-$a::usage = $b::usage = $c::usage = $d::usage = $i::usage = $j::usage = $A::usage = $B::usage = 
+$a::usage = $b::usage = $c::usage = $d::usage = $i::usage = $j::usage = $A::usage = $B::usage = $vev::usage =  $vevSelect::usage =  
 	"Used as a global dummy index."
 
 $couplings::usage = 
 	"$coupling is an association containing the types of all the couplings that have been defined in the model."
+
+$fermionMasses::usage =
+	"$fermionMasses is an association with all the fermion masses that have been declared in the model."
 
 $fermions::usage =
 	"$fermions is an association containing all the internal information on the fermions that have been declared in the model."
@@ -77,8 +80,8 @@ sDelV::usage =
 tGen::usage =
 	"tGen[rep, A, a, b] represents a group generator of the representation \"rep\" with adjoint index A. a and b are the two indices of rep. "
 
-Chirality::usage = Coupling::usage = CouplingBar::usage = Field::usage = Fields::usage = FlavorIndices::usage = 
-	GaugeRep::usage = Indices::usage = Invariant::usage = LieGroup::usage = Projector::usage = Quartic::usage =
+Chirality::usage = Coupling::usage = CouplingBar::usage = FermionMass::usage = Field::usage = Fields::usage = FlavorIndices::usage = 
+	GaugeRep::usage = Indices::usage = Invariant::usage = LieGroup::usage = Mass::usage= Projector::usage = Quartic::usage =
 	SelfConjugate::usage = Yukawa::usage = 
 	"Key used in global association lists of fields and/or couplings."
 
@@ -87,6 +90,9 @@ SO::usage = Sp::usage = SU::usage = U::usage =
 
 AddFermion::usage =
 	"AddFermion[field] is a function used to define a fermion field in the model."
+
+AddFermionMass::ussage =
+	"AddFermionMass[mass, {ferm1, ferm2}] defines a mass term between the two fermion fields."
 
 AddGaugeGroup::usage =
 	"AddGaugeGroup[coupling, groupName, lieGroup[n]] is a function used to define a gauge group in the model."
@@ -124,14 +130,20 @@ Casimir2::usage =
 CasimirSig::usage =
 	"CasimirSig is internal function used to determined the relative sign of the contraction of two structure constants."
 
+CheckProjection::usage =
+	"CheckProjection[coupling] returns the result of the automatic projection operator of the coupling on the corresponding generalized coupling."
+
+DefineU1Group::usage =
+	"DefineU1Group[group, n] defines group to be a U(1) group and defines representations accordingly."
+
+DefineSpGroup::usage =
+	"DefineSpGroup[group, n] defines group to be an Sp(n) group and sets defines invariants for several common representations accordingly."
+
 DefineSOGroup::usage =
 	"DefineSOGroup[group, n] defines group to be an SO(n) group and sets defines invariants for several common representations accordingly."
 
 DefineSUGroup::usage =
 	"DefineSUGroup[group, n] defines group to be an SU(n) group and sets defines invariants for several common representations accordingly."
-
-DefineU1Group::usage =
-	"DefineU1Group[group, n] defines group to be a U(1) group and defines representations accordingly."
 
 Dim::usage =
 	"Dim[rep] sets the dimension of a given representation."
@@ -153,9 +165,6 @@ Lam::usage =
 
 Matrix::usage =
 	"Matrix[x,...][i, j] represents the matrix product of couplings x,... with open indices i and j."
-
-ProjectionCheck::usage =
-	"ProjectionCheck[coupling] returns the result of the automatic projection operator of the coupling on the corresponding generalized coupling."
 
 QuarticTensors::usage = 
 	"QuarticTensors[loop] is a function that computes all the tensor contractions used the general quartic beta function at the given loop order."
