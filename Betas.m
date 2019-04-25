@@ -93,6 +93,13 @@ BetaTerm[coupling_Symbol, loop_Integer] :=
 			];
 			
 			beta = QuarticTensors[loop] $trilinears[coupling, Projector][$a, $b, $c, $d] /. $quarticCoefficients // Expand // Expand;
+		,ScalarMass,
+			If[loop > 2, 
+				Message[BetaTerm::loopNumber, "scalar mass", 2];
+				Return[Null];
+			];
+			
+			beta = QuarticTensors[loop] $scalarMasses[coupling, Projector][$a, $b, $c, $d] /. $quarticCoefficients // Expand // Expand;
 		,_Missing,
 			Message[BetaTerm::unkown, coupling];
 			Return[Null];
@@ -159,6 +166,8 @@ CheckProjection[coupling_Symbol] :=
 			cop = tensor $fermionMasses[coupling, Projector][a, i, j] // Expand // Expand;
 		,Trilinear,
 			cop = Lam[a, b, c, d] $trilinears[coupling, Projector][a, b, c, d] // Expand // Expand;
+		,ScalarMass,
+			cop = Lam[a, b, c, d] $scalarMasses[coupling, Projector][a, b, c, d] // Expand // Expand;
 		,_Missing,
 			Message[CheckProjection::unkown, coupling];
 			Return @ Null;

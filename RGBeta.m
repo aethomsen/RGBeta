@@ -38,6 +38,9 @@ $quarticCoefficients::usage =
 $quartics::usage = 
 	"$quartics is an association containing all internal information on the quartic couplings."
 
+$scalarMasses::usage =
+	"$scalarMasses is an association with all the scalar masses that have been declared in the model."
+
 $scalars::usage =
 	"$scalars is an association containing all the internal information on the scalars that have been declared in the model."
 
@@ -85,7 +88,7 @@ tGen::usage =
 
 Chirality::usage = Coupling::usage = CouplingBar::usage = FermionMass::usage = Field::usage = Fields::usage = FlavorIndices::usage = 
 	GaugeRep::usage = Indices::usage = Invariant::usage = LieGroup::usage = Mass::usage= Projector::usage = Quartic::usage =
-	SelfConjugate::usage = Trilinear::usage = Yukawa::usage = 
+	ScalarMass::usage = SelfConjugate::usage = Trilinear::usage = Yukawa::usage = 
 	"Key used in global association lists of fields and/or couplings."
 
 SO::usage = Sp::usage = SU::usage = U::usage =
@@ -105,6 +108,9 @@ AddQuartic::usage =
 	
 AddScalar::usage =
 	"AddScalar[field] is a function used to define a scalar field in the model."
+
+AddScalarMass::ussage =
+	"AddScalarMass[mass, {scal1, scal2}] defines a mass term between the two scalar fields."
 
 AddTrilinear::usage = 
 	"AddTrilinear[coupling, {scal1, scal2, scal3}] defines a Yukawa interaction between a scalar and two fermion fields."

@@ -264,7 +264,7 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 	];
 
 
-(*Function for defining the Yukawa couplings of the theory*)
+(*Function for defining the fermion masses of the theory*)
 Options[AddFermionMass] = {MassIndices -> (Null &),
 	GroupInvariant -> (1 &),
 	Chirality -> Left};
@@ -378,7 +378,7 @@ YukTil[a_, i_, j_] := {{YukawaRight[a, i, j], 0}, {0, YukawaLeft[a, i, j]}};
 (*----------Quartic couplings----------*)
 (*#####################################*)
 
-(*Function for defining the Yukawa couplings of the theory*)
+(*Function for defining the quartic couplings of the theory*)
 AddQuartic::unkown = "`1` does not match any of the scalars.";
 AddQuartic::nonfunction = "The value given in `1` is not a function.";
 Options[AddQuartic] = {CouplingIndices -> (Null &),
@@ -461,7 +461,7 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 	];
 
 
-(*Function for defining the Yukawa couplings of the theory*)
+(*Function for defining the trilinear scalar couplings of the theory*)
 AddTrilinear::unkown = "`1` does not match any of the scalars.";
 AddTrilinear::nonfunction = "The value given in `1` is not a function.";
 Options[AddTrilinear] = {CouplingIndices -> (Null &),
@@ -526,6 +526,71 @@ AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] :=
 		FlushBetas[];
 	];
 
+(*Function for defining the Scalar mass terms of the theory*)
+AddScalarMass::unkown = "`1` does not match any of the scalars.";
+AddScalarMass::nonfunction = "The value given in `1` is not a function.";
+Options[AddScalarMass] = {MassIndices -> (Null &),
+	GroupInvariant -> (1 &),
+	SelfConjugate -> True}; 
+AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] :=
+	Block[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
+		(*Tests if the fields have been defined*)
+		Do[
+			If[!MemberQ[Keys@ $scalars, temp /. Bar[x_] -> x],
+				Message[AddQuartic::unkown, temp /. Bar[x_] -> x];
+				Return[Null];
+			];
+		,{temp, {phi1, phi2}}];
+		
+		(*Tests if the fields have been defined*)
+		If[! Head @ OptionValue @ MassIndices === Function,
+			Message[AddQuartic::nonfunction, CouplingIndices];
+			Return @ Null;
+		]; 
+		If[! Head @ OptionValue @ GroupInvariant === Function,
+			Message[AddQuartic::nonfunction, GroupInvariant];
+			Return @ Null;
+		]; 
+		
+		If[OptionValue @ SelfConjugate, 
+			Bar @ coupling = coupling;
+		];
+		normalization = 24; (*To account for the symmetrization in Lam[a, b, c, d]*)
+		Do[
+			If[!$scalars[phi, SelfConjugate] || Head @ phi === Bar, normalization *= 1/Sqrt[2];];
+		,{phi, {phi1, phi2}}];
+		With[{n = normalization},
+			If[Length @ coupling <= 2,
+				lam = n Matrix[coupling]@ ## &;
+				lambar = n Matrix[Bar @ coupling]@ ## &
+			,
+				lam = n coupling @ ## &;
+				lambar = n Bar[coupling] @ ## &
+			];
+		];
+			
+		(*Defines the projection operator for extracting out the mass from the quartic couplings.*)
+		symmetryFactor = If[phi1 === phi2, 4, 2];	(*there's an extra factor 2 from the 2 vevs.*)
+		projection = With[{c = normalization /24 /symmetryFactor / Expand[OptionValue[GroupInvariant][a, b] 
+				* OptionValue[GroupInvariant][a, b]],
+				gInv = OptionValue[GroupInvariant][s1, s2] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b] },
+			c sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[$vevSelect, #3, s3] * sDelS[$vevSelect, #4, s4] gInv &
+		];
+		
+		(*Adds the quartic coupling to the association*)
+		AppendTo[$scalarMasses, coupling -> 
+			<|Coupling -> lam,
+			CouplingBar -> lambar,
+			Fields -> {phi1, phi2, phi3},
+			Indices -> OptionValue @ MassIndices,
+			Invariant -> OptionValue @ GroupInvariant,
+			Projector -> projection,
+			SelfConjugate -> OptionValue @ SelfConjugate|>];
+		AppendTo[$couplings, coupling -> ScalarMass];
+		
+		FlushBetas[];
+	];
+
 (*Genral quartic coupling used in the computation of the beta function tensors.*)
 Lam[$da_, $db_, $dc_, $dd_] :=
 	Module[{l, s1, s2, s3, s4},
@@ -533,7 +598,7 @@ Lam[$da_, $db_, $dc_, $dd_] :=
 			(*Quartic couplings*)
 			Sum[sDelS[l[Fields][[1]], $da, s1] sDelS[l[Fields][[2]], $db, s2] sDelS[l[Fields][[3]], $dc, s3] sDelS[l[Fields][[4]], $dd, s4]
 				* l[Invariant][s1, s2, s3, s4] l[Coupling][Sequence @@ l[Indices][s1, s2, s3, s4]]
-			+If[! l@SelfConjugate,
+			+ If[! l@SelfConjugate,
 				sDelS[Bar@ l[Fields][[1]], $da, s1] sDelS[Bar@ l[Fields][[2]], $db, s2] sDelS[Bar@ l[Fields][[3]], $dc, s3] 
 				* sDelS[Bar@ l[Fields][[4]], $dd, s4] l[Invariant][s1, s2, s3, s4] l[CouplingBar][Sequence @@ l[Indices][s1, s2, s3, s4]]
 				,0] 
@@ -541,11 +606,19 @@ Lam[$da_, $db_, $dc_, $dd_] :=
 			(*Trilinear couplings*)
 			Sum[sDelS[l[Fields][[1]], $da, s1] sDelS[l[Fields][[2]], $db, s2] sDelS[l[Fields][[3]], $dc, s3] sDelS[$vev, $dd, s4]
 				* l[Invariant][s1, s2, s3] l[Coupling][Sequence @@ l[Indices][s1, s2, s3]]
-			+If[! l@SelfConjugate,
+			+ If[! l@SelfConjugate,
 				sDelS[Bar@ l[Fields][[1]], $da, s1] sDelS[Bar@ l[Fields][[2]], $db, s2] sDelS[Bar@ l[Fields][[3]], $dc, s3] 
 				* sDelS[$vev, $dd, s4] l[Invariant][s1, s2, s3] l[CouplingBar][Sequence @@ l[Indices][s1, s2, s3]]
 				,0] 
-			,{l, $trilinears}]
+			,{l, $trilinears}] +
+			(*Scalar masses*)
+			Sum[sDelS[l[Fields][[1]], $da, s1] sDelS[l[Fields][[2]], $db, s2] sDelS[$vev, $dc, s3] sDelS[$vev, $dd, s4]
+				* l[Invariant][s1, s2] l[Coupling][Sequence @@ l[Indices][s1, s2]]
+			+ If[! l@SelfConjugate,
+				sDelS[Bar@ l[Fields][[1]], $da, s1] sDelS[Bar@ l[Fields][[2]], $db, s2] sDelS[$vev, $dc, s3] sDelS[$vev, $dd, s4] 
+				* l[Invariant][s1, s2] l[CouplingBar][Sequence @@ l[Indices][s1, s2]]
+				,0] 
+			,{l, $scalarMasses}]
 		]
 	];
 
@@ -592,6 +665,8 @@ ResetModel[] :=
 		$fermionMasses = <||>;
 		(*Associationwith all information on the trilinear scalar couplings.*)
 		$trilinears = <||>;
+		(*Associationwith all information on the scalar masses.*)
+		$scalarMasses = <||>;
 		
 		(*Removes stored computations of the beta tensors.*)
 		FlushBetas[];
@@ -673,6 +748,8 @@ RemoveInteraction[coupling_] :=
 			$fermionMasses = Delete[$fermionMasses, Key @ coupling];
 		,Trilinear,
 			$trilinears = Delete[$trilinears, Key @ coupling];
+		,ScalarMass,
+			$scalarMasses = Delete[$scalarMasses, Key @ coupling];
 		,_Missing,
 			Message[RemoveInteraction::unkown, coupling];
 			Return[Null];
