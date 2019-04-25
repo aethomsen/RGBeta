@@ -38,13 +38,14 @@ Tdot[a_] = a;
 BetaTerm::gaugeLoops = "The gauge beta function is only implemented to 3 loops."
 BetaTerm::yukawaLoops = "The Yukawa beta function is only implemented to 2 loops."
 BetaTerm::quarticLoops = "The quartic beta function is only implemented to 2 loops."
+BetaTerm::loopNumber = "The `1` beta function is only implemented up to `2` loops."
 BetaTerm::unkown = "The coupling `1` has not been defined."
 BetaTerm[coupling_Symbol, loop_Integer] :=
 	Module[{beta, tensor, C},
 		Switch[$couplings @ coupling
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
 			If[loop > 3, 
-				Message[BetaTerm::gaugeLoops];
+				Message[BetaTerm::loopNumber, "gauge", 3];
 				Return[Null];
 			];
 			
@@ -52,7 +53,7 @@ BetaTerm[coupling_Symbol, loop_Integer] :=
 				] /. $gaugeCoefficients;
 		,Yukawa,
 			If[loop > 2, 
-				Message[BetaTerm::yukawaLoops];
+				Message[BetaTerm::loopNumber, "Yukawa", 2];
 				Return[Null];
 			];
 			
@@ -66,14 +67,14 @@ BetaTerm[coupling_Symbol, loop_Integer] :=
 			beta = tensor $yukawas[coupling, Projector][$a, $i, $j] /. $yukawaCoefficients // Expand // Expand;
 		,Quartic,
 			If[loop > 2, 
-				Message[BetaTerm::quarticLoops];
+				Message[BetaTerm::loopNumber, "quartic", 2];
 				Return[Null];
 			];
 			
 			beta = QuarticTensors[loop] $quartics[coupling, Projector][$a, $b, $c, $d] /. $quarticCoefficients // Expand // Expand;
 		,FermionMass,
 			If[loop > 2, 
-				Message[BetaTerm::yukawaLoops];
+				Message[BetaTerm::loopNumber, "fermion mass", 2];
 				Return[Null];
 			];
 			
@@ -85,6 +86,13 @@ BetaTerm[coupling_Symbol, loop_Integer] :=
 			];
 			
 			beta = tensor $fermionMasses[coupling, Projector][$a, $i, $j] /. $yukawaCoefficients // Expand // Expand;
+		,Trilinear,
+			If[loop > 2, 
+				Message[BetaTerm::loopNumber, "trilinear scalar", 2];
+				Return[Null];
+			];
+			
+			beta = QuarticTensors[loop] $trilinears[coupling, Projector][$a, $b, $c, $d] /. $quarticCoefficients // Expand // Expand;
 		,_Missing,
 			Message[BetaTerm::unkown, coupling];
 			Return[Null];
@@ -149,6 +157,8 @@ CheckProjection[coupling_Symbol] :=
 				tensor = Yuk[a, i, j][[2, 2]];
 			];
 			cop = tensor $fermionMasses[coupling, Projector][a, i, j] // Expand // Expand;
+		,Trilinear,
+			cop = Lam[a, b, c, d] $trilinears[coupling, Projector][a, b, c, d] // Expand // Expand;
 		,_Missing,
 			Message[CheckProjection::unkown, coupling];
 			Return @ Null;

@@ -41,6 +41,9 @@ $quartics::usage =
 $scalars::usage =
 	"$scalars is an association containing all the internal information on the scalars that have been declared in the model."
 
+$trilinears::usage =
+	"$trilinears is an association contraining all the internal informaiton on the trilinear scalar couplings." 
+
 $yukawaCoefficients::usage = 
 	"$yukawaCoefficients is an internal replacement list containing the coefficient of all tensor constractions used in the yukawa beta function."
 
@@ -82,7 +85,7 @@ tGen::usage =
 
 Chirality::usage = Coupling::usage = CouplingBar::usage = FermionMass::usage = Field::usage = Fields::usage = FlavorIndices::usage = 
 	GaugeRep::usage = Indices::usage = Invariant::usage = LieGroup::usage = Mass::usage= Projector::usage = Quartic::usage =
-	SelfConjugate::usage = Yukawa::usage = 
+	SelfConjugate::usage = Trilinear::usage = Yukawa::usage = 
 	"Key used in global association lists of fields and/or couplings."
 
 SO::usage = Sp::usage = SU::usage = U::usage =
@@ -102,6 +105,9 @@ AddQuartic::usage =
 	
 AddScalar::usage =
 	"AddScalar[field] is a function used to define a scalar field in the model."
+
+AddTrilinear::usage = 
+	"AddTrilinear[coupling, {scal1, scal2, scal3}] defines a Yukawa interaction between a scalar and two fermion fields."
 
 AddYukawa::usage = 
 	"AddYukawa[coupling, {scal, ferm1, ferm2}] defines a Yukawa interaction between a scalar and two fermion fields."
