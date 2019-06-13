@@ -41,7 +41,7 @@ BetaTerm::quarticLoops = "The quartic beta function is only implemented to 2 loo
 BetaTerm::loopNumber = "The `1` beta function is only implemented up to `2` loops."
 BetaTerm::unkown = "The coupling `1` has not been defined."
 BetaTerm[coupling_Symbol, loop_Integer] :=
-	Module[{beta, tensor, C},
+	Module[{beta, tensor, C1, C2},
 		Switch[$couplings @ coupling
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
 			If[loop > 3, 
@@ -49,7 +49,7 @@ BetaTerm[coupling_Symbol, loop_Integer] :=
 				Return[Null];
 			];
 			
-			beta = Ttimes[GaugeTensors[loop], G2Matrix[$B, C, 3/2], $gaugeGroups[$couplings @ coupling, Projector][C, $A] 
+			beta = Ttimes[G2Matrix[C1, $A] ,GaugeTensors[loop], G2Matrix[$B, C2], $gaugeGroups[$couplings @ coupling, Projector][C1, C2] 
 				] /. $gaugeCoefficients;
 		,Yukawa,
 			If[loop > 2, 
@@ -145,7 +145,7 @@ CheckProjection[coupling_Symbol] :=
 	Module[{cop, tensor, A, B, a, i, j, b, c, d},
 		Switch[$couplings @ coupling
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
-			cop = Ttimes[G2Matrix[A, B, 1/2], $gaugeGroups[$couplings @ coupling, Projector][B, A] ] // Expand;
+			cop = Ttimes[G2Matrix[A, B], $gaugeGroups[$couplings @ coupling, Projector][B, A] ] // Expand;
 		,Yukawa,			
 			Switch[$yukawas[coupling, Chirality]
 			,Left,
@@ -268,51 +268,51 @@ $yukawaCoefficients = {
 
 $gaugeCoefficients = {
 	(* 1-loop *)
-	Bcoef[1, 1, 1] -> -11/3,
-	Bcoef[1, 1, 2] -> 1/3,
-	Bcoef[1, 1, 3] -> 1/6,
+	Bcoef[1, 1, 1] -> -22/3,
+	Bcoef[1, 1, 2] -> 2/3,
+	Bcoef[1, 1, 3] -> 1/3,
 	(* 2-loop *)
-	Bcoef[1, 2, 1] -> 1,
-	Bcoef[1, 2, 2] -> 2,
-	Bcoef[1, 2, 3] -> -34/3,
-	Bcoef[1, 2, 4] -> 5/3,
-	Bcoef[1, 2, 5] -> 1/3,
-	Bcoef[1, 2, 6] -> -1/2,
+	Bcoef[1, 2, 1] -> 2,
+	Bcoef[1, 2, 2] -> 4,
+	Bcoef[1, 2, 3] -> -68/3,
+	Bcoef[1, 2, 4] -> 10/3,
+	Bcoef[1, 2, 5] -> 2/3,
+	Bcoef[1, 2, 6] -> -1,
 	Bcoef[1, 2, 7] -> 0,
 	(* 3-loop *)
-	Bcoef[1, 3, 1] -> -1/2,
-	Bcoef[1, 3, 2] -> 29/4,
-	Bcoef[1, 3, 3] -> 133/36,
-	Bcoef[1, 3, 4] -> 679/72,
-	Bcoef[1, 3, 5] -> -11/36,
-	Bcoef[1, 3, 6] -> -25/36,
-	Bcoef[1, 3, 7] -> -23/72,
-	Bcoef[1, 3, 8] -> -49/72,
-	Bcoef[1, 3, 9] -> 2,
-	Bcoef[1, 3, 10] -> 25/4,
-	Bcoef[1, 3, 11] -> -2857/54,
-	Bcoef[1, 3, 12] -> -79/216,
-	Bcoef[1, 3, 13] -> 1/108,
-	Bcoef[1, 3, 14] -> 1415/108,
-	Bcoef[1, 3, 15] -> 545/216,
-	Bcoef[1, 3, 16] -> -29/108,
-	Bcoef[1, 3, 17] -> 1/2,
-	Bcoef[1, 3, 18] -> -1/24,
-	Bcoef[1, 3, 19] -> -5/8,
-	Bcoef[1, 3, 20] -> -1/8,
-	Bcoef[1, 3, 21] -> -1/2,
-	Bcoef[1, 3, 22] -> -7/2,
-	Bcoef[1, 3, 23] -> -7/4,
-	Bcoef[1, 3, 24] -> -3,
-	Bcoef[1, 3, 25] -> 9/8,
-	Bcoef[1, 3, 26] -> 1/2,
-	Bcoef[1, 3, 27] -> -1/2,
-	Bcoef[1, 3, 28] -> 3/4,
-	Bcoef[1, 3, 29] -> 7/16,
-	Bcoef[1, 3, 30] -> 1/4,
-	Bcoef[1, 3, 31] -> 1/16,
-	Bcoef[1, 3, 32] -> 3/16,
-	Bcoef[1, 3, 33] -> -1/16
+	Bcoef[1, 3, 1] -> -1,
+	Bcoef[1, 3, 2] -> 29/2,
+	Bcoef[1, 3, 3] -> 133/18,
+	Bcoef[1, 3, 4] -> 679/36,
+	Bcoef[1, 3, 5] -> -11/18,
+	Bcoef[1, 3, 6] -> -25/18,
+	Bcoef[1, 3, 7] -> -23/36,
+	Bcoef[1, 3, 8] -> -49/36,
+	Bcoef[1, 3, 9] -> 4,
+	Bcoef[1, 3, 10] -> 25/2,
+	Bcoef[1, 3, 11] -> -2857/27,
+	Bcoef[1, 3, 12] -> -79/108,
+	Bcoef[1, 3, 13] -> 1/54,
+	Bcoef[1, 3, 14] -> 1415/54,
+	Bcoef[1, 3, 15] -> 545/108,
+	Bcoef[1, 3, 16] -> -29/54,
+	Bcoef[1, 3, 17] -> 1,
+	Bcoef[1, 3, 18] -> -1/12,
+	Bcoef[1, 3, 19] -> -5/4,
+	Bcoef[1, 3, 20] -> -1/4,
+	Bcoef[1, 3, 21] -> -1,
+	Bcoef[1, 3, 22] -> -7,
+	Bcoef[1, 3, 23] -> -7/2,
+	Bcoef[1, 3, 24] -> -6,
+	Bcoef[1, 3, 25] -> 9/4,
+	Bcoef[1, 3, 26] -> 1,
+	Bcoef[1, 3, 27] -> -1,
+	Bcoef[1, 3, 28] -> 3/2,
+	Bcoef[1, 3, 29] -> 7/8,
+	Bcoef[1, 3, 30] -> 1/2,
+	Bcoef[1, 3, 31] -> 1/8,
+	Bcoef[1, 3, 32] -> 3/8,
+	Bcoef[1, 3, 33] -> -1/8
 };
 
 Protect[$gaugeCoefficients, $quarticCoefficients, $yukawaCoefficients];
