@@ -149,6 +149,7 @@ Finalize[expr_, OptionsPattern[{Parametrizations -> {}}] ] :=
 		Matrix[y__][a_[f1_], b_[f2_]] /; !OrderedQ[{f1, f2}] :=
 			Matrix[Sequence @@ Reverse[Trans /@ List@ y]][b[f2], a[f1]];
 		Matrix[y__][a_[f1], b_[f2]] := Dot[y];
+		Matrix /: Matrix[u_List][_[v1]] Matrix[w_List][_[v2]] := List /@ u . List @ w;
 		out
 	];
 

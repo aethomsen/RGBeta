@@ -65,8 +65,10 @@ AddVector[name_, group_] :=
 (*----------Gauge couplings----------*)
 (*###################################*)
 (*Function for adding gauge groups to the model*)
-AddGaugeGroup::unkown = "`1` is not a reckognized Lie group."
-AddGaugeGroup::nonstring = "Use a string for the field or leave it as the default value."
+AddGaugeGroup::unkown = "`1` is not a reckognized Lie group.";
+AddGaugeGroup::nonstring = "Use a string for the field or leave it as the default value.";
+AddGaugeGroup::dimensions = "The dimension of the coupling matrix does not match the dimension of 
+	the kineitc mixing term";
 Options[AddGaugeGroup] = {CouplingMatrix -> {{}}, Field -> Automatic, KineticMixing -> 1};
 AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[]] :=
 	Block[{projector, fieldName},
@@ -117,9 +119,16 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[]
 		AppendTo[$couplings, coupling -> groupName];
 		
 		(*For Abelian groups with Kinetic mixing*)
-		(*If[OptionValue @ KineticMixing > 1,
-			$gaugeGroups[groupName, Coupling] = CouplingMatrix;
-		];*)
+		If[Length @ OptionValue @ CouplingMatrix > 1 && OptionValue @ KineticMixing > 1, 
+			If[Length @ OptionValue @ CouplingMatrix =!= OptionValue @ KineticMixing,
+				Message[AddGaugeGroup::dimensions];
+				Return @ Null;
+			];
+			AppendTo[$gaugeGroups @ groupName, CouplingMatrix -> OptionValue @ CouplingMatrix];
+			coupling /: Matrix[a_List, coupling, b___] = Matrix[Dot[a, OptionValue @ CouplingMatrix] b];
+			coupling /: Matrix[a___, coupling, b_List] = Matrix[a, Dot[OptionValue @ CouplingMatrix, b]];
+			Trans[coupling] = coupling;
+		];
 		
 		FlushBetas[];
 	];

@@ -73,6 +73,7 @@ ReInitializeSymbols[] :=
 	Bar[0] = 0;	
 	Trans[Trans[x_]] := x;
 	Trans[0] = 0;
+	Trans[a_List] /; VectorQ[a] := a;
 (*Matrix head for symbolic matrix manipulations*)
 	Matrix /: del[ind_, a___, x_, b___] Matrix[m__][c___, ind_[x_], d___] := Matrix[m][c, ind[a, b], d];
 	Matrix /: Matrix[m1__][a_] Matrix[m2__][a_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][];
@@ -81,6 +82,7 @@ ReInitializeSymbols[] :=
 	Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][b_, c_] := Matrix[m1, m2][a, c];
 	Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][c_, b_] := Matrix[m1, Sequence @@ Reverse[Trans /@ List@m2]][a, c];
 	Matrix /: Matrix[m1__][b_, a_] Matrix[m2__][b_, c_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][a, c];
+	Matrix[a_List, b_List] = Matrix[Dot[a, b]];
 	Matrix[m_][] := m;
 	(*Matrix[m__][Null] := m;*)
 	Matrix[___, 0, ___][___] = 0;
