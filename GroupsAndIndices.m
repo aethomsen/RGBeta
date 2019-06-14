@@ -44,7 +44,7 @@ ReInitializeSymbols[] :=
 		eps /: eps[rep_ ,b_, a_] eps[rep_ ,b_, c_] := del[rep, a, c];
 		eps /: Power[eps[rep_, a_, b_], 2] := Dim[rep];
 		eps[rep_, a_, a_] := 0;
-	
+		
 		(*Default group generator properties.*)
 		Clear @ tGen;
 		tGen /: del[rep_, a___, x_, b___] tGen[rep_, A_, c___, x_, d___] := tGen[rep, A, c, a, b, d];
@@ -75,14 +75,14 @@ ReInitializeSymbols[] :=
 	Trans[0] = 0;
 (*Matrix head for symbolic matrix manipulations*)
 	Matrix /: del[ind_, a___, x_, b___] Matrix[m__][c___, ind_[x_], d___] := Matrix[m][c, ind[a, b], d];
-	Matrix /: Matrix[m1__][a_] Matrix[m2__][a_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][a];
+	Matrix /: Matrix[m1__][a_] Matrix[m2__][a_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][];
 	Matrix /: Matrix[m1__][b_] Matrix[m2__][b_, c_] := Matrix[Sequence @@ Reverse[Trans /@ List@m2], m1][c];
 	Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][b_] := Matrix[m1, m2][a];
 	Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][b_, c_] := Matrix[m1, m2][a, c];
 	Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][c_, b_] := Matrix[m1, Sequence @@ Reverse[Trans /@ List@m2]][a, c];
 	Matrix /: Matrix[m1__][b_, a_] Matrix[m2__][b_, c_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][a, c];
-	Matrix[m__][] := m;
-	Matrix[m__][Null] := m;
+	Matrix[m_][] := m;
+	(*Matrix[m__][Null] := m;*)
 	Matrix[___, 0, ___][___] = 0;
 	(*Matrix[m__][a_, a_] := Tr @ Dot[m];*)
 	Matrix[m__][a_, a_] :=
@@ -95,10 +95,11 @@ ReInitializeSymbols[] :=
 		];
 		
 (*Formating*)
-	Format[Trans[x_]] := x^Global`T;
+	Format[Trans[x_]] := HoldForm[x^Global`T];
 	Format[Bar[x_]] := OverBar @ x;
 	Format[Trans[Bar[x_]] ] := x^Style[Global`\[Dagger], Bold, 12];
-	Format[Matrix[x__][h1_[i1_] ] ]:= Subscript[Dot[x], i1];
+	Format[Matrix[x_, y__][] ] := HoldForm @Dot[x, y];
+	Format[Matrix[x__][h1_[i1_] ] ] := Subscript[Dot[x], i1];
 	Format[Matrix[x__][h1_[i1_], h2_[i2_]] ] := Subscript[Dot[x], i1, i2];
 	
 
@@ -177,12 +178,19 @@ DefineSUGroup[group_Symbol, n_Integer|n_Symbol] :=
 	];
 
 (*Initialization for a U(1) gauge group.*)	
-DefineU1Group[group_Symbol] := 
+DefineU1Group[group_Symbol, power_Integer:1] := 
 	Block[{},
-		del[group[_], ___] = 1;
-		Dim[group[x_]] = 1;
-		tGen[group[x_], ___] = x; 
-		Dim[group[adj]] = 1; 
+		Switch[power
+		,1,
+			del[group[_], ___] = 1;
+			Dim[group[_]] = 1;
+			tGen[group[x_], ___] = x; 
+		,n_ /; n > 1,
+			tGen[group[x_List], A_, a_, b_] = Matrix[x][group[adj][A]];
+			Dim[group[adj]] = power; 
+			del[group[_List], ___] = 1;
+			Dim[group[_List]] = 1; 
+		];
 		fStruct[group, __] = 0; 
 	];
 

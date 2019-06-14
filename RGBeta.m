@@ -59,8 +59,8 @@ $RGBetaVersion::usage =
 adj::usage = fund::usage = S2::usage = A2::usage =
 	"Representation name defined defined by the Define(SO/Sp/SU)Group functions."
 
-f1::usage = f2::usage =  s1::usage =  s2::usage =  s3::usage =  s4::usage =
-	"Index name used for flavor indices on yukawa or quartic couplings."  
+f1::usage = f2::usage =  s1::usage =  s2::usage =  s3::usage =  s4::usage = v1::usage = v2::usage =
+	"Index name used for flavor indices on kinetic mixings or Yukawa or quartic couplings."  
 
 del::usage = 
 	"del[rep, a, b] represents a Kronecker delta in \"rep space\" with indices a and b."
@@ -87,9 +87,9 @@ tGen::usage =
 	"tGen[rep, A, a, b] represents a group generator of the representation \"rep\" with adjoint index A. a and b are the two indices of rep. "
 
 Chirality::usage = Coupling::usage = CouplingBar::usage = FermionMass::usage = Field::usage = Fields::usage = FlavorIndices::usage = 
-	GaugeRep::usage = Indices::usage = Invariant::usage = LieGroup::usage = Mass::usage= Projector::usage = Quartic::usage =
+	GaugeRep::usage = Indices::usage = Invariant::usage = KineticMixing::usage = LieGroup::usage = Mass::usage= Projector::usage = Quartic::usage =
 	ScalarMass::usage = SelfConjugate::usage = Trilinear::usage = Yukawa::usage = 
-	"Key used in global association lists of fields and/or couplings."
+	"Function option and/or key used in global association lists of fields and/or couplings."
 
 SO::usage = Sp::usage = SU::usage = U::usage =
 	"SO, Sp, SU, and U are used to specify different Lie groups."

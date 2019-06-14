@@ -67,7 +67,8 @@ AddVector[name_, group_] :=
 (*Function for adding gauge groups to the model*)
 AddGaugeGroup::unkown = "`1` is not a reckognized Lie group."
 AddGaugeGroup::nonstring = "Use a string for the field or leave it as the default value."
-AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[{Field -> Automatic}]] :=
+Options[AddGaugeGroup] = {CouplingMatrix -> {{}}, Field -> Automatic, KineticMixing -> 1};
+AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[]] :=
 	Block[{projector, fieldName},
 		(*Sets the field name*)
 		Switch[OptionValue @ Field
@@ -90,7 +91,7 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[{
 				Message[AddGaugeGroup::unkown, lieGroup[n] ];
 				Return @ Null;
 			];
-			DefineU1Group[groupName];
+			DefineU1Group[groupName, OptionValue @ KineticMixing];
 		,_,
 			Message[AddGaugeGroup::unkown, lieGroup[n] ];
 			Return @ Null;
@@ -98,26 +99,41 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[{
 		
 		(*Sets up the gauge fields and 2-point projection*)
 		AddVector[fieldName, groupName];
-		projector = With[{V = fieldName, gStruct = del[groupName[adj], v1, v2] / Dim @ groupName[adj]}, 
-			sDelV[V, #1, v1] sDelV[V, #2, v2] gStruct &]; 
+		projector = With[{V = fieldName, 
+			gStruct = If[OptionValue @ KineticMixing === 1,
+				del[groupName[adj], v1, v2] / Dim @ groupName[adj]
+				, 1]
+			}, 
+			sDelV[V, #1, v1] sDelV[V, #2, v2] gStruct &
+		]; 
 		
 		(*Adds the group information and the coupling to the repsective lists*)
 		AppendTo[$gaugeGroups, groupName -> 
 			<|Coupling -> coupling,
-			Field -> fieldName, 
+			Field -> fieldName,
+			KineticMixing -> OptionValue @ KineticMixing, 
 			LieGroup -> lieGroup[n], 
 			Projector -> projector|>];
 		AppendTo[$couplings, coupling -> groupName];
+		
+		(*For Abelian groups with Kinetic mixing*)
+		(*If[OptionValue @ KineticMixing > 1,
+			$gaugeGroups[groupName, Coupling] = CouplingMatrix;
+		];*)
 		
 		FlushBetas[];
 	];
 
 (*The general gauge coupling matrix G^2_{AB} used in the computation of the beta function tensors*)
-G2Matrix[A_, B_, power_: 1] := 
+G2Matrix[A_, B_] := 
 	Module[{gauge, v1, v2},
 		Sum[
 			sDelV[$gaugeGroups[gauge, Field], A, v1] sDelV[$gaugeGroups[gauge, Field], B, v2] 
-				*Power[$gaugeGroups[gauge, Coupling], 2 power] del[gauge[adj], v1, v2]  
+				* If[$gaugeGroups[gauge, KineticMixing] > 1,
+					Matrix[$gaugeGroups[gauge, Coupling]][gauge[adj] @v1, gauge[adj] @v2]
+				,
+					$gaugeGroups[gauge, Coupling]^2 del[gauge[adj], v1, v2]
+				]  
 		,{gauge, Keys @ $gaugeGroups}]
 	];
 	

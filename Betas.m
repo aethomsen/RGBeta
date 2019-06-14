@@ -40,8 +40,21 @@ BetaTerm::yukawaLoops = "The Yukawa beta function is only implemented to 2 loops
 BetaTerm::quarticLoops = "The quartic beta function is only implemented to 2 loops."
 BetaTerm::loopNumber = "The `1` beta function is only implemented up to `2` loops."
 BetaTerm::unkown = "The coupling `1` has not been defined."
-BetaTerm[coupling_Symbol, loop_Integer] :=
-	Module[{beta, tensor, C1, C2},
+BetaTerm[coupling_, loop_Integer] :=
+	Module[{beta, couplingType,  tensor, C1, C2},
+		(*
+		(*Treats special cases of kinetic mixing and quartic projectors mixing*)
+		If[Head @ coupling === List,
+			(*Checks if all couplings are U(1)*)
+			couplingType = $couplings /@ coupling;
+			Switch[couplingType
+			,_, 
+				Message[BetaTerm::loopNumber, "Yukawa", 2];
+				Return[Null];
+			];
+		];*)
+		
+		(*Returns the beta term for single couplings*)
 		Switch[$couplings @ coupling
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
 			If[loop > 3, 
