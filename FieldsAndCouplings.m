@@ -148,11 +148,11 @@ G2Matrix[A_, B_] :=
 	
 (*Defining the gauge generators for the left-handed spinors, \bar{\psi} T^A \psi.*)
 TfLeft[A_, i_, j_] := 
-	Module[{ferm, group, rep, gRep1, gRep2, f1, f2, v}, 
+	Module[{ferm, group, rep, gRep1, gRep2, f1, f2, v1}, 
 		Sum[
 			sDelF[Bar @ ferm, i, f1] sDelF[ferm, j, f2] * Product[del[rep, f1, f2], {rep, $fermions[ferm, FlavorIndices]}]
 			* Sum[group = Head@ If[Head@ gRep1 === Bar, gRep1[[1]], gRep1]; 
-					sDelV[$gaugeGroups[group, Field], A, v] tGen[gRep1, v, f1, f2] 
+					sDelV[$gaugeGroups[group, Field], A, v1] tGen[gRep1, v1, f1, f2] 
 					* Product[del[gRep2, f1, f2], {gRep2, DeleteCases[$fermions[ferm, GaugeRep], gRep1]}], 
 				{gRep1, $fermions[ferm, GaugeRep]}] 
 		,{ferm, Keys @ $fermions}]
@@ -164,12 +164,12 @@ TfermTil[A_, i_, j_] := {{-TfLeft[A, j, i], 0}, {0, TfLeft[A, i, j]}};
 
 (*The general scalar gauge generators used in the computation of the beta function tensors*)
 Tscal[A_, a_, b_] := 
-	Module[{scal, group, rep, gRep1, gRep2, s1, s2, v}, 
+	Module[{scal, group, rep, gRep1, gRep2, s1, s2, v1}, 
 		Sum[
 			AntiSym[a, b][sDelS[Bar @ scal, a, s1] sDelS[scal, b, s2]]  
 			* Product[del[rep, s1, s2], {rep, $scalars[scal, FlavorIndices]}]
 			* Sum[group = Head@ If[Head@ gRep1 === Bar, gRep1[[1]], gRep1];
-					sDelV[$gaugeGroups[group, Field], A, v] tGen[gRep1, v, s1, s2] 
+					sDelV[$gaugeGroups[group, Field], A, v1] tGen[gRep1, v1, s1, s2] 
 					* Product[del[gRep2, s1, s2], {gRep2, DeleteCases[$scalars[scal, GaugeRep], gRep1]}],
 				{gRep1, $scalars[scal, GaugeRep]}] 
 		,{scal, Keys @ $scalars}]
@@ -464,9 +464,19 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 		];
 		
 		(*Defines the projection operator for extracting out the particular quartic coupling.*)
-		symmetryFactor = 24 / Length @ DeleteDuplicates @ Permutations @ {phi1, phi2, phi3, phi4};	
+		(*symmetryFactor = 24 / Length @ DeleteDuplicates @ Permutations @ {phi1, phi2, phi3, phi4};	
 		projection = With[{c = normalization /24 /symmetryFactor / Expand[OptionValue[GroupInvariant][a, b, c, d] 
 				* (OptionValue[GroupInvariant][a, b, c, d] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b])],
+				gInv = OptionValue[GroupInvariant][s1, s2, s3, s4] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b] },
+			c sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[Bar@phi3, #3, s3] * sDelS[Bar@phi4, #4, s4] gInv &
+			];*)
+		
+		(*The symmetry factor is the total of all the different ways the GroupInvariant function can be contracted into the quartic coupling.*)
+		symmetryFactor = Expand[ OptionValue[GroupInvariant][a, b, c, d] 
+			* (Plus@@ OptionValue[GroupInvariant]@@@ DeleteCases[ Permutations@{{phi1, a}, {phi2, b}, {phi3, c}, {phi4, d}}, 
+					_?(#[[;; , 1]] =!= {phi1, phi2, phi3, phi4} &)][[;; , ;; , 2]] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]
+				) ];
+		projection = With[{c = normalization / 24 / symmetryFactor,
 				gInv = OptionValue[GroupInvariant][s1, s2, s3, s4] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b] },
 			c sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[Bar@phi3, #3, s3] * sDelS[Bar@phi4, #4, s4] gInv &
 			];
@@ -606,7 +616,7 @@ AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] :=
 		AppendTo[$scalarMasses, coupling -> 
 			<|Coupling -> lam,
 			CouplingBar -> lambar,
-			Fields -> {phi1, phi2, phi3},
+			Fields -> {phi1, phi2},
 			Indices -> OptionValue @ MassIndices,
 			Invariant -> OptionValue @ GroupInvariant,
 			Projector -> projection,

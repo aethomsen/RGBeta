@@ -51,6 +51,10 @@ ReInitializeSymbols[] :=
 		tGen /: del[group_[adj], A___, X_, B___] tGen[group_[rep_], X_, c__] := tGen[group[rep], A, B, c];
 		tGen /: tGen[rep_, A_, a_, b_] tGen[rep_, A_, b_, c_] := Casimir2[rep] del[rep, a, c];
 		tGen /: tGen[rep_, A_, a_, b_] tGen[rep_, B_, b_, a_] := TraceNormalization[rep] del[Head[rep][adj], A, B];
+		(*For the real representation we need*)
+		tGen /: Power[tGen[rep_, A_, a_, b_], 2] := -Casimir2[rep] * Dim[rep];
+		tGen /: tGen[rep_, A_, a_, b_] tGen[rep_, A_, c_, b_] := - Casimir2[rep] del[rep, a, c];
+		tGen /: tGen[rep_, A_, b_, a_] tGen[rep_, A_, b_, c_] := - Casimir2[rep] del[rep, a, c];
 		tGen[rep_, A_, a_, a_] = 0;
 		tGen[Bar[rep_], A_, a_, b_ ] = - tGen[rep, A, b, a]; 
 		
@@ -84,7 +88,7 @@ ReInitializeSymbols[] :=
 	Matrix /: Matrix[m1__][b_, a_] Matrix[m2__][b_, c_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][a, c];
 	Matrix[a_List, b_List] = Matrix[Dot[a, b]];
 	Matrix[m_][] := m;
-	(*Matrix[m__][Null] := m;*)
+	Matrix[m_][Null] := m;
 	Matrix[___, 0, ___][___] = 0;
 	(*Matrix[m__][a_, a_] := Tr @ Dot[m];*)
 	Matrix[m__][a_, a_] :=
