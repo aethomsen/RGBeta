@@ -233,9 +233,10 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 		];
 		
 		(*Constructs the coupling structure*)
-		normalization = 2; (*To account for the symmetrization in Yukawa[a, i, j]*)
+		normalization = 1; (*To account for the structure deltas working with real/complex scalars in Yuk[a, i, j]*)
 		If[!$scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization *= 1/Sqrt[2];];
-		With[{n = normalization, g0 = g},
+		
+		With[{n = 2 * normalization, g0 = g},
 			If[Length @ coupling <= 2,
 				yuk = n Matrix[g0]@ ## &;
 				yukbar = n Matrix[Bar @g0]@ ## &
@@ -262,8 +263,8 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 		];
 		
 		(*Defines the projection operator for extracting out the particular Yukawa coupling.*)
-		symmetryFactor = If[psi1 === psi2, 2, 1];
-		projection = With[{c = normalization/2 /symmetryFactor/ Expand[OptionValue[GroupInvariant][a,b,c] 
+		(*symmetryFactor = If[psi1 === psi2, 2, 1];
+		projection = With[{c = normalization /symmetryFactor/ Expand[OptionValue[GroupInvariant][a,b,c] 
 				*(OptionValue[GroupInvariant][a,b,c] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b])], 
 				gInv = OptionValue[GroupInvariant][s, f1, f2] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]}, 
 			Switch[OptionValue @ Chirality
@@ -271,6 +272,22 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 				c sDelS[Bar@ phi, #1, s] sDelF[Bar@ psi1, #2, f1] sDelF[Bar@ psi2, #3, f2] gInv &	
 			,Right,
 				c sDelS[phi, #1, s] sDelF[psi1, #2, f1] sDelF[psi2, #3, f2] gInv &
+			]
+		];*)
+		
+		(*The symmetry factor is the total of all the different ways the GroupInvariant function can be contracted into the quartic coupling.*)
+		symmetryFactor = Expand[ OptionValue[GroupInvariant][a, i, j] 
+			* (Plus@@ OptionValue[GroupInvariant]@@@ DeleteCases[ Permutations@{{phi, a}, {psi1, i}, {psi2, j}}, 
+					_?(#[[;; , 1]] =!= {phi, psi1, psi2} &)][[;; , ;; , 2]] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]
+				) ] //Simplify;
+		(*Defines the projection operator for extracting out the particular quartic coupling.*)
+		projection = With[
+			{c = normalization /symmetryFactor,	gInv = OptionValue[GroupInvariant][s1, f1, f2] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]}, 
+			Switch[OptionValue @ Chirality
+			,Left,
+				c sDelS[Bar@ phi, #1, s1] sDelF[Bar@ psi1, #2, f1] sDelF[Bar@ psi2, #3, f2] gInv &	
+			,Right,
+				c sDelS[phi, #1, s1] sDelF[psi1, #2, f1] sDelF[psi2, #3, f2]  gInv &
 			]
 		];
 		
@@ -341,18 +358,22 @@ AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] :=
 			];
 		];
 		
-		(*Defines the projection operator for extracting out the particular Yukawa coupling.*)
-		symmetryFactor = If[psi1 === psi2, 2, 1];
+		(*The symmetry factor is the total of all the different ways the GroupInvariant function can be contracted into the quartic coupling.*)
+		symmetryFactor = Expand[ OptionValue[GroupInvariant][a, b] 
+			* (Plus@@ OptionValue[GroupInvariant]@@@ DeleteCases[ Permutations@{{psi1, a}, {psi2, b}}, 
+					_?(#[[;; , 1]] =!= {psi1, psi2} &)][[;; , ;; , 2]] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]
+				) ] //Simplify;
+		(*Defines the projection operator for extracting out the particular quartic coupling.*)
 		projection = With[
-			{c = 1 /symmetryFactor/ Expand[OptionValue[GroupInvariant][a,b]	*OptionValue[GroupInvariant][a,b] ], 
-			gInv = OptionValue[GroupInvariant][f1, f2]}, 
+			{c = 1 /symmetryFactor,	gInv = OptionValue[GroupInvariant][f1, f2] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]}, 
 			Switch[OptionValue @ Chirality
 			,Left,
-				c sDelS[$vevSelect, #1, s] sDelF[Bar@ psi1, #2, f1] sDelF[Bar@ psi2, #3, f2] gInv &	
+				c sDelS[$vevSelect, #1, s1] sDelF[Bar@ psi1, #2, f1] sDelF[Bar@ psi2, #3, f2] gInv &	
 			,Right,
-				c sDelS[$vevSelect, #1, s] sDelF[psi1, #2, f1] sDelF[psi2, #3, f2] gInv &
+				c sDelS[$vevSelect, #1, s1] sDelF[psi1, #2, f1] sDelF[psi2, #3, f2]  gInv &
 			]
 		];
+		
 		
 		(*Adds the Yukawa coupling to the association*)
 		AppendTo[$fermionMasses, mass -> 
@@ -433,11 +454,13 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 		If[OptionValue @ SelfConjugate, 
 			Bar @ coupling = coupling;
 		];
-		normalization = 24; (*To account for the symmetrization in Lam[a, b, c, d]*)
+		
+		normalization = 1; (*To account for the structure deltas working with real/complex scalars in Lam[a, b, c, d]*)
 		Do[
 			If[!$scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization *= 1/Sqrt[2];];
 		,{phi, {phi1, phi2, phi3, phi4}}];
-		With[{n = normalization},
+		
+		With[{n = 24 * normalization},
 			If[Length @ coupling <= 2,
 				lam = n Matrix[coupling]@ ## &;
 				lambar = n Matrix[Bar @ coupling]@ ## &
@@ -475,8 +498,9 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 		symmetryFactor = Expand[ OptionValue[GroupInvariant][a, b, c, d] 
 			* (Plus@@ OptionValue[GroupInvariant]@@@ DeleteCases[ Permutations@{{phi1, a}, {phi2, b}, {phi3, c}, {phi4, d}}, 
 					_?(#[[;; , 1]] =!= {phi1, phi2, phi3, phi4} &)][[;; , ;; , 2]] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]
-				) ];
-		projection = With[{c = normalization / 24 / symmetryFactor,
+				) ] //Simplify;
+		(*Defines the projection operator for extracting out the particular quartic coupling.*)
+		projection = With[{c = normalization / symmetryFactor,
 				gInv = OptionValue[GroupInvariant][s1, s2, s3, s4] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b] },
 			c sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[Bar@phi3, #3, s3] * sDelS[Bar@phi4, #4, s4] gInv &
 			];
@@ -525,11 +549,13 @@ AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] :=
 		If[OptionValue @ SelfConjugate, 
 			Bar @ coupling = coupling;
 		];
-		normalization = 24; (*To account for the symmetrization in Lam[a, b, c, d]*)
+		
+		normalization = 1; (*To account for the structure deltas working with real/complex scalars in Lam[a, b, c, d]*)
 		Do[
 			If[!$scalars[phi, SelfConjugate] || Head @ phi === Bar, normalization *= 1/Sqrt[2];];
 		,{phi, {phi1, phi2, phi3}}];
-		With[{n = normalization},
+		
+		With[{n = 24 * normalization},
 			If[Length @ coupling <= 2,
 				lam = n Matrix[coupling]@ ## &;
 				lambar = n Matrix[Bar @ coupling]@ ## &
@@ -539,13 +565,16 @@ AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] :=
 			];
 		];
 			
+		(*The symmetry factor is the total of all the different ways the GroupInvariant function can be contracted into the quartic coupling.*)
+		symmetryFactor = Expand[ OptionValue[GroupInvariant][a, b, c] 
+			* (Plus@@ OptionValue[GroupInvariant]@@@ DeleteCases[ Permutations@{{phi1, a}, {phi2, b}, {phi3, c}}, 
+					_?(#[[;; , 1]] =!= {phi1, phi2, phi3} &)][[;; , ;; , 2]] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]
+				) ] //Simplify;
 		(*Defines the projection operator for extracting out the particular quartic coupling.*)
-		symmetryFactor = 6 / Length @ DeleteDuplicates @ Permutations @ {phi1, phi2, phi3};	
-		projection = With[{c = normalization /24 /symmetryFactor / Expand[OptionValue[GroupInvariant][a, b, c] 
-				* (OptionValue[GroupInvariant][a, b, c] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b])],
+		projection = With[{c = normalization / symmetryFactor,
 				gInv = OptionValue[GroupInvariant][s1, s2, s3] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b] },
 			c sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[Bar@phi3, #3, s3] * sDelS[$vevSelect, #4, s4] gInv &
-		];
+			];
 		
 		(*Adds the quartic coupling to the association*)
 		AppendTo[$trilinears, coupling -> 
@@ -590,11 +619,13 @@ AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] :=
 		If[OptionValue @ SelfConjugate, 
 			Bar @ coupling = coupling;
 		];
-		normalization = 24; (*To account for the symmetrization in Lam[a, b, c, d]*)
+		
+		normalization = 1; (*To account for the structure deltas working with real/complex scalars in Lam[a, b, c, d]*)
 		Do[
 			If[!$scalars[phi, SelfConjugate] || Head @ phi === Bar, normalization *= 1/Sqrt[2];];
 		,{phi, {phi1, phi2}}];
-		With[{n = normalization},
+		
+		With[{n = 24 * normalization},
 			If[Length @ coupling <= 2,
 				lam = n Matrix[coupling]@ ## &;
 				lambar = n Matrix[Bar @ coupling]@ ## &
@@ -603,14 +634,17 @@ AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] :=
 				lambar = n Bar[coupling] @ ## &
 			];
 		];
-			
+				
+		(*The symmetry factor is the total of all the different ways the GroupInvariant function can be contracted into the quartic coupling.*)
+		symmetryFactor = 2 * Expand[ OptionValue[GroupInvariant][a, b] (*there's an extra factor 2 from the 2 vevs.*)
+			* (Plus@@ OptionValue[GroupInvariant]@@@ DeleteCases[ Permutations@{{phi1, a}, {phi2, b}}, 
+					_?(#[[;; , 1]] =!= {phi1, phi2} &)][[;; , ;; , 2]] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]
+				) ] //Simplify;
 		(*Defines the projection operator for extracting out the mass from the quartic couplings.*)
-		symmetryFactor = If[phi1 === phi2, 4, 2];	(*there's an extra factor 2 from the 2 vevs.*)
-		projection = With[{c = normalization /24 /symmetryFactor / Expand[OptionValue[GroupInvariant][a, b] 
-				* OptionValue[GroupInvariant][a, b]],
+		projection = With[{c = normalization / symmetryFactor,
 				gInv = OptionValue[GroupInvariant][s1, s2] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b] },
 			c sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[$vevSelect, #3, s3] * sDelS[$vevSelect, #4, s4] gInv &
-		];
+			];
 		
 		(*Adds the quartic coupling to the association*)
 		AppendTo[$scalarMasses, coupling -> 
