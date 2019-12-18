@@ -1,11 +1,11 @@
 (*
 ################################################################
 This is RGBeta, Version 0.2. 
-Last modefied xx-03-2019
+Last modefied 18-12-2019
 
 Copyright...
 
-Anders Eller Thomsen 
+Author: Anders Eller Thomsen 
 ################################################################
 *)
 
@@ -65,8 +65,14 @@ f1::usage = f2::usage =  s1::usage =  s2::usage =  s3::usage =  s4::usage = v1::
 del::usage = 
 	"del[rep, a, b] represents a Kronecker delta in \"rep space\" with indices a and b."
 
+delA2::usage = 
+	"delA2[group, a, i, j] represents the singlet contraction between the A2 index a and the two fundamental indices i and j."
+
 delIndex::usage = 
 	"del[rep, a, b] represents a Kronecker delta function in \"rep space\" with either a or b being an Integer fixing the value of the other summation index."
+
+delS2::usage = 
+	"delS2[group, a, i, j] represents the singlet contraction between the S2 index a and the two fundamental indices i and j."
 
 eps::usage = 
 	"eps[rep, a, b] represents the 2-index antisymmetric tensor in \"rep space\" with indices a and b."
@@ -87,7 +93,7 @@ tGen::usage =
 	"tGen[rep, A, a, b] represents a group generator of the representation \"rep\" with adjoint index A. a and b are the two indices of rep. "
 
 Chirality::usage = Coupling::usage = CouplingBar::usage = FermionMass::usage = Field::usage = Fields::usage = FlavorIndices::usage = 
-	GaugeRep::usage = Indices::usage = Invariant::usage = KineticMixing::usage = LieGroup::usage = Mass::usage= Projector::usage = Quartic::usage =
+	GaugeRep::usage = GroupInvariant::usage = Indices::usage = Invariant::usage = KineticMixing::usage = LieGroup::usage = Mass::usage= Projector::usage = Quartic::usage =
 	ScalarMass::usage = SelfConjugate::usage = Trilinear::usage = Yukawa::usage = 
 	"Function option and/or key used in global association lists of fields and/or couplings."
 
@@ -189,6 +195,9 @@ RemoveInteraction::usage =
 
 ResetModel::usage = 
 	"ResetModel[] resets all tensors and removes all fields and coupling definitions made in the current instance of RGBeta."
+
+RefineGroupStructures::usage = 
+	"RefineGroupStructures[expr] decomposes generators of non-fundamental representations of the groups to the fundamental ones, whereby identities can be applied."
 
 ReInitializeSymbols::usage = 
 	"ReInitializeSymbols[] is a function which when called flushes all previous definitions for symbol behaviour under implicit summation."

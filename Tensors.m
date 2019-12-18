@@ -139,7 +139,7 @@ GaugeTensors[loop_Integer] := GaugeTensors[loop] =
 			bg[2, 4] := Ttimes[C2G[$A, C1], G2Matrix[C1, C2], S2F[C2, $B]];
 			bg[2, 5] := Ttimes[C2G[$A, C1], G2Matrix[C1, C2], S2S[C2, $B]];
 			bg[2, 6] := S2FY2F[$A, $B];
-			bg[2, 7] := S2SY2S[$A, $B];
+			bg[2, 7] := 0 (*S2SY2S[$A, $B]*);
 		,3,
 		(*y^0 terms*)
 			bg[3, 1] := Tr@Tdot[Tferm[$B, l, i], Tferm[$A, i, j], C2F[j, k], C2F[k, l]];
@@ -198,7 +198,7 @@ YukawaTensors[loop_Integer] := YukawaTensors[loop] =
 		,0,
 			Return[- \[Epsilon] / 2 Yuk[$a, $i, $j] ];
 		,1,
-			bYuk[1, 1] := Yuk[b, $i, $j] C2S[$a, b] // Expand;
+			bYuk[1, 1] := 0 (*Yuk[b, $i, $j] C2S[$a, b] // Expand*);
 			bYuk[1, 2] := Tdot[C2Ft[$i, k1], Yuk[$a, k1, $j]] // Sym[$i, $j];
 			bYuk[1, 3] := Tdot[Yuk[b, $i, k1], YukTil[$a, k1, k2], Yuk[b, k2, $j]];
 			bYuk[1, 4] := Tdot[Y2F[$i, k1], Yuk[$a, k1, $j]] // Sym[$i, $j];
@@ -207,7 +207,7 @@ YukawaTensors[loop_Integer] := YukawaTensors[loop] =
 		(* y^1 terms*)
 			bYuk[2, 1] := Ttimes[Yuk[c, $i, $j], C2S[c, b], C2S[b, $a]];
 			bYuk[2, 2] := Tdot[C2Ft[$i, k], Yuk[b, k, $j]] C2S[b, $a] // Expand // Sym[$i, $j];
-			bYuk[2, 3] := Tdot[C2Ft[$i, k1], Yuk[$a, k1, k2], C2F[k2, $j]];
+			bYuk[2, 3] := 0 (*Tdot[C2Ft[$i, k1], Yuk[$a, k1, k2], C2F[k2, $j]]*);
 			bYuk[2, 4] := Tdot[C2Ft[$i, k1], C2Ft[k1, k2], Yuk[$a, k2, $j]] // Sym[$i, $j];
 			bYuk[2, 5] := Yuk[b, $i, $j] C2SC2G[b, $a] // Expand;
 			bYuk[2, 6] := Yuk[b, $i, $j] C2SS2S[b, $a] // Expand;
@@ -218,7 +218,7 @@ YukawaTensors[loop_Integer] := YukawaTensors[loop] =
 			bYuk[2, 11] := Yuk[b, $i, $j] Lam2[b, $a] // Expand;
 		(*y^3 terms*)
 			bYuk[2, 12] := Tdot[TfermTil[A, $i, k1], Yuk[$a, k1, k2], YukTil[b, k2, k3], TfG2t[A, k3, k4], Yuk[b, k4, $j]] // Sym[$i, $j];
-			bYuk[2, 13] := Tdot[Y2F[$i, k1], TfermTil[A, k1, k2], Yuk[$a, k2, k3], TfG2[A, k3, $j]] // Sym[$i, $j];
+			bYuk[2, 13] := 0 (*Tdot[Y2F[$i, k1], TfermTil[A, k1, k2], Yuk[$a, k2, k3], TfG2[A, k3, $j]] // Sym[$i, $j]*);
 			bYuk[2, 14] := Tdot[Yuk[b, $i, k1], YukTil[$a, k1, k2], Yuk[c, k2, $j]] C2S[b, c] // Expand;
 			bYuk[2, 15] := Tdot[Yuk[b, $i, k1], YukTil[c, k1, k2], Yuk[b, k2, $j]] C2S[c, $a] // Expand;
 			bYuk[2, 16] := Tdot[Yuk[b, $i, k1], C2F[k1, k2], YukTil[$a, k2, k3], Yuk[b, k3, $j]] // Sym[$i, $j];
@@ -227,13 +227,13 @@ YukawaTensors[loop_Integer] := YukawaTensors[loop] =
 			bYuk[2, 19] := Yuk[$a, $i, k].Y2FC2St[k, $j] // Expand // Sym[$i, $j];
 			bYuk[2, 20] := Yuk[$a, $i, k].Y2FC2Ft[k, $j] // Expand // Sym[$i, $j];
 			bYuk[2, 21] := Tdot[Yuk[$a, $i, k1], Y2Ft[k1, k2], C2F[k2, $j]] // Sym[$i, $j];
-			bYuk[2, 22] := Ttimes[Yuk[c, $i, $j], Y2S[c, b], C2S[b, $a]];
+			bYuk[2, 22] := 0 (*Ttimes[Yuk[c, $i, $j], Y2S[c, b], C2S[b, $a]]*);
 			bYuk[2, 23] := Tdot[Yuk[b, $i, k1], YukTil[c, k1, k2], Yuk[d, k2, $j]] Lam[$a, b, c, d] // Expand;
 		(*y^5 terms*)
 			bYuk[2, 24] := Tdot[Yuk[b, $i, k1], YukTil[c, k1, k2], Yuk[$a, k2, k3], YukTil[b, k3, k4], Yuk[c, k4, $j]];
-			bYuk[2, 25] := Tdot[Yuk[b, $i, k1], YukTil[$a, k1, k2], Yuk[c, k2, k3], YukTil[b, k3, k4], Yuk[c, k4, $j]] // Sym[$i, $j];
+			bYuk[2, 25] := 0 (*Tdot[Yuk[b, $i, k1], YukTil[$a, k1, k2], Yuk[c, k2, k3], YukTil[b, k3, k4], Yuk[c, k4, $j]] // Sym[$i, $j]*);
 			bYuk[2, 26] := Tdot[Yuk[c, $i, k1], YukTil[b, k1, k2], Yuk[$a, k2, k3], YukTil[b, k3, k4], Yuk[c, k4, $j]];
-			bYuk[2, 27] := Tdot[Yuk[$a, $i, k], Y4cFt[k, $j]] // Sym[$i, $j];
+			bYuk[2, 27] := 0 (*Tdot[Yuk[$a, $i, k], Y4cFt[k, $j]] // Sym[$i, $j]*);
 			bYuk[2, 28] := Yuk[b, $i, $j] Y4cS[b, $a] // Expand;
 			bYuk[2, 29] := Tdot[Yuk[b, $i, k1], Y2Ft[k1, k2], YukTil[$a, k2, k3], Yuk[b, k3, $j]] // Sym[$i, $j];
 			bYuk[2, 30] := Tdot[Yuk[$a, $i, k], Y2FY2Ft[k, $j]] // Sym[$i, $j];
@@ -275,7 +275,7 @@ QuarticTensors[loop_Integer] := QuarticTensors[loop] =
 			bl[2, 5] := Ttimes[TsG2[A1, $a, b1], TsG2[A2, b1, $b], S2F[A2, A3], Tscal[A1, $c, b2], TsG2[A3, b2, $d]] // Sym[$a, $b, $c, $d];
 			bl[2, 6] := Ttimes[FourGLam[$a, b1, $d, b2], Lam[b1, b2, $b, $c]] // Sym[$a, $b, $c, $d];
 			bl[2, 7] := Ttimes[FourGLam[$a, $b, b1, b2], Lam[b1, b2, $c, $d]] // Sym[$a, $b, $c, $d];
-			bl[2, 8] := Ttimes[Lam[$a, $b, b1, b2], C2S[b1, $c], C2S[b2, $d]] // Sym[$a, $b, $c, $d];
+			bl[2, 8] := 0 (*Ttimes[Lam[$a, $b, b1, b2], C2S[b1, $c], C2S[b2, $d]] // Sym[$a, $b, $c, $d]*);
 			bl[2, 9] := Ttimes[C2S[$a, b1], C2S[b1, b2], Lam[b2, $b, $c, $d] ]  // Sym4[$a, $b, $c, $d];
 			bl[2, 10] := Ttimes[C2SC2G[$a, b1], Lam[b1, $b, $c, $d] ]  // Sym4[$a, $b, $c, $d];
 			bl[2, 11] := Ttimes[C2SS2S[$a, b1], Lam[b1, $b, $c, $d] ]  // Sym4[$a, $b, $c, $d];
@@ -286,25 +286,25 @@ QuarticTensors[loop_Integer] := QuarticTensors[loop] =
 			bl[2, 15] := Ttimes[C2S[$a, b1], Lam[b1, $b, b2, b3], Lam[b2, b3, $c, $d]]  // Sym[$a, $b, $c, $d];
 			bl[2, 16] := Ttimes[Lam2[$a, b1], Lam[b1,$b, $c, $d]]  // Sym4[$a, $b, $c, $d];
 			bl[2, 17] := Ttimes[Lam[$a, b1, b2, b3], Lam[$b, b4, b2, b3], Lam[b1, b4, $c, $d]] // Sym[$a, $b, $c, $d];
-			bl[2, 18] := Ttimes[Lam[$a, $b, b1, b2], Lam[b1, b2, b3, b4], Lam[b3, b4, $c, $d]] // Sym[$b, $c, $d];
+			bl[2, 18] := 0 (*Ttimes[Lam[$a, $b, b1, b2], Lam[b1, b2, b3, b4], Lam[b3, b4, $c, $d]] // Sym[$b, $c, $d]*);
 		(*y^2 terms*)
 			bl[2, 19] := Ttimes[Tr @ Tdot[Yuk[$a, k4, k1], Tferm[A1, k1, k2], Tferm[A2, k2, k3], YukTil[$b, k3, k4]], 
 				TsG2[A1, $c, b1], TsG2[A2, b1, $d]] // Sym[$a, $b, $c, $d];
 			bl[2, 20] := Ttimes[Y2S[$a, b1], FourGLam[b1, $b, $c, $d]] // Sym[$a, $b, $c, $d];
 			bl[2, 21] := Ttimes[Y2SC2F[$a, b1], Lam[b1, $b, $c, $d]] // Sym4[$a, $b, $c, $d];
-			bl[2, 22] := Ttimes[C2S[$a, b1], Y2S[b1, b2], Lam[b2, $b, $c, $d] ]  // Sym4[$a, $b, $c, $d];
+			bl[2, 22] := 0 (*Ttimes[C2S[$a, b1], Y2S[b1, b2], Lam[b2, $b, $c, $d] ]  // Sym4[$a, $b, $c, $d]*);
 			bl[2, 23] := Ttimes[Lam[$a, $b, b1, b2], Y2S[b2, b3], Lam[b3, b1, $c, $d]] // Sym[$b, $c, $d];
 		(*y^4 terms*)
-			bl[2, 24] := Tr @ Tdot[Yuk[$a, k6, k1], Tferm[A1, k1, k2], YukTil[$b, k2, k3], Yuk[$c, k3, k4], 
-				TfG2[A1, k4, k5], YukTil[$d, k5, k6]] // Sym[$b, $c, $d];
+			bl[2, 24] := 0 (*Tr @ Tdot[Yuk[$a, k6, k1], Tferm[A1, k1, k2], YukTil[$b, k2, k3], Yuk[$c, k3, k4], 
+				TfG2[A1, k4, k5], YukTil[$d, k5, k6]] // Sym[$b, $c, $d]*);
 			bl[2, 25] := Tr @ Tdot[Yuk[b1, k4, k1], YukTil[$b, k1, k2], Yuk[$c, k2, k3], YukTil[$d, k3, k4]] 
 				* C2S[$a, b1] // Expand // Sym[$a, $b, $c, $d];
 			bl[2, 26] := Tr @ Tdot[Yuk[$a, k5, k1], YukTil[$b, k1, k2], Yuk[$c, k2, k3], YukTil[$d, k3, k4], 
 				C2Ft[k4, k5]] // Sym[$a, $b, $c, $d];
 			bl[2, 27] := Tr @ Tdot[Yuk[$a, k4, k1], YukTil[b1, k1, k2], Yuk[$b, k2, k3], YukTil[b2, k3, k4]] 
 				*Lam[b1, b2, $c, $d] // Sym[$a, $b, $c, $d];
-			bl[2, 28] := Tr @ Tdot[Yuk[$a, k4, k1], YukTil[$b, k1, k2], Yuk[b1, k2, k3], YukTil[b2, k3, k4]] 
-				*Lam[b1, b2, $c, $d] // Sym[$a, $b, $c, $d];
+			bl[2, 28] := 0 (*Tr @ Tdot[Yuk[$a, k4, k1], YukTil[$b, k1, k2], Yuk[b1, k2, k3], YukTil[b2, k3, k4]] 
+				*Lam[b1, b2, $c, $d] // Sym[$a, $b, $c, $d]*);
 			bl[2, 29] := Y4cS[$a, b1] Lam[b1, $b, $c, $d] // Sym4[$a, $b, $c, $d];
 			bl[2, 30] := Y2SY2F[$a, b1] Lam[b1, $b, $c, $d] // Sym4[$a, $b, $c, $d];
 		(*y^6 terms*)

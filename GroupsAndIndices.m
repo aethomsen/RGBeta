@@ -45,6 +45,22 @@ ReInitializeSymbols[] :=
 		eps /: Power[eps[rep_, a_, b_], 2] := Dim[rep];
 		eps[rep_, a_, a_] := 0;
 		
+		(*Invariant of S2 and fundamentals*)
+		Clear @ delS2;
+		delS2 /: del[group_[S2], a___, x_ , b___] delS2[group_, x_, i_, j_]=  delS2[group, a, b, i, j];
+		delS2 /: del[group_[fund], k___, x_ , l___] delS2[group_, a_, i___ x_, j___]=  delS2[group, a, i, k, l, j];
+		delS2 /: delS2[group_, a_, i_ , j_] delS2[group_, a_, k_, l_] = Sym[k, l][del[group@ fund, i, k] del[group@ fund, j, l]];
+		delS2 /: delS2[group_, a_, i_ , j_] delS2[group_, b_, i_, j_] = del[group@ S2, a, b];
+		delS2 /: delS2[group_, a_, i_ , j_] delS2[group_, b_, j_, i_] = del[group@ S2, a, b];
+		
+		(*Invariant of A2 and fundamentals*)
+		Clear @ delA2;
+		delA2 /: del[group_[A2], a___, x_ , b___] delA2[group_, x_, i_, j_]=  delA2[group, a, b, i, j];
+		delA2 /: del[group_[fund], k___, x_ , l___] delA2[group_, a_, i___ x_, j___]=  delA2[group, a, i, k, l, j];
+		delA2 /: delA2[group_, a_, i_ , j_] delA2[group_, a_, k_, l_] = AntiSym[k, l][del[group@ fund, i, k] del[group@ fund, j, l]];
+		delA2 /: delA2[group_, a_, i_ , j_] delA2[group_, b_, i_, j_] = del[group@ A2, a, b];
+		delA2 /: delA2[group_, a_, i_ , j_] delA2[group_, b_, j_, i_] = - del[group@ A2, a, b];
+		
 		(*Default group generator properties.*)
 		Clear @ tGen;
 		tGen /: del[rep_, a___, x_, b___] tGen[rep_, A_, c___, x_, d___] := tGen[rep, A, c, a, b, d];
@@ -61,11 +77,26 @@ ReInitializeSymbols[] :=
 		(*Default structure constant properties.*)
 		Clear @ fStruct;
 		fStruct /: del[group_[adj], A___, X_, B___] fStruct[group_, C___, X_, D___] := fStruct[group, C, A, B, D];
-		fStruct /: fStruct[group_, A___] fStruct[group_, B___] /; Length @ Intersection[List @A, List @B] === 2 := 
-			Casimir2 @ group[adj] CasimirSig[group, List@A, List@B];
+		(*fStruct /: fStruct[group_, A___] fStruct[group_, B___] /; Length @ Intersection[List @A, List @B] === 2 := 
+			Casimir2 @ group[adj] CasimirSig[group, List@A, List@B];*)
+		fStruct /: fStruct[group_, x:OrderlessPatternSequence[A_, B_, C_] ] fStruct[group_, y:OrderlessPatternSequence[D_, B_, C_] ] := 
+			Signature[List@ x] Signature[List@ y] Signature[{A, B, C}] Signature[{D, B, C}] Casimir2[group@ adj] del[group@ adj, A, D];
 		fStruct[group_, a___, x_, b___, x_, c___] := 0;
 	];
-	
+
+(*Function applying the group *)
+RefineGroupStructures[expr_] := Block[{replace},
+	replace = {
+			tGen[group_[adj], A_, B_, C_] :> - Module[{a, b, c}, 2 AntiSym[A, B][tGen[group@ fund, A, a, b] tGen[group@ fund, B, b, c]] tGen[group@ fund, C , c, a] 
+				] / TraceNormalization @ group @ fund,
+			tGen[group_[S2], A_, a_, b_] :> 2 Sym[a@1, a@2] @ Sym[b@1, b@2][tGen[group@ fund, A, a@1, b@1] del[group@ fund, a@2, b@2]],
+			delS2[group_, a_, i_, j_] :> Sym[a@1, a@2][ del[group@ fund, a@1, i] del[group@ fund, a@2, j]],
+			tGen[group_[A2], A_, a_, b_] :> 2 AntiSym[a@1, a@2] @ AntiSym[b@1, b@2][tGen[group@ fund, A, a@1, b@1] del[group@ fund, a@2, b@2]],
+			delA2[group_, a_, i_, j_] :> AntiSym[a@1, a@2][ del[group@ fund, a@1, i] del[group@ fund, a@2, j]]  
+		};
+	Return[expr /. replace];	
+];
+
 (*Adds case to the system built in function Tr and Dot, to deal with substituting couplings for 0.*)
 	Unprotect[Tr, Dot];
 		Dot[___, 0, ___] = 0;
