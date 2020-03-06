@@ -1,6 +1,6 @@
 (*
 ################################################################
-This is RGBeta, Version 0.2. 
+This is RGBeta, Version 0.2x. 
 Last modefied 18-12-2019
 
 Copyright...
@@ -184,6 +184,9 @@ Lam::usage =
 Matrix::usage =
 	"Matrix[x,...][i, j] represents the matrix product of couplings x,... with open indices i and j."
 
+QuarticBetaFunctions::usage =
+	"QuarticBetaFunctions[loop] returns all quartic beta functions to the given loop order using diagonalized projectors."
+
 QuarticTensors::usage = 
 	"QuarticTensors[loop] is a function that computes all the tensor contractions used the general quartic beta function at the given loop order."
 
@@ -242,7 +245,7 @@ YukTil::usage =
 (*---------------Loads components---------------*)
 (*##############################################*) 
 Begin["`Private`"] (* Begin Private Context *) 
-	$RGBetaVersion = "RGBeta 0.2";
+	$RGBetaVersion = "RGBeta 0.2x";
 	Print[$RGBetaVersion, " by Anders Eller Thomsen"];
 	
 	(*Loads package files*)

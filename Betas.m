@@ -121,9 +121,10 @@ BetaTerm[coupling_, loop_Integer] :=
 		Return @ beta;
 	];
 
+(*Function that produces the beta function for the requested coupling*)
 BetaFunction::unkown = "The coupling `1` has not been defined."
 BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[{RescaledCouplings -> False, FourDimensions -> True}] ] :=
-	Module[{coef = 4 Pi, firstTerm = 0, l},
+	Block[{coef = 4 Pi, firstTerm = 0, l},
 		If[Head @ $couplings @ coupling === Missing, 
 			Message[BetaFunction::unkown, coupling];
 			Return @ Null;
@@ -134,6 +135,25 @@ BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[{RescaledCouplings ->
 		
 		Sum[ Power[coef, -2 l] BetaTerm[coupling, l], {l, firstTerm, loop}]
 	];
+
+
+QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] :=
+	Block[{betaFunctions, couplings, qProjections, invMatrix},
+		couplings = Keys @ $quartics;
+		Print["The quartic couplings are ", couplings];
+		
+		(*Finds inversion matrix for the quartic projectors*)
+		qProjections = CheckProjection /@ couplings;
+		invMatrix = Inverse @ Transpose @ Table[Simplify @ D[qProjections, c], {c, couplings}];
+		
+		(*Extracts beta functions*)
+		betaFunctions = Monitor[
+							Table[BetaFunction[c, loop, opt], {c, couplings}]
+						,StringForm["Evaluating the `` \[Beta]-function", c] ];
+		
+		Return[invMatrix . betaFunctions];
+	];
+
 
 (*Function for finalizing a betafunction, bringing it from a nice compact output to a form more suitable for 
 further Mathematica manipulations. Can also be used to specify particular cases for coupling matrices.*)
