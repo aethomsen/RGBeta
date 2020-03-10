@@ -181,7 +181,7 @@ GaugeTensors[loop_Integer] := GaugeTensors[loop] =
 		
 		With[{diagrams = {3, 7, 33}[[loop]]},
 			Monitor[
-				Return @ Sum[Bcoef[1, loop, n] bg[loop, n], {n, diagrams}]
+				Return[Sum[Bcoef[1, loop, n] bg[loop, n], {n, diagrams}] /. $gaugeCoefficients]
 			,StringForm["Evaluating term `` / ``", n, diagrams]]
 		]
 	];
@@ -244,7 +244,7 @@ YukawaTensors[loop_Integer] := YukawaTensors[loop] =
 		
 		With[{diagrams = {5, 33}[[loop]]},
 			Monitor[
-				Return @ Sum[Bcoef[2, loop, n] bYuk[loop, n], {n, diagrams}]
+				Return[Sum[Bcoef[2, loop, n] bYuk[loop, n], {n, diagrams}] /. $yukawaCoefficients]
 			,StringForm["Evaluating term `` / ``", n, diagrams]]
 		]
 	];
@@ -318,7 +318,7 @@ QuarticTensors[loop_Integer] := QuarticTensors[loop] =
 		
 		With[{diagrams = {5, 33}[[loop]]},
 			Monitor[
-				Return @ Sum[Bcoef[3, loop, n] bl[loop, n], {n, diagrams}]
+				Return[Sum[Bcoef[3, loop, n] bl[loop, n], {n, diagrams}] /. $quarticCoefficients]
 			,StringForm["Evaluating term `` / ``", n, diagrams]]
 		]
 	];
@@ -386,7 +386,7 @@ QuarticTensors[coupling_, loop_Integer] :=
 		
 		With[{diagrams = {5, 33}[[loop]]},
 			Monitor[
-				Return @ Sum[Bcoef[3, loop, n] bl[loop, n], {n, diagrams}]
+				Return[Sum[Bcoef[3, loop, n] bl[loop, n], {n, diagrams}] /. $quarticCoefficients]
 			,StringForm["Evaluating term `` / ``", n, diagrams]]
 		]
 	];

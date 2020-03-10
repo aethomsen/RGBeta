@@ -41,29 +41,21 @@ BetaTerm::quarticLoops = "The quartic beta function is only implemented to 2 loo
 BetaTerm::loopNumber = "The `1` beta function is only implemented up to `2` loops."
 BetaTerm::unkown = "The coupling `1` has not been defined."
 BetaTerm[coupling_, loop_Integer] :=
-	Module[{beta, couplingType,  tensor, C1, C2},
-		(*
-		(*Treats special cases of kinetic mixing and quartic projectors mixing*)
-		If[Head @ coupling === List,
-			(*Checks if all couplings are U(1)*)
-			couplingType = $couplings /@ coupling;
-			Switch[couplingType
-			,_, 
-				Message[BetaTerm::loopNumber, "Yukawa", 2];
-				Return[Null];
-			];
-		];*)
-		
-		(*Returns the beta term for single couplings*)
+	Module[{beta, group, tensor, C1, C2},
+		(*Determines the correct tensor structure based on coupling type*)
 		Switch[$couplings @ coupling
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
 			If[loop > 3, 
 				Message[BetaTerm::loopNumber, "gauge", 3];
 				Return[Null];
 			];
+			group = $couplings @ coupling;
+			beta = Ttimes[G2Matrix[C1, $A] ,GaugeTensors[loop], G2Matrix[$B, C2], $gaugeGroups[group, Projector][C1, C2] ];
 			
-			beta = Ttimes[G2Matrix[C1, $A] ,GaugeTensors[loop], G2Matrix[$B, C2], $gaugeGroups[$couplings @ coupling, Projector][C1, C2] 
-				] /. $gaugeCoefficients;
+			(*Puts U1-mixing matrix on matrix form*)
+			If[MatchQ[$gaugeGroups[group, LieGroup], U1[n_] /; n >1],
+				beta = beta /. Matrix[l1_List][group[adj] @ v1] Matrix[l2_List][group[adj] @ v2] :> Outer[Times, l1, l2];
+			];
 		,Yukawa,
 			If[loop > 2, 
 				Message[BetaTerm::loopNumber, "Yukawa", 2];
@@ -77,14 +69,14 @@ BetaTerm[coupling_, loop_Integer] :=
 				tensor = YukawaTensors[loop][[2, 2]];
 			];
 			
-			beta = tensor $yukawas[coupling, Projector][$a, $i, $j] /. $yukawaCoefficients // Expand // Expand;
+			beta = tensor $yukawas[coupling, Projector][$a, $i, $j] // Expand // Expand;
 		,Quartic,
 			If[loop > 2, 
 				Message[BetaTerm::loopNumber, "quartic", 2];
 				Return[Null];
 			];
 			
-			beta = QuarticTensors[loop] $quartics[coupling, Projector][$a, $b, $c, $d] /. $quarticCoefficients // Expand // Expand;
+			beta = QuarticTensors[loop] $quartics[coupling, Projector][$a, $b, $c, $d] // Expand // Expand;
 		,FermionMass,
 			If[loop > 2, 
 				Message[BetaTerm::loopNumber, "fermion mass", 2];
@@ -98,21 +90,21 @@ BetaTerm[coupling_, loop_Integer] :=
 				tensor = YukawaTensors[loop][[2, 2]];
 			];
 			
-			beta = tensor $fermionMasses[coupling, Projector][$a, $i, $j] /. $yukawaCoefficients // Expand // Expand;
+			beta = tensor $fermionMasses[coupling, Projector][$a, $i, $j] // Expand // Expand;
 		,Trilinear,
 			If[loop > 2, 
 				Message[BetaTerm::loopNumber, "trilinear scalar", 2];
 				Return[Null];
 			];
 			
-			beta = QuarticTensors[loop] $trilinears[coupling, Projector][$a, $b, $c, $d] /. $quarticCoefficients // Expand // Expand;
+			beta = QuarticTensors[loop] $trilinears[coupling, Projector][$a, $b, $c, $d] // Expand // Expand;
 		,ScalarMass,
 			If[loop > 2, 
 				Message[BetaTerm::loopNumber, "scalar mass", 2];
 				Return[Null];
 			];
 			
-			beta = QuarticTensors[loop] $scalarMasses[coupling, Projector][$a, $b, $c, $d] /. $quarticCoefficients // Expand // Expand;
+			beta = QuarticTensors[loop] $scalarMasses[coupling, Projector][$a, $b, $c, $d] // Expand // Expand;
 		,_Missing,
 			Message[BetaTerm::unkown, coupling];
 			Return[Null];
@@ -169,7 +161,7 @@ Finalize[expr_, OptionsPattern[{Parametrizations -> {}}] ] :=
 		Matrix[y__][a_[f1_], b_[f2_]] /; !OrderedQ[{f1, f2}] :=
 			Matrix[Sequence @@ Reverse[Trans /@ List@ y]][b[f2], a[f1]];
 		Matrix[y__][a_[f1], b_[f2]] := Dot[y];
-		Matrix /: Matrix[u_List][_[v1]] Matrix[w_List][_[v2]] := List /@ u . List @ w;
+		(*Matrix /: Matrix[u_List][_[v1]] Matrix[w_List][_[v2]] := List /@ u . List @ w;*)
 		out
 	];
 

@@ -69,10 +69,14 @@ AddGaugeGroup::unkown = "`1` is not a reckognized Lie group.";
 AddGaugeGroup::nonstring = "Use a string for the field or leave it as the default value.";
 AddGaugeGroup::dimensions = "The dimension of the coupling matrix does not match the dimension of 
 	the kineitc mixing term";
-Options[AddGaugeGroup] = {CouplingMatrix -> {{}}, Field -> Automatic, KineticMixing -> 1};
-AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[]] :=
-	Block[{projector, fieldName},
-		(*Sets the field name*)
+AddGaugeGroup::automatic = "Automatic naming of the coupling matrix only suitable for U(1)^p for p <= 9";
+Options[AddGaugeGroup] = {CouplingMatrix -> Automatic, Field -> Automatic};
+AddGaugeGroup[coupling_Symbol, groupName_Symbol, U1, opts:OptionsPattern[]] :=
+	AddGaugeGroup[coupling, groupName, U1[1], opts]; 
+AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_Symbol[n_Integer]/; n>0, OptionsPattern[]] :=
+	Block[{cMatrix, projector, fieldName},
+		
+		(*Decides on the field name*)
 		Switch[OptionValue @ Field
 		,Automatic,
 			fieldName = "A_" <> ToString @ groupName;
@@ -85,15 +89,22 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[]
 		,SO,
 			DefineSOGroup[groupName, n];
 		,Sp,
-			DefineSpGroup[groupName, n];
-		,SU,
-			DefineSUGroup[groupName, n];
-		,U,
-			If[n =!= 1,
+			If[!EvenQ @ n, 
 				Message[AddGaugeGroup::unkown, lieGroup[n] ];
 				Return @ Null;
 			];
-			DefineU1Group[groupName, OptionValue @ KineticMixing];
+			DefineSpGroup[groupName, n];
+		,SU,
+			DefineSUGroup[groupName, n];
+		,U1,
+			(*Checks for mismatch between U1 power and coupling matrix*)	
+			If[n > 1 && OptionValue @ CouplingMatrix =!= Automatic,
+				If[!SymmetricMatrixQ @ OptionValue @ CouplingMatrix || Length @ OptionValue @ CouplingMatrix =!= n,   
+					Message[AddGaugeGroup::dimensions];
+					Return @ Null;
+				];
+			];
+			DefineU1Group[groupName, n];
 		,_,
 			Message[AddGaugeGroup::unkown, lieGroup[n] ];
 			Return @ Null;
@@ -102,7 +113,7 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[]
 		(*Sets up the gauge fields and 2-point projection*)
 		AddVector[fieldName, groupName];
 		projector = With[{V = fieldName, 
-			gStruct = If[OptionValue @ KineticMixing === 1,
+			gStruct = If[lieGroup =!= U1,
 				del[groupName[adj], v1, v2] / Dim @ groupName[adj]
 				, 1]
 			}, 
@@ -112,21 +123,28 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[]
 		(*Adds the group information and the coupling to the repsective lists*)
 		AppendTo[$gaugeGroups, groupName -> 
 			<|Coupling -> coupling,
-			Field -> fieldName,
-			KineticMixing -> OptionValue @ KineticMixing, 
+			Field -> fieldName, 
 			LieGroup -> lieGroup[n], 
 			Projector -> projector|>];
 		AppendTo[$couplings, coupling -> groupName];
 		
-		(*For Abelian groups with Kinetic mixing*)
-		If[Length @ OptionValue @ CouplingMatrix > 1 && OptionValue @ KineticMixing > 1, 
-			If[Length @ OptionValue @ CouplingMatrix =!= OptionValue @ KineticMixing,
-				Message[AddGaugeGroup::dimensions];
-				Return @ Null;
+		(*Setting up the coupling matrix for Abelian groups with Kinetic mixing*)
+		If[lieGroup === U1 && n > 1, 
+			If[OptionValue @ CouplingMatrix === Automatic,
+				If[n > 9, 
+					Message[AddGaugeGroup::automatic]; 
+				];
+				cMatrix = Table[Symbol[ToString @ coupling <> 
+						Which[i < j, ToString @ i <> ToString @ j, 
+							i===j, ToString @ i,
+							j < i, ToString @ j <> ToString @ i] ]
+					,{i, n}, {j, n} ];
+			,
+				cMatrix = OptionValue @ CouplingMatrix;
 			];
-			AppendTo[$gaugeGroups @ groupName, CouplingMatrix -> OptionValue @ CouplingMatrix];
-			coupling /: Matrix[a_List, coupling, b___] = Matrix[Dot[a, OptionValue @ CouplingMatrix], b];
-			coupling /: Matrix[a___, coupling, b_List] = Matrix[a, Dot[OptionValue @ CouplingMatrix, b]];
+			AppendTo[$gaugeGroups @ groupName, CouplingMatrix -> cMatrix];
+			coupling /: Matrix[a_List, coupling, b___] = Matrix[Dot[a, cMatrix], b];
+			coupling /: Matrix[a___, coupling, b_List] = Matrix[a, Dot[cMatrix, b]];
 			Trans[coupling] = coupling;
 		];
 		
@@ -138,7 +156,7 @@ G2Matrix[A_, B_] :=
 	Module[{gauge, v1, v2},
 		Sum[
 			sDelV[$gaugeGroups[gauge, Field], A, v1] sDelV[$gaugeGroups[gauge, Field], B, v2] 
-				* If[$gaugeGroups[gauge, KineticMixing] > 1,
+				* If[MatchQ[$gaugeGroups[gauge, LieGroup], U1[n_] /; n > 1],
 					Matrix[$gaugeGroups[gauge, Coupling]][gauge[adj] @v1, gauge[adj] @v2]
 				,
 					$gaugeGroups[gauge, Coupling]^2 del[gauge[adj], v1, v2]

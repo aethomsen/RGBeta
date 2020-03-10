@@ -92,13 +92,13 @@ sDelV::usage =
 tGen::usage =
 	"tGen[rep, A, a, b] represents a group generator of the representation \"rep\" with adjoint index A. a and b are the two indices of rep. "
 
-Chirality::usage = Coupling::usage = CouplingBar::usage = FermionMass::usage = Field::usage = Fields::usage = FlavorIndices::usage = 
-	GaugeRep::usage = GroupInvariant::usage = Indices::usage = Invariant::usage = KineticMixing::usage = LieGroup::usage = Mass::usage= Projector::usage = Quartic::usage =
+Chirality::usage = Coupling::usage = CouplingBar::usage = CouplingMatrix::usage = FermionMass::usage = Field::usage = Fields::usage = FlavorIndices::usage = 
+	GaugeRep::usage = GroupInvariant::usage = Indices::usage = Invariant::usage = LieGroup::usage = Mass::usage= Projector::usage = Quartic::usage =
 	ScalarMass::usage = SelfConjugate::usage = Trilinear::usage = Yukawa::usage = 
 	"Function option and/or key used in global association lists of fields and/or couplings."
 
-SO::usage = Sp::usage = SU::usage = U::usage =
-	"SO, Sp, SU, and U are used to specify different Lie groups."
+SO::usage = Sp::usage = SU::usage = U1::usage =
+	"SO, Sp, SU, and U1 are used to specify different Lie groups."
 
 AddFermion::usage =
 	"AddFermion[field] is a function used to define a fermion field in the model."
