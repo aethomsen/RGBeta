@@ -136,7 +136,7 @@ BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[{RescaledCouplings ->
 		Sum[ Power[coef, -2 l] BetaTerm[coupling, l], {l, firstTerm, loop}]
 	];
 
-
+(*Fuction for diagonalizing the quartic beta functions. It inherits the options from BetaFunction*)
 QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] :=
 	Block[{betaFunctions, couplings, qProjections, invMatrix},
 		couplings = Keys @ $quartics;

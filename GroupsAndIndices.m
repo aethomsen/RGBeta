@@ -109,6 +109,7 @@ RefineGroupStructures[expr_] := Block[{replace},
 	Trans[Trans[x_]] := x;
 	Trans[0] = 0;
 	Trans[a_List] /; VectorQ[a] := a;
+	Trans[a_List] /; MatrixQ[a] := Transpose @ a;
 (*Matrix head for symbolic matrix manipulations*)
 	Matrix /: del[ind_, a___, x_, b___] Matrix[m__][c___, ind_[x_], d___] := Matrix[m][c, ind[a, b], d];
 	Matrix /: Matrix[m1__][a_] Matrix[m2__][a_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][];

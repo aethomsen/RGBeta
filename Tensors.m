@@ -323,6 +323,75 @@ QuarticTensors[loop_Integer] := QuarticTensors[loop] =
 		]
 	];
 
+(*Evaluates the tensors involved in the quartic beta function for a particular coupling*)
+QuarticTensors[coupling_, loop_Integer] :=  
+	Module[{projector, proj4, proj6, proj24, bl, n, b1, b2, b3, b4, A1, A2, A3, k1, k2, k3, k4, k5, k6},
+		projector = $quartics[coupling, Projector][$a, $b, $c, $d];
+		proj4 = Sym4[$a, $b, $c, $d] @ projector;
+		proj6 = Sym[$b, $c, $d] @ projector;
+		proj24 = Sym[$a, $b, $c, $d] @ projector;
+		Switch[loop
+		,0,
+			Return[- \[Epsilon] coupling];
+		,1,
+			bl[1, 1] := Ttimes[FourGLam[$a, $b, $c, $d], proj6];
+			bl[1, 2] := Ttimes[C2S[$a, b1], Lam[b1, $b, $c, $d], proj4];
+			bl[1, 3] := Ttimes[Lam[$a, $b, b1, b2], Lam[b1, b2, $c, $d], proj6];
+			bl[1, 4] := Ttimes[Y2S[$a, b1], Lam[b1, $b, $c, $d], proj4];
+			bl[1, 5] := Ttimes[Tr@ Tdot[Yuk[$a, k4, k1], YukTil[$b, k1, k2], Yuk[$c, k2, k3], YukTil[$d, k3, k4]], proj6];
+		,2,		
+		(* y^0, lam^0 terms*)
+			bl[2, 1] := Ttimes[Tscal[A1, $a, b1], FourGLam[b1, b2, $b, $c], TsG2[A1, b2, $d], proj24]; 	
+			bl[2, 2] := Ttimes[C2S[$a, b1], FourGLam[b1, $b, $c, $d], proj24];
+			bl[2, 3] := Ttimes[TsG2[A1, $a, b1], TsG2[A2, b1, $b], C2G[A2, A3], Tscal[A1, $c, b2], TsG2[A3, b2, $d], proj24];
+			bl[2, 4] := Ttimes[TsG2[A1, $a, b1], TsG2[A2, b1, $b], S2S[A2, A3], Tscal[A1, $c, b2], TsG2[A3, b2, $d], proj24];
+			bl[2, 5] := Ttimes[TsG2[A1, $a, b1], TsG2[A2, b1, $b], S2F[A2, A3], Tscal[A1, $c, b2], TsG2[A3, b2, $d], proj24];
+			bl[2, 6] := Ttimes[FourGLam[$a, b1, $d, b2], Lam[b1, b2, $b, $c], proj24];
+			bl[2, 7] := Ttimes[FourGLam[$a, $b, b1, b2], Lam[b1, b2, $c, $d], proj24];
+			bl[2, 8] := 0;
+			bl[2, 9] := Ttimes[C2S[$a, b1], C2S[b1, b2], Lam[b2, $b, $c, $d], proj4];
+			bl[2, 10] := Ttimes[C2SC2G[$a, b1], Lam[b1, $b, $c, $d], proj4];
+			bl[2, 11] := Ttimes[C2SS2S[$a, b1], Lam[b1, $b, $c, $d], proj4];
+			bl[2, 12] := Ttimes[C2SS2F[$a, b1], Lam[b1, $b, $c, $d], proj4];
+		(* y^0, lam^{n>0} terms*)
+			bl[2, 13] := Ttimes[Tscal[A1, $a, b1], Lam[b1, b2, b3, b4], TsG2[A1, $b, b2], Lam[b3, b4, $c, $d], proj24];
+			bl[2, 14] := Ttimes[Lam[$a, $b, b1, b2], C2S[b2, b3], Lam[b3, b1, $c, $d], proj6];
+			bl[2, 15] := Ttimes[C2S[$a, b1], Lam[b1, $b, b2, b3], Lam[b2, b3, $c, $d], proj24];
+			bl[2, 16] := Ttimes[Lam2[$a, b1], Lam[b1,$b, $c, $d], proj4];
+			bl[2, 17] := Ttimes[Lam[$a, b1, b2, b3], Lam[$b, b4, b2, b3], Lam[b1, b4, $c, $d], proj24];
+			bl[2, 18] := 0;
+		(*y^2 terms*)
+			bl[2, 19] := Ttimes[Tr @ Tdot[Yuk[$a, k4, k1], Tferm[A1, k1, k2], Tferm[A2, k2, k3], YukTil[$b, k3, k4]], 
+				TsG2[A1, $c, b1], TsG2[A2, b1, $d], proj24];
+			bl[2, 20] := Ttimes[Y2S[$a, b1], FourGLam[b1, $b, $c, $d], proj24];
+			bl[2, 21] := Ttimes[Y2SC2F[$a, b1], Lam[b1, $b, $c, $d], proj4];
+			bl[2, 22] := 0;
+			bl[2, 23] := Ttimes[Lam[$a, $b, b1, b2], Y2S[b2, b3], Lam[b3, b1, $c, $d], proj6];
+		(*y^4 terms*)
+			bl[2, 24] := 0;
+			bl[2, 25] := Ttimes[C2S[$a, b1], Tr @ Tdot[Yuk[b1, k4, k1], YukTil[$b, k1, k2], Yuk[$c, k2, k3], YukTil[$d, k3, k4]], proj24];
+			bl[2, 26] := Ttimes[Tr @ Tdot[Yuk[$a, k5, k1], YukTil[$b, k1, k2], Yuk[$c, k2, k3], YukTil[$d, k3, k4], C2Ft[k4, k5]], proj24];
+			bl[2, 27] := Ttimes[Lam[b1, b2, $c, $d], Tr @ Tdot[Yuk[$a, k4, k1], YukTil[b1, k1, k2], Yuk[$b, k2, k3], YukTil[b2, k3, k4]], proj24];
+			bl[2, 28] := 0;
+			bl[2, 29] := Ttimes[Y4cS[$a, b1], Lam[b1, $b, $c, $d], proj4];
+			bl[2, 30] := Ttimes[Y2SY2F[$a, b1], Lam[b1, $b, $c, $d], proj4];
+		(*y^6 terms*)
+			bl[2, 31] := Ttimes[Tr @ Tdot[Yuk[b1, k6, k1], YukTil[$a, k1, k2], Yuk[b1, k2, k3], YukTil[$b, k3, k4], 
+				Yuk[$c, k4, k5], YukTil[$d, k5, k6]], proj24];
+			bl[2, 32] := Ttimes[Tr @ Tdot[Yuk[$a, k6, k1], YukTil[b1, k1, k2], Yuk[$b, k2, k3], YukTil[$c, k3, k4], 
+				Yuk[b1, k4, k5], YukTil[$d, k5, k6]], proj6];
+			bl[2, 33] := Ttimes[Tr @ Tdot[Yuk[$a, k5, k1], YukTil[$b, k1, k2], Yuk[$c, k2, k3], YukTil[$d, k3, k4], 
+				Y2F[k4, k5]], proj24];
+		];
+		
+		With[{diagrams = {5, 33}[[loop]]},
+			Monitor[
+				Return @ Sum[Bcoef[3, loop, n] bl[loop, n], {n, diagrams}]
+			,StringForm["Evaluating term `` / ``", n, diagrams]]
+		]
+	];
+
+
 
 End[]
 

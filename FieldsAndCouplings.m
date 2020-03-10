@@ -125,7 +125,7 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_[n_], OptionsPattern[]
 				Return @ Null;
 			];
 			AppendTo[$gaugeGroups @ groupName, CouplingMatrix -> OptionValue @ CouplingMatrix];
-			coupling /: Matrix[a_List, coupling, b___] = Matrix[Dot[a, OptionValue @ CouplingMatrix] b];
+			coupling /: Matrix[a_List, coupling, b___] = Matrix[Dot[a, OptionValue @ CouplingMatrix], b];
 			coupling /: Matrix[a___, coupling, b_List] = Matrix[a, Dot[OptionValue @ CouplingMatrix, b]];
 			Trans[coupling] = coupling;
 		];
