@@ -1,5 +1,3 @@
-- Check of the gauge representation of the matter fields.
-
 - Limit symmetrization of the quartic couplings to what is actually required.
 
-- Fix relevant beta functions.
+- Fix beta functions of the relevant couplings.

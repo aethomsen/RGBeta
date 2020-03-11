@@ -11,17 +11,27 @@ Bar@ $vev = $vev;
 
 (*Initiates a scalar field*)
 Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
+AddScalar::failure = "Failed to add scalar field.";
 AddScalar[field_, OptionsPattern[] ] :=
 	Block[{rep, massTerm = 1},
+		(*Checks gauge representations*)
+		If[! And @@ Table[RepresentationCheck @ rep, {rep, OptionValue[GaugeRep]}],
+			Message[AddScalar::failure];
+			Return @ Null;
+		];
+		
+		(*Adds field options to the list of scalar fields*)
 		AppendTo[$scalars, field -> <|
 			GaugeRep -> OptionValue[GaugeRep], 
 			FlavorIndices -> OptionValue[FlavorIndices],
 			SelfConjugate -> OptionValue[SelfConjugate], 
 			Mass -> OptionValue @ Mass|>];
+		
 		If[OptionValue @ Mass =!= None,
 			massTerm = UnitStep[Global`t - OptionValue @ Mass];
 		];
 		
+		(*Initializes the structure deltas for the field*)
 		If[OptionValue[SelfConjugate],
 			sDelS/: sDelS[field, ind_, s1_] sDelS[field, ind_, s2_] = 1 * massTerm 
 				* Product[del[rep, s1, s2], {rep, OptionValue[GaugeRep]}]
@@ -38,15 +48,26 @@ AddScalar[field_, OptionsPattern[] ] :=
 
 (*Initiates a fermion field*)	
 Options[AddFermion] = {GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
+AddFermion::failure = "Failed to add fermion field.";
 AddFermion[field_, OptionsPattern[] ] :=
 	Block[{massTerm = 1, rep},
-		If[OptionValue @ Mass =!= None,
-			massTerm = UnitStep[Global`t - OptionValue @ Mass];
+		(*Checks gauge representations*)
+		If[! And @@ Table[RepresentationCheck @ rep, {rep, OptionValue[GaugeRep]}],
+			Message[AddFermion::failure];
+			Return @ Null;
 		];
+		
+		(*Adds field options to the list of fermion fields*)
 		AppendTo[$fermions, field -> <|
 			GaugeRep -> OptionValue[GaugeRep], 
 			FlavorIndices -> OptionValue[FlavorIndices], 
 			Mass -> OptionValue @ Mass|>]; 
+		
+		If[OptionValue @ Mass =!= None,
+			massTerm = UnitStep[Global`t - OptionValue @ Mass];
+		];
+		
+		(*Initializes the structure deltas for the field*)
 		sDelF/: sDelF[field, ind_, f1_] sDelF[Bar[field], ind_, f2_] = massTerm 
 			* Product[del[rep, f1, f2], {rep, OptionValue[GaugeRep]}]
 			* Product[del[rep, f1, f2], {rep, OptionValue[FlavorIndices]}];
@@ -150,6 +171,54 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_Symbol[n_Integer]/; n>
 		
 		FlushBetas[];
 	];
+
+(*Checks the validity of a given representation. Returns True iff rep is valid given gauge groups
+ of the present model*)
+RepresentationCheck::invalid = "`1` is not a reckognized format for a representation.";
+RepresentationCheck::representation = "`1` is not a reckognized representation of a `2` group.";
+RepresentationCheck::noGroup = "The `1` gauge group has not been defined.";
+RepresentationCheck[rep_] := 
+	Block[{group, gName},
+		If[! MatchQ[rep, g_[r_]], 
+			Message[RepresentationCheck::invalid, rep];
+			Return @ False; 
+		]; (*Checks form*)
+		
+		gName = Head@ If[Head@ rep === Bar, rep[[1]], rep];
+		group = $gaugeGroups[gName, LieGroup];
+		Switch[group
+		,SU[_],
+			If[MemberQ[Join[gName/@{fund, adj, S2, A2}, Bar/@ gName/@ {fund, S2, A2}], rep],
+				Return @ True;
+			];
+			Message[RepresentationCheck::representation, rep, group];
+		,SO[_],
+			If[MemberQ[gName/@{fund, adj, S2}, rep],
+				Return @ True;
+			];
+			Message[RepresentationCheck::representation, rep, group];
+		,Sp[_],
+			If[MemberQ[Join[gName/@{fund, adj, A2}, Bar/@ gName/@ {fund, A2}], rep],
+				Return @ True;
+			];
+			Message[RepresentationCheck::representation, rep, group];
+		,U1[1],
+			If[Head @ rep =!= Bar && Head @ rep[[1]] =!= List && 
+					!MemberQ[{adj, fund, A2, S2}, rep[[1]] ],
+				Return @ True;
+			];
+			Message[RepresentationCheck::representation, rep, group];
+		,U1[_],
+			If[Head @ rep =!= Bar && VectorQ @ rep[[1]] && Length @ rep[[1]] === group[[1]],
+				Return @ True;
+			];
+			Message[RepresentationCheck::representation, rep, group];
+		,_,
+			Message[RepresentationCheck::noGroup, Head @rep];
+			Return @ False;
+		];
+		Return @ False;
+	]; 
 
 (*The general gauge coupling matrix G^2_{AB} used in the computation of the beta function tensors*)
 G2Matrix[A_, B_] := 

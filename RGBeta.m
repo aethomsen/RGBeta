@@ -205,6 +205,9 @@ RefineGroupStructures::usage =
 ReInitializeSymbols::usage = 
 	"ReInitializeSymbols[] is a function which when called flushes all previous definitions for symbol behaviour under implicit summation."
 
+RepresentationCheck::usage =
+	"RepresentationCheck[rep] returns True if rep is a valid representation given the gauge groups of the present model and False otherwise."
+
 Sym::usage =
 	"Sym[a1, a2, a3, a4][expr] is an internal function for symmetrizing expr over up to four dummy indices."
 
