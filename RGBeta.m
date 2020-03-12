@@ -1,9 +1,9 @@
 (*
 ################################################################
 This is RGBeta, Version 0.2x. 
-Last modefied 18-12-2019
+Last modefied 11-03-2020
 
-Copyright...
+Released under the MIT license (see enclosed document).
 
 Author: Anders Eller Thomsen 
 ################################################################
@@ -59,8 +59,8 @@ $RGBetaVersion::usage =
 adj::usage = fund::usage = S2::usage = A2::usage =
 	"Representation name defined defined by the Define(SO/Sp/SU)Group functions."
 
-f1::usage = f2::usage =  s1::usage =  s2::usage =  s3::usage =  s4::usage = v1::usage = v2::usage =
-	"Index name used for flavor indices on kinetic mixings or Yukawa or quartic couplings."  
+f1::usage = f2::usage = s1::usage = s2::usage = s3::usage = s4::usage = v1::usage = v2::usage =
+	"Index name used for flavor indices on kinetic-mixing, Yukawa, or quartic couplings."  
 
 del::usage = 
 	"del[rep, a, b] represents a Kronecker delta in \"rep space\" with indices a and b."
