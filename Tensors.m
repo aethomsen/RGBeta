@@ -1,3 +1,7 @@
+(*
+	Author: Anders Eller Thomsen 
+	Released under the MIT license (see 'MIT_license.txt').
+*)
 Begin["Tensors`"]
 
 sig1 = {{0, 1}, {1, 0}};

@@ -1,9 +1,9 @@
 (*
 ################################################################
 This is RGBeta, Version 0.2x. 
-Last modefied 11-03-2020
+Last modefied 16-03-2020
 
-Released under the MIT license (see enclosed document).
+Released under the MIT license (see 'MIT_license.txt').
 
 Author: Anders Eller Thomsen 
 ################################################################
@@ -94,7 +94,7 @@ tGen::usage =
 
 Chirality::usage = Coupling::usage = CouplingBar::usage = CouplingMatrix::usage = FermionMass::usage = Field::usage = Fields::usage = FlavorIndices::usage = 
 	GaugeRep::usage = GroupInvariant::usage = Indices::usage = Invariant::usage = LieGroup::usage = Mass::usage= Projector::usage = Quartic::usage =
-	ScalarMass::usage = SelfConjugate::usage = Trilinear::usage = Yukawa::usage = 
+	ScalarMass::usage = SelfConjugate::usage = Trilinear::usage = UniqueArrangements::ussage = Yukawa::usage = 
 	"Function option and/or key used in global association lists of fields and/or couplings."
 
 SO::usage = Sp::usage = SU::usage = U1::usage =
@@ -130,6 +130,9 @@ AddVector::usage =
 AntiSym::usage = 
 	"AntiSym[a, b][expr] is an internal function for antisymmetrizing expr in a and b."
 
+AveragePermutations::usage =
+	"AveragePermutations[indices, permutations][expr] gives the average of expr with indices (List) exchanged in all way perscribed by permutations."
+
 Bar::usage =
 	"Bar[x] rerpresents the conjugate of x. Used both for fields, couplings, and representations."
 
@@ -150,6 +153,9 @@ CasimirSig::usage =
 
 CheckProjection::usage =
 	"CheckProjection[coupling] returns the result of the automatic projection operator of the coupling on the corresponding generalized coupling."
+
+CouplingPermutations::usage = 
+	"CouplingPermutations[fields, invariant] provides at list of all unique permutations of a coupling of the fields (List) and with the given group invariance function."
 
 DefineU1Group::usage =
 	"DefineU1Group[group, n] defines group to be a U(1) group and defines representations accordingly."
@@ -265,7 +271,7 @@ Begin["`Private`"] (* Begin Private Context *)
 
 	(*Protects global symbols*)	
 	Protect[$a, $b, $c, $d, $i, $j, $A, $B];
-	Protect[SO, Sp, SU, U];
+	Protect[SO, Sp, SU, U1];
 	Protect[f1, f2, s1, s2, s3, s4];
 	
 End[] (* End Private Context *)

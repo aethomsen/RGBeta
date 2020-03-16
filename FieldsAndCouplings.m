@@ -1,3 +1,7 @@
+(*
+	Author: Anders Eller Thomsen 
+	Released under the MIT license (see 'MIT_license.txt').
+*)
 Begin["FieldsAndCouplings`"]
 
 (*Structure deltas*)
@@ -83,6 +87,34 @@ AddVector[name_, group_] :=
 
 
 (*###################################*)
+(*----------Other functions----------*)
+(*###################################*)
+CouplingPermutations[fields_List, invariant_Function] :=
+	Block[{arg, fs, inv, number, perms, uniqueArrangements},
+		number = Length @ fields;
+		perms = Permutations @ Table[n, {n, number}];
+		uniqueArrangements = {};
+		Return@ Reap[
+			Do[
+				fs = fields[[Ordering @ p]];
+				inv = (invariant @@ arg /@ p) /. del[rep_, a_, b_] /; ! OrderedQ @{a, b} -> del[rep, b, a]; 
+				If[MemberQ[uniqueArrangements, {fs, inv}],
+					Continue[];	
+				]; 
+				AppendTo[uniqueArrangements, {fs, inv}];
+				Sow @ p;
+			,{p, perms}];
+		][[2,1]];
+	];
+
+AveragePermutations[indices_List, permutations_List][expr_] :=
+	Block[{subs},
+		subs = MapThread[Rule, {indices, indices[[#]]}] & /@ permutations;
+		Mean[expr/.subs]		
+	];
+
+
+(*###################################*)
 (*----------Gauge couplings----------*)
 (*###################################*)
 (*Function for adding gauge groups to the model*)
@@ -94,9 +126,8 @@ AddGaugeGroup::automatic = "Automatic naming of the coupling matrix only suitabl
 Options[AddGaugeGroup] = {CouplingMatrix -> Automatic, Field -> Automatic};
 AddGaugeGroup[coupling_Symbol, groupName_Symbol, U1, opts:OptionsPattern[]] :=
 	AddGaugeGroup[coupling, groupName, U1[1], opts]; 
-AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_Symbol[n_Integer]/; n>0, OptionsPattern[]] :=
+AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_Symbol[n_], OptionsPattern[]] :=
 	Block[{cMatrix, projector, fieldName},
-		
 		(*Decides on the field name*)
 		Switch[OptionValue @ Field
 		,Automatic,
@@ -110,7 +141,7 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_Symbol[n_Integer]/; n>
 		,SO,
 			DefineSOGroup[groupName, n];
 		,Sp,
-			If[!EvenQ @ n, 
+			If[IntegerQ @n && !EvenQ @ n, 
 				Message[AddGaugeGroup::unkown, lieGroup[n] ];
 				Return @ Null;
 			];
@@ -600,7 +631,8 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 			Indices -> OptionValue @ CouplingIndices,
 			Invariant -> OptionValue @ GroupInvariant,
 			Projector -> projection,
-			SelfConjugate -> OptionValue @ SelfConjugate|>];
+			SelfConjugate -> OptionValue @ SelfConjugate,
+			UniqueArrangements -> CouplingPermutations[{phi1, phi2, phi3, phi4}, OptionValue @ GroupInvariant]|>];
 		AppendTo[$couplings, coupling -> Quartic];
 		
 		FlushBetas[];
@@ -750,6 +782,22 @@ AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] :=
 (*Genral quartic coupling used in the computation of the beta function tensors.*)
 Lam[$da_, $db_, $dc_, $dd_] :=
 	Module[{l, s1, s2, s3, s4},
+			(*Quartic couplings*)
+			Sum[
+				AveragePermutations[{$da, $db, $dc, $dd}, l[UniqueArrangements] ][
+				sDelS[l[Fields][[1]], $da, s1] sDelS[l[Fields][[2]], $db, s2] sDelS[l[Fields][[3]], $dc, s3] sDelS[l[Fields][[4]], $dd, s4]
+				* l[Invariant][s1, s2, s3, s4] l[Coupling][Sequence @@ l[Indices][s1, s2, s3, s4]]
+			+ If[! l@SelfConjugate,
+				sDelS[Bar@ l[Fields][[1]], $da, s1] sDelS[Bar@ l[Fields][[2]], $db, s2] sDelS[Bar@ l[Fields][[3]], $dc, s3] 
+				* sDelS[Bar@ l[Fields][[4]], $dd, s4] l[Invariant][s1, s2, s3, s4] l[CouplingBar][Sequence @@ l[Indices][s1, s2, s3, s4]]
+				,0] 
+				]
+			,{l, $quartics}] 
+	];
+
+(*Genral quartic coupling used in the computation of the beta function tensors.*)
+(*LamMassive[$da_, $db_, $dc_, $dd_] :=
+	Module[{l, s1, s2, s3, s4},
 		Sym[$da, $db, $dc, $dd][
 			(*Quartic couplings*)
 			Sum[sDelS[l[Fields][[1]], $da, s1] sDelS[l[Fields][[2]], $db, s2] sDelS[l[Fields][[3]], $dc, s3] sDelS[l[Fields][[4]], $dd, s4]
@@ -776,7 +824,7 @@ Lam[$da_, $db_, $dc_, $dd_] :=
 				,0] 
 			,{l, $scalarMasses}]
 		]
-	];
+	];*)
 
 
 
