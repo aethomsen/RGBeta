@@ -1,5 +1,3 @@
-- Limit symmetrization of the quartic couplings to what is actually required.
-
-- Fix beta functions of the relevant couplings.
-
 - Verify implementation of A2, S2, and adj representations.
+
+- Fix cannonical form of matrix couplings and their contractions.

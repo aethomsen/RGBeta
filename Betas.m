@@ -89,9 +89,9 @@ BetaTerm[coupling_, loop_Integer] :=
 			
 			Switch[$fermionMasses[coupling, Chirality]
 			,Left,
-				tensor = YukawaTensors[loop][[1, 1]];
+				tensor = FermionMassTensors[loop][[1, 1]];
 			,Right,
-				tensor = YukawaTensors[loop][[2, 2]];
+				tensor = FermionMassTensors[loop][[2, 2]];
 			];
 			
 			beta = tensor $fermionMasses[coupling, Projector][$a, $i, $j] // Expand // Expand;
@@ -101,14 +101,17 @@ BetaTerm[coupling_, loop_Integer] :=
 				Return[Null];
 			];
 			
-			beta = QuarticTensors[loop] $trilinears[coupling, Projector][$a, $b, $c, $d] // Expand // Expand;
+			beta = ScalarMassiveTensors[loop] $trilinears[coupling, Projector][$a, $b, $c, $d] // Expand // Expand;
 		,ScalarMass,
 			If[loop > 2, 
 				Message[BetaTerm::loopNumber, "scalar mass", 2];
 				Return[Null];
 			];
+			If[loop === 0,
+				Return @ 0;
+			];
 			
-			beta = QuarticTensors[loop] $scalarMasses[coupling, Projector][$a, $b, $c, $d] // Expand // Expand;
+			beta = ScalarMassiveTensors[loop] $scalarMasses[coupling, Projector][$a, $b, $c, $d] // Expand // Expand;
 		,_Missing,
 			Message[BetaTerm::unkown, coupling];
 			Return[Null];
@@ -189,15 +192,15 @@ CheckProjection[coupling_Symbol] :=
 		,FermionMass,
 			Switch[$fermionMasses[coupling, Chirality]
 			,Left,
-				tensor = Yuk[a, i, j][[1, 1]];
+				tensor = Yuk[a, i, j, True][[1, 1]];
 			,Right,
-				tensor = Yuk[a, i, j][[2, 2]];
+				tensor = Yuk[a, i, j, True][[2, 2]];
 			];
 			cop = tensor $fermionMasses[coupling, Projector][a, i, j] // Expand // Expand;
 		,Trilinear,
-			cop = Lam[a, b, c, d] $trilinears[coupling, Projector][a, b, c, d] // Expand // Expand;
+			cop = Lam[a, b, c, d, True] $trilinears[coupling, Projector][a, b, c, d] // Expand // Expand;
 		,ScalarMass,
-			cop = Lam[a, b, c, d] $scalarMasses[coupling, Projector][a, b, c, d] // Expand // Expand;
+			cop = Lam[a, b, c, d, True] $scalarMasses[coupling, Projector][a, b, c, d] // Expand // Expand;
 		,_Missing,
 			Message[CheckProjection::unkown, coupling];
 			Return @ Null;

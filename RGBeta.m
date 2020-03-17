@@ -172,6 +172,9 @@ DefineSUGroup::usage =
 Dim::usage =
 	"Dim[rep] sets the dimension of a given representation."
 
+FermionMassTensors::usage = 
+	"FermionMassTensors[loop] is a function that computes all the tensor contractions used the general fermion mass beta function at the given loop order."
+
 Finalize::usage = 
 	"Finalize[expr] performs additional refinement of beta function expressions."
 
@@ -213,6 +216,9 @@ ReInitializeSymbols::usage =
 
 RepresentationCheck::usage =
 	"RepresentationCheck[rep] returns True if rep is a valid representation given the gauge groups of the present model and False otherwise."
+
+ScalarMassiveTensors::usage =
+	"ScalarMassiveTensors[loop] is a function that computes all the tensor contractions used in the the trillinear and scalar mass beta functions at the given loop order."
 
 Sym::usage =
 	"Sym[a1, a2, a3, a4][expr] is an internal function for symmetrizing expr over up to four dummy indices."

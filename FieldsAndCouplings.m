@@ -509,33 +509,37 @@ AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] :=
 
 
 (*Chiral Yukawa couplings*)
-YukawaLeft[$da_, $di_, $dj_] :=
+YukawaLeft[$da_, $di_, $dj_, massive_:False] :=
 	Module[{f1, f2, yu, s1},
 		Sym[$di, $dj][
 			Sum[sDelS[yu[Fields][[1]], $da, s1] sDelF[yu[Fields][[2]], $di, f1] sDelF[yu[Fields][[3]], $dj, f2]
 					* yu[Invariant][s1, f1, f2] yu[Coupling][Sequence @@ yu[Indices][s1, f1, f2]]  
 				,{yu, $yukawas}] +
-			Sum[sDelS[$vev, $da, s1] sDelF[yu[Fields][[1]], $di, f1] sDelF[yu[Fields][[2]], $dj, f2]
+			If[massive,
+				Sum[sDelS[$vev, $da, s1] sDelF[yu[Fields][[1]], $di, f1] sDelF[yu[Fields][[2]], $dj, f2]
 					* yu[Invariant][f1, f2] yu[Coupling][Sequence @@ yu[Indices][f1, f2]]  
-				,{yu, $fermionMasses}] 
+				,{yu, $fermionMasses}]
+			,0]  
 		]
 	];
 
-YukawaRight[$da_, $di_, $dj_] :=
+YukawaRight[$da_, $di_, $dj_, massive_:False] :=
 	Module[{f1, f2, yu, s1},
 		Sym[$di, $dj][
 			Sum[sDelS[Bar @ yu[Fields][[1]], $da, s1] sDelF[Bar @ yu[Fields][[2]], $di, f1] sDelF[Bar @ yu[Fields][[3]], $dj, f2]
 					* yu[Invariant][s1, f1, f2] yu[CouplingBar][Sequence @@ yu[Indices][s1, f1, f2]]  
 				,{yu, $yukawas}] +
-			Sum[sDelS[$vev, $da, s1] sDelF[Bar @ yu[Fields][[1]], $di, f1] sDelF[Bar @ yu[Fields][[2]], $dj, f2]
-				* yu[Invariant][f1, f2] yu[CouplingBar][Sequence @@ yu[Indices][f1, f2]]  
-			,{yu, $fermionMasses}]
+			If[massive,
+				Sum[sDelS[$vev, $da, s1] sDelF[Bar @ yu[Fields][[1]], $di, f1] sDelF[Bar @ yu[Fields][[2]], $dj, f2]
+					* yu[Invariant][f1, f2] yu[CouplingBar][Sequence @@ yu[Indices][f1, f2]]  
+				,{yu, $fermionMasses}]
+			,0]
 		] 
 	];
 
 (*Genral Yukawa couplings used in the computation of the beta function tensors.*)
-Yuk[a_, i_, j_] := {{YukawaLeft[a, i, j], 0}, {0, YukawaRight[a, i, j]}};
-YukTil[a_, i_, j_] := {{YukawaRight[a, i, j], 0}, {0, YukawaLeft[a, i, j]}};
+Yuk[a_, i_, j_, massive_:False] := {{YukawaLeft[a, i, j, massive], 0}, {0, YukawaRight[a, i, j, massive]}};
+YukTil[a_, i_, j_, massive_:False] := {{YukawaRight[a, i, j, massive], 0}, {0, YukawaLeft[a, i, j, massive]}};
 
 
 (*#####################################*)
@@ -703,7 +707,8 @@ AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] :=
 			Indices -> OptionValue @ CouplingIndices,
 			Invariant -> OptionValue @ GroupInvariant,
 			Projector -> projection,
-			SelfConjugate -> OptionValue @ SelfConjugate|>];
+			SelfConjugate -> OptionValue @ SelfConjugate,
+			UniqueArrangements -> CouplingPermutations[{phi1, phi2, phi3, $vev}, OptionValue @ GroupInvariant]|>];
 		AppendTo[$couplings, coupling -> Trilinear];
 		
 		FlushBetas[];
@@ -773,58 +778,50 @@ AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] :=
 			Indices -> OptionValue @ MassIndices,
 			Invariant -> OptionValue @ GroupInvariant,
 			Projector -> projection,
-			SelfConjugate -> OptionValue @ SelfConjugate|>];
+			SelfConjugate -> OptionValue @ SelfConjugate,
+			UniqueArrangements -> CouplingPermutations[{phi1, phi2, $vev, $vev}, OptionValue @ GroupInvariant]|>];
 		AppendTo[$couplings, coupling -> ScalarMass];
 		
 		FlushBetas[];
 	];
 
 (*Genral quartic coupling used in the computation of the beta function tensors.*)
-Lam[$da_, $db_, $dc_, $dd_] :=
+Lam[$da_, $db_, $dc_, $dd_, massive_:False] :=
 	Module[{l, s1, s2, s3, s4},
-			(*Quartic couplings*)
-			Sum[
-				AveragePermutations[{$da, $db, $dc, $dd}, l[UniqueArrangements] ][
+		(*Quartic couplings*)
+		Sum[
+			AveragePermutations[{$da, $db, $dc, $dd}, l[UniqueArrangements] ][
 				sDelS[l[Fields][[1]], $da, s1] sDelS[l[Fields][[2]], $db, s2] sDelS[l[Fields][[3]], $dc, s3] sDelS[l[Fields][[4]], $dd, s4]
 				* l[Invariant][s1, s2, s3, s4] l[Coupling][Sequence @@ l[Indices][s1, s2, s3, s4]]
 			+ If[! l@SelfConjugate,
 				sDelS[Bar@ l[Fields][[1]], $da, s1] sDelS[Bar@ l[Fields][[2]], $db, s2] sDelS[Bar@ l[Fields][[3]], $dc, s3] 
 				* sDelS[Bar@ l[Fields][[4]], $dd, s4] l[Invariant][s1, s2, s3, s4] l[CouplingBar][Sequence @@ l[Indices][s1, s2, s3, s4]]
+			,0] 
+			]
+		,{l, $quartics}] +
+		If[massive,
+			(*Trilinear couplings*)
+			Sum[AveragePermutations[{$da, $db, $dc, $dd}, l[UniqueArrangements] ][
+					sDelS[l[Fields][[1]], $da, s1] sDelS[l[Fields][[2]], $db, s2] sDelS[l[Fields][[3]], $dc, s3] sDelS[$vev, $dd, s4]
+					* l[Invariant][s1, s2, s3] l[Coupling][Sequence @@ l[Indices][s1, s2, s3]]
+				+ If[! l@SelfConjugate,
+					sDelS[Bar@ l[Fields][[1]], $da, s1] sDelS[Bar@ l[Fields][[2]], $db, s2] sDelS[Bar@ l[Fields][[3]], $dc, s3] 
+					* sDelS[$vev, $dd, s4] l[Invariant][s1, s2, s3] l[CouplingBar][Sequence @@ l[Indices][s1, s2, s3]]
 				,0] 
 				]
-			,{l, $quartics}] 
-	];
-
-(*Genral quartic coupling used in the computation of the beta function tensors.*)
-(*LamMassive[$da_, $db_, $dc_, $dd_] :=
-	Module[{l, s1, s2, s3, s4},
-		Sym[$da, $db, $dc, $dd][
-			(*Quartic couplings*)
-			Sum[sDelS[l[Fields][[1]], $da, s1] sDelS[l[Fields][[2]], $db, s2] sDelS[l[Fields][[3]], $dc, s3] sDelS[l[Fields][[4]], $dd, s4]
-				* l[Invariant][s1, s2, s3, s4] l[Coupling][Sequence @@ l[Indices][s1, s2, s3, s4]]
-			+ If[! l@SelfConjugate,
-				sDelS[Bar@ l[Fields][[1]], $da, s1] sDelS[Bar@ l[Fields][[2]], $db, s2] sDelS[Bar@ l[Fields][[3]], $dc, s3] 
-				* sDelS[Bar@ l[Fields][[4]], $dd, s4] l[Invariant][s1, s2, s3, s4] l[CouplingBar][Sequence @@ l[Indices][s1, s2, s3, s4]]
-				,0] 
-			,{l, $quartics}] +
-			(*Trilinear couplings*)
-			Sum[sDelS[l[Fields][[1]], $da, s1] sDelS[l[Fields][[2]], $db, s2] sDelS[l[Fields][[3]], $dc, s3] sDelS[$vev, $dd, s4]
-				* l[Invariant][s1, s2, s3] l[Coupling][Sequence @@ l[Indices][s1, s2, s3]]
-			+ If[! l@SelfConjugate,
-				sDelS[Bar@ l[Fields][[1]], $da, s1] sDelS[Bar@ l[Fields][[2]], $db, s2] sDelS[Bar@ l[Fields][[3]], $dc, s3] 
-				* sDelS[$vev, $dd, s4] l[Invariant][s1, s2, s3] l[CouplingBar][Sequence @@ l[Indices][s1, s2, s3]]
-				,0] 
 			,{l, $trilinears}] +
 			(*Scalar masses*)
-			Sum[sDelS[l[Fields][[1]], $da, s1] sDelS[l[Fields][[2]], $db, s2] sDelS[$vev, $dc, s3] sDelS[$vev, $dd, s4]
-				* l[Invariant][s1, s2] l[Coupling][Sequence @@ l[Indices][s1, s2]]
-			+ If[! l@SelfConjugate,
-				sDelS[Bar@ l[Fields][[1]], $da, s1] sDelS[Bar@ l[Fields][[2]], $db, s2] sDelS[$vev, $dc, s3] sDelS[$vev, $dd, s4] 
-				* l[Invariant][s1, s2] l[CouplingBar][Sequence @@ l[Indices][s1, s2]]
+			Sum[AveragePermutations[{$da, $db, $dc, $dd}, l[UniqueArrangements] ][
+					sDelS[l[Fields][[1]], $da, s1] sDelS[l[Fields][[2]], $db, s2] sDelS[$vev, $dc, s3] sDelS[$vev, $dd, s4]
+					* l[Invariant][s1, s2] l[Coupling][Sequence @@ l[Indices][s1, s2]]
+				+ If[! l@SelfConjugate,
+					sDelS[Bar@ l[Fields][[1]], $da, s1] sDelS[Bar@ l[Fields][[2]], $db, s2] sDelS[$vev, $dc, s3] sDelS[$vev, $dd, s4] 
+					* l[Invariant][s1, s2] l[CouplingBar][Sequence @@ l[Indices][s1, s2]]
 				,0] 
+				]
 			,{l, $scalarMasses}]
-		]
-	];*)
+		,0]
+	];
 
 
 
