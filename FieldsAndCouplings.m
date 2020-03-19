@@ -126,7 +126,7 @@ AddGaugeGroup::automatic = "Automatic naming of the coupling matrix only suitabl
 Options[AddGaugeGroup] = {CouplingMatrix -> Automatic, Field -> Automatic};
 AddGaugeGroup[coupling_Symbol, groupName_Symbol, U1, opts:OptionsPattern[]] :=
 	AddGaugeGroup[coupling, groupName, U1[1], opts]; 
-AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_Symbol[n_], OptionsPattern[]] :=
+AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_Symbol[n_Integer|n_Symbol], OptionsPattern[]] :=
 	Block[{cMatrix, projector, fieldName},
 		(*Decides on the field name*)
 		Switch[OptionValue @ Field
@@ -380,19 +380,6 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 			,{group, $gaugeGroups}];
 		];
 		
-		(*Defines the projection operator for extracting out the particular Yukawa coupling.*)
-		(*symmetryFactor = If[psi1 === psi2, 2, 1];
-		projection = With[{c = normalization /symmetryFactor/ Expand[OptionValue[GroupInvariant][a,b,c] 
-				*(OptionValue[GroupInvariant][a,b,c] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b])], 
-				gInv = OptionValue[GroupInvariant][s, f1, f2] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]}, 
-			Switch[OptionValue @ Chirality
-			,Left,
-				c sDelS[Bar@ phi, #1, s] sDelF[Bar@ psi1, #2, f1] sDelF[Bar@ psi2, #3, f2] gInv &	
-			,Right,
-				c sDelS[phi, #1, s] sDelF[psi1, #2, f1] sDelF[psi2, #3, f2] gInv &
-			]
-		];*)
-		
 		(*The symmetry factor is the total of all the different ways the GroupInvariant function can be contracted into the quartic coupling.*)
 		symmetryFactor = Expand[ OptionValue[GroupInvariant][a, i, j] 
 			* (Plus@@ OptionValue[GroupInvariant]@@@ DeleteCases[ Permutations@{{phi, a}, {psi1, i}, {psi2, j}}, 
@@ -607,15 +594,7 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 				];
 			,{group, $gaugeGroups}];
 		];
-		
-		(*Defines the projection operator for extracting out the particular quartic coupling.*)
-		(*symmetryFactor = 24 / Length @ DeleteDuplicates @ Permutations @ {phi1, phi2, phi3, phi4};	
-		projection = With[{c = normalization /24 /symmetryFactor / Expand[OptionValue[GroupInvariant][a, b, c, d] 
-				* (OptionValue[GroupInvariant][a, b, c, d] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b])],
-				gInv = OptionValue[GroupInvariant][s1, s2, s3, s4] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b] },
-			c sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[Bar@phi3, #3, s3] * sDelS[Bar@phi4, #4, s4] gInv &
-			];*)
-		
+				
 		(*The symmetry factor is the total of all the different ways the GroupInvariant function can be contracted into the quartic coupling.*)
 		symmetryFactor = Expand[ OptionValue[GroupInvariant][a, b, c, d] 
 			* (Plus@@ OptionValue[GroupInvariant]@@@ DeleteCases[ Permutations@{{phi1, a}, {phi2, b}, {phi3, c}, {phi4, d}}, 

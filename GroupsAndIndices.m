@@ -49,21 +49,26 @@ ReInitializeSymbols[] :=
 		eps /: Power[eps[rep_, a_, b_], 2] := Dim[rep];
 		eps[rep_, a_, a_] := 0;
 		
+		(*Levi-Civita symbols*)
+		Clear @ lcSymb;
+		lcSymb /: del[rep_, a___, x_, b___] lcSymb[rep_, c___, x_, d___] := lcSymb[rep, c, a, b, d];
+		lcSymb[rep_, a___, x_, b___, x_, c___] := 0;
+		
 		(*Invariant of S2 and fundamentals*)
 		Clear @ delS2;
 		delS2 /: del[group_[S2], a___, x_ , b___] delS2[group_, x_, i_, j_]=  delS2[group, a, b, i, j];
-		delS2 /: del[group_[fund], k___, x_ , l___] delS2[group_, a_, i___ x_, j___]=  delS2[group, a, i, k, l, j];
-		delS2 /: delS2[group_, a_, i_ , j_] delS2[group_, a_, k_, l_] = Sym[k, l][del[group@ fund, i, k] del[group@ fund, j, l]];
+		delS2 /: del[group_[fund], k___, x_, l___] delS2[group_, a_, i___, x_, j___]=  delS2[group, a, i, k, l, j];
 		delS2 /: delS2[group_, a_, i_ , j_] delS2[group_, b_, i_, j_] = del[group@ S2, a, b];
 		delS2 /: delS2[group_, a_, i_ , j_] delS2[group_, b_, j_, i_] = del[group@ S2, a, b];
+		delS2 /: Power[delS2[group_, a_, i_ , j_], 2] = Dim[group@ S2];
 		
 		(*Invariant of A2 and fundamentals*)
 		Clear @ delA2;
 		delA2 /: del[group_[A2], a___, x_ , b___] delA2[group_, x_, i_, j_]=  delA2[group, a, b, i, j];
-		delA2 /: del[group_[fund], k___, x_ , l___] delA2[group_, a_, i___ x_, j___]=  delA2[group, a, i, k, l, j];
-		delA2 /: delA2[group_, a_, i_ , j_] delA2[group_, a_, k_, l_] = AntiSym[k, l][del[group@ fund, i, k] del[group@ fund, j, l]];
+		delA2 /: del[group_[fund], k___, x_, l___] delA2[group_, a_, i___, x_, j___]=  delA2[group, a, i, k, l, j];
 		delA2 /: delA2[group_, a_, i_ , j_] delA2[group_, b_, i_, j_] = del[group@ A2, a, b];
 		delA2 /: delA2[group_, a_, i_ , j_] delA2[group_, b_, j_, i_] = - del[group@ A2, a, b];
+		delA2 /: Power[delA2[group_, a_, i_ , j_], 2] = Dim[group@ A2];
 		
 		(*Default group generator properties.*)
 		Clear @ tGen;
@@ -162,7 +167,9 @@ DefineSOGroup[group_Symbol, n_Integer|n_Symbol] :=
 		(*Symmetric traceless*)
 		Dim[group[S2]] = (n - 1) (n + 2) / 2 ;
 		TraceNormalization[group[S2]] = (n + 2) / 2;
-		Casimir2[group[S2]] =  n / 2;  
+		Casimir2[group[S2]] =  n / 2; 
+		delS2 /: delS2[group, a_, i_ , j_] delS2[group, a_, k_, l_] = Sym[k, l][del[group@ fund, i, k] del[group@ fund, j, l]] 
+			- del[group@ fund, i, j] del[group@ fund, k, l] / n;
 		
 		(*Adjoint*)
 		Dim[group[adj]] = n (n - 1) / 2;
@@ -185,6 +192,8 @@ DefineSpGroup[group_Symbol, n_Integer|n_Symbol] :=
 		Dim[group[A2]] = (n - 2) (n + 1) / 2 ;
 		TraceNormalization[group[A2]] = (n - 2) / 2;
 		Casimir2[group[A2]] =  n / 2;  
+		delA2 /: delA2[group, a_, i_ , j_] delA2[group, a_, k_, l_] = AntiSym[k, l][del[group@ fund, i, k] del[group@ fund, j, l]]
+			- eps[group@ fund, i, j] eps[group@ fund, k, l] / n;
 		
 		(*Adjoint*)
 		Dim[group[adj]] = n (n + 1) / 2;
@@ -207,11 +216,13 @@ DefineSUGroup[group_Symbol, n_Integer|n_Symbol] :=
 		Dim[group[S2]] = n (n +1) /2;
 		TraceNormalization[group[S2]] = (n + 2) / 2;
 		Casimir2[group[S2]] =  (n - 1) (n + 2) / n;
+		delS2 /: delS2[group, a_, i_ , j_] delS2[group, a_, k_, l_] = Sym[k, l][del[group@ fund, i, k] del[group@ fund, j, l]];
 		
 		(*Anti-Symmetric*)
 		Dim[group[A2]] = n (n -1) /2;
 		TraceNormalization[group[A2]] = (n - 2) / 2;
-		Casimir2[group[A2]] =  (n - 2) (n + 1) / n;  
+		Casimir2[group[A2]] =  (n - 2) (n + 1) / n;
+		delA2 /: delA2[group, a_, i_ , j_] delA2[group, a_, k_, l_] = AntiSym[k, l][del[group@ fund, i, k] del[group@ fund, j, l]];  
 		
 		(*Adjoint*)
 		Dim[group[adj]] = n^2 - 1;
