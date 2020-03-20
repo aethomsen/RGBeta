@@ -140,12 +140,17 @@ RefineGroupStructures[expr_] := Block[{replace},
 			matrices = permutations[[Ordering[permutations, 1][[1]] ]];
 			Tr @ Dot[Sequence @@ matrices]
 		];
-		
+	Matrix[m__][] := 
+		Block[{forms},
+			forms = {Dot[m], Trans /@ Reverse @ Dot[m]};
+			Sort[forms][[1]]	
+		];
+	
 (*Formating*)
 	Format[Trans[x_]] := HoldForm[x^Global`T];
 	Format[Bar[x_]] := OverBar @ x;
 	Format[Trans[Bar[x_]] ] := x^Style[Global`\[Dagger], Bold, 12];
-	Format[Matrix[x_, y__][] ] := HoldForm @Dot[x, y];
+	(*Format[Matrix[x_, y__][] ] := HoldForm @Dot[x, y];*)
 	Format[Matrix[x__][h1_[i1_] ] ] := Subscript[Dot[x], i1];
 	Format[Matrix[x__][h1_[i1_], h2_[i2_]] ] := Subscript[Dot[x], i1, i2];
 	

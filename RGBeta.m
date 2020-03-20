@@ -92,9 +92,9 @@ sDelV::usage =
 tGen::usage =
 	"tGen[rep, A, a, b] represents a group generator of the representation \"rep\" with adjoint index A. a and b are the two indices of rep. "
 
-Chirality::usage = Coupling::usage = CouplingBar::usage = CouplingMatrix::usage = FermionMass::usage = Field::usage = Fields::usage = FlavorIndices::usage = 
-	GaugeRep::usage = GroupInvariant::usage = Indices::usage = Invariant::usage = LieGroup::usage = Mass::usage= Projector::usage = Quartic::usage =
-	ScalarMass::usage = SelfConjugate::usage = Trilinear::usage = UniqueArrangements::ussage = Yukawa::usage = 
+Chirality::usage = Coupling::usage = CouplingBar::usage = CouplingIndices::usage = CouplingMatrix::usage = FermionMass::usage = Field::usage = 
+Fields::usage = FlavorIndices::usage = FourDimensions::usage = GaugeRep::usage = GroupInvariant::usage = Indices::usage = Invariant::usage = LieGroup::usage = Mass::usage= 
+MassIndices::usage = Parameterizations::usage = Projector::usage = Quartic::usage = RescaledCouplings::usage = ScalarMass::usage = SelfConjugate::usage = Trilinear::usage = UniqueArrangements::ussage = Yukawa::usage = 
 	"Function option and/or key used in global association lists of fields and/or couplings."
 
 SO::usage = Sp::usage = SU::usage = U1::usage =
@@ -193,6 +193,9 @@ Lam::usage =
 Matrix::usage =
 	"Matrix[x,...][i, j] represents the matrix product of couplings x,... with open indices i and j."
 
+OptionsCheck::usage =
+	"Function internally used to check validity of options passed as arguments."
+
 QuarticBetaFunctions::usage =
 	"QuarticBetaFunctions[loop] returns all quartic beta functions to the given loop order using diagonalized projectors."
 
@@ -281,5 +284,40 @@ Begin["`Private`"] (* Begin Private Context *)
 	Protect[f1, f2, s1, s2, s3, s4];
 	
 End[] (* End Private Context *)
+
+
+(*###########################################*)
+(*---------------Options check---------------*)
+(*###########################################*) 
+General::invalidopt = "Option `1` for function `2` received invalid value `3`.";
+General::optexpectsval = "Option `1` for function `2` received invalid value `3`. A `4` is expected.";
+OptionMessage[opt_, func_, val_] := Message[General::invalidopt, opt, func, val];
+OptionMessage[Chirality, func_, val_] := Message[General::optexpectsval, Chirality, func, val, "Left or Right"];
+OptionMessage[CouplingIndices, func_, val_] := Message[General::optexpectsval, CouplingIndices, func, val, Function];
+OptionMessage[FlavorIndices, func_, val_] := Message[General::optexpectsval, FlavorIndices, func, val, List];
+OptionMessage[GaugeRep, func_, val_] := Message[General::optexpectsval, GaugeRep, func, val, List];
+OptionMessage[GroupInvariant, func_, val_] := Message[General::optexpectsval, GroupInvariant, func, val, Function];
+OptionMessage[MassIndices, func_, val_] := Message[General::optexpectsval, MassIndices, func, val, Function];
+OptionMessage[Parameterizations, func_, val_] := Message[General::optexpectsval, Parameterizations, func, val, "List of rules"];
+
+(*Tests for specific options. Form expected is OptionTest[function, options] *)
+OptionTest[_, Chirality] = MatchQ[Left|Right];
+OptionTest[_, CouplingIndices] = MatchQ[_Function];
+OptionTest[_, CouplingMatrix] = MatchQ[Automatic|_List];
+OptionTest[_, FlavorIndices] = MatchQ[_List];
+OptionTest[_, FourDimensions] = BooleanQ;
+OptionTest[_, GaugeRep] = MatchQ[_List];
+OptionTest[_, GroupInvariant] = MatchQ[_Function];
+OptionTest[_, MassIndices] = MatchQ[_Function];
+OptionTest[_, Parameterizations] = MatchQ[_Function];
+OptionTest[_, RescaledCouplings] = BooleanQ;
+OptionTest[_, SelfConjugate] = BooleanQ;
+
+Attributes @ OptionsCheck = {HoldFirst};
+OptionsCheck @ func_[___, opts : OptionsPattern[]] := 
+	And @@ (OptionTest[func, #1][#2] || OptionMessage[#1, func, #2] &) @@@ FilterRules[List[opts], Options @ func];
+
+
+
 
 EndPackage[]

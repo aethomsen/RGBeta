@@ -16,7 +16,7 @@ Bar@ $vev = $vev;
 (*Initiates a scalar field*)
 Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
 AddScalar::failure = "Failed to add scalar field.";
-AddScalar[field_, OptionsPattern[] ] :=
+AddScalar[field_, OptionsPattern[] ] ? OptionsCheck :=
 	Block[{rep, massTerm = 1},
 		(*Checks gauge representations*)
 		If[! And @@ Table[RepresentationCheck @ rep, {rep, OptionValue[GaugeRep]}],
@@ -53,7 +53,7 @@ AddScalar[field_, OptionsPattern[] ] :=
 (*Initiates a fermion field*)	
 Options[AddFermion] = {GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
 AddFermion::failure = "Failed to add fermion field.";
-AddFermion[field_, OptionsPattern[] ] :=
+AddFermion[field_, OptionsPattern[] ] ? OptionsCheck :=
 	Block[{massTerm = 1, rep},
 		(*Checks gauge representations*)
 		If[! And @@ Table[RepresentationCheck @ rep, {rep, OptionValue[GaugeRep]}],
@@ -126,7 +126,7 @@ AddGaugeGroup::automatic = "Automatic naming of the coupling matrix only suitabl
 Options[AddGaugeGroup] = {CouplingMatrix -> Automatic, Field -> Automatic};
 AddGaugeGroup[coupling_Symbol, groupName_Symbol, U1, opts:OptionsPattern[]] :=
 	AddGaugeGroup[coupling, groupName, U1[1], opts]; 
-AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_Symbol[n_Integer|n_Symbol], OptionsPattern[]] :=
+AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_Symbol[n_Integer|n_Symbol], OptionsPattern[]] ? OptionsCheck :=
 	Block[{cMatrix, projector, fieldName},
 		(*Decides on the field name*)
 		Switch[OptionValue @ Field
@@ -309,11 +309,9 @@ FGauge[A_, B_, C_] :=
 Options[AddYukawa] = {CouplingIndices -> (Null &),
 	GroupInvariant -> (1 &),
 	Chirality -> Left, 
-	CheckInvariance -> False};
-AddYukawa::chirality = "The chirality `1` is invalid: Left or Right expected."; 
-AddYukawa::unkown = "`1` does not match any of the `2`s.";
-AddYukawa::nonfunction = "The value given in `1` is not a function."; 
-AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
+	CheckInvariance -> False}; 
+AddYukawa::unkown = "`1` does not match any of the `2`s."; 
+AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 	Block[{g, group, normalization, projection, symmetryFactor, temp, test, yuk, yukbar, y}, 
 		(*Tests if the fields have been defined*)
 		If[!MemberQ[Keys @ $scalars, phi /. Bar[x_] -> x],
@@ -328,16 +326,6 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 			Message[AddYukawa::unkown, psi2, "fermion"];
 			Return @ Null;
 		];
-
-		(*Tests if the invariants and coupling indices are functions*)
-		If[! Head @ OptionValue @ CouplingIndices === Function,
-			Message[AddYukawa::nonfunction, CouplingIndices];
-			Return @ Null;
-		]; 
-		If[! Head @ OptionValue @ GroupInvariant === Function,
-			Message[AddYukawa::nonfunction, GroupInvariant];
-			Return @ Null;
-		]; 
 		
 		(*If the chirality is right handed, the coupling is written with the barred fields*)
 		Switch[OptionValue @ Chirality
@@ -345,9 +333,6 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 			g = coupling;
 		,Right, 	
 			g = Bar @ coupling;
-		,_,
-			Message[AddYukawa::chirality, OptionValue @ Chirality];
-			Return @ Null;
 		];
 		
 		(*Constructs the coupling structure*)
@@ -414,11 +399,9 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] :=
 (*Function for defining the fermion masses of the theory*)
 Options[AddFermionMass] = {MassIndices -> (Null &),
 	GroupInvariant -> (1 &),
-	Chirality -> Left};
-AddFermionMass::chirality = "The chirality `1` is invalid: Left or Right expected."; 
+	Chirality -> Left}; 
 AddFermionMass::unkown = "`1` does not match any of the `2`s.";
-AddFermionMass::nonfunction = "The value given in `1` is not a function."; 
-AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] :=
+AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 	Block[{g, group, projection, symmetryFactor, temp, test, yuk, yukbar, y}, 
 		(*Tests if the fields have been defined*)
 		If[!MemberQ[Keys@ $fermions, psi1],
@@ -428,16 +411,6 @@ AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] :=
 		If[!MemberQ[Keys@ $fermions, psi2],
 			Message[AddFermionMass::unkown, psi2, "fermion"];
 			Return @ Null;
-		];
-
-		(*Tests if the invariants and coupling indices are functions*)
-		If[! Head @ OptionValue @ MassIndices === Function,
-			Message[AddFermionMass::nonfunction, MassIndices];
-			Return @ Null;
-		]; 
-		If[! Head @ OptionValue @ GroupInvariant === Function,
-			Message[AddFermionMass::nonfunction, GroupInvariant];
-			Return @ Null;
 		]; 
 		
 		(*If the chirality is right handed, the coupling is written with the barred fields*)
@@ -446,9 +419,6 @@ AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] :=
 			g = mass;
 		,Right, 	
 			g = Bar @ mass;
-		,_,
-			Message[AddFermionMass::chirality, OptionValue @ Chirality];
-			Return @ Null;
 		];
 		
 		(*Constructs the coupling structure*)
@@ -535,12 +505,11 @@ YukTil[a_, i_, j_, massive_:False] := {{YukawaRight[a, i, j, massive], 0}, {0, Y
 
 (*Function for defining the quartic couplings of the theory*)
 AddQuartic::unkown = "`1` does not match any of the scalars.";
-AddQuartic::nonfunction = "The value given in `1` is not a function.";
 Options[AddQuartic] = {CouplingIndices -> (Null &),
 	GroupInvariant -> (1 &),
 	SelfConjugate -> True, 
 	InvarianceCheck -> False}; 
-AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
+AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? OptionsCheck :=
 	Block[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
 		(*Tests if the fields have been defined*)
 		Do[
@@ -549,16 +518,6 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 				Return[Null];
 			];
 		,{temp, {phi1, phi2, phi3, phi4}}];
-		
-		(*Tests if the fields have been defined*)
-		If[! Head @ OptionValue @ CouplingIndices === Function,
-			Message[AddQuartic::nonfunction, CouplingIndices];
-			Return @ Null;
-		]; 
-		If[! Head @ OptionValue @ GroupInvariant === Function,
-			Message[AddQuartic::nonfunction, GroupInvariant];
-			Return @ Null;
-		]; 
 		
 		If[OptionValue @ SelfConjugate, 
 			Bar @ coupling = coupling;
@@ -624,11 +583,10 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] :=
 
 (*Function for defining the trilinear scalar couplings of the theory*)
 AddTrilinear::unkown = "`1` does not match any of the scalars.";
-AddTrilinear::nonfunction = "The value given in `1` is not a function.";
 Options[AddTrilinear] = {CouplingIndices -> (Null &),
 	GroupInvariant -> (1 &),
 	SelfConjugate -> True}; 
-AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] :=
+AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] ? OptionsCheck :=
 	Block[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
 		(*Tests if the fields have been defined*)
 		Do[
@@ -637,16 +595,6 @@ AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] :=
 				Return[Null];
 			];
 		,{temp, {phi1, phi2, phi3}}];
-		
-		(*Tests if the fields have been defined*)
-		If[! Head @ OptionValue @ CouplingIndices === Function,
-			Message[AddQuartic::nonfunction, CouplingIndices];
-			Return @ Null;
-		]; 
-		If[! Head @ OptionValue @ GroupInvariant === Function,
-			Message[AddQuartic::nonfunction, GroupInvariant];
-			Return @ Null;
-		]; 
 		
 		If[OptionValue @ SelfConjugate, 
 			Bar @ coupling = coupling;
@@ -695,11 +643,10 @@ AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] :=
 
 (*Function for defining the Scalar mass terms of the theory*)
 AddScalarMass::unkown = "`1` does not match any of the scalars.";
-AddScalarMass::nonfunction = "The value given in `1` is not a function.";
 Options[AddScalarMass] = {MassIndices -> (Null &),
 	GroupInvariant -> (1 &),
 	SelfConjugate -> True}; 
-AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] :=
+AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] ? OptionsCheck:=
 	Block[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
 		(*Tests if the fields have been defined*)
 		Do[
@@ -708,16 +655,6 @@ AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] :=
 				Return[Null];
 			];
 		,{temp, {phi1, phi2}}];
-		
-		(*Tests if the fields have been defined*)
-		If[! Head @ OptionValue @ MassIndices === Function,
-			Message[AddQuartic::nonfunction, CouplingIndices];
-			Return @ Null;
-		]; 
-		If[! Head @ OptionValue @ GroupInvariant === Function,
-			Message[AddQuartic::nonfunction, GroupInvariant];
-			Return @ Null;
-		]; 
 		
 		If[OptionValue @ SelfConjugate, 
 			Bar @ coupling = coupling;

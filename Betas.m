@@ -121,8 +121,9 @@ BetaTerm[coupling_, loop_Integer] :=
 	];
 
 (*Function that produces the beta function for the requested coupling*)
+Options[BetaFunction] = {RescaledCouplings -> False, FourDimensions -> True};
 BetaFunction::unkown = "The coupling `1` has not been defined."
-BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[{RescaledCouplings -> False, FourDimensions -> True}] ] :=
+BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
 	Block[{coef = 4 Pi, firstTerm = 0, l},
 		If[Head @ $couplings @ coupling === Missing, 
 			Message[BetaFunction::unkown, coupling];
@@ -136,7 +137,7 @@ BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[{RescaledCouplings ->
 	];
 
 (*Fuction for diagonalizing the quartic beta functions. It inherits the options from BetaFunction*)
-QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] :=
+QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 	Block[{betaFunctions, couplings, qProjections, invMatrix},
 		couplings = Keys @ $quartics;
 		Print["The quartic couplings are ", couplings];
@@ -156,9 +157,9 @@ QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] :=
 
 (*Function for finalizing a betafunction, bringing it from a nice compact output to a form more suitable for 
 further Mathematica manipulations. Can also be used to specify particular cases for coupling matrices.*)
-Finalize[expr_, OptionsPattern[{Parametrizations -> {}}] ] :=
+Finalize[expr_, OptionsPattern[{Parameterizations -> {}}] ] :=
 	Internal`InheritedBlock[{out, Bar, Trans, Matrix},
-		out = expr /. OptionValue @ Parametrizations;
+		out = expr /. OptionValue @ Parameterizations;
 			Bar[a_List] := Bar /@ a;
 			Bar[Times[a__]] := Bar /@ Times[a];
 			Bar[Plus[a__]] := Bar /@ Plus[a];

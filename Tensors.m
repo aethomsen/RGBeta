@@ -131,7 +131,7 @@ GaugeTensors[loop_Integer] := GaugeTensors[loop] =
 	Module[{bg, n, i, j, k, l, a, b, c, d, C1, C2, C3, C4, e, f},
 		Switch[loop
 		,0,
-			Return[- \[Epsilon] / 2 G2Matrix[$A, $B, -1]];
+			Return[- Global`\[Epsilon] / 2 G2Matrix[$A, $B, -1]];
 		,1,
 			bg[1, 1] := C2G[$A, $B];
 			bg[1, 2] := S2F[$A, $B];
@@ -200,7 +200,7 @@ YukawaTensors[loop_Integer] := YukawaTensors[loop] =
 	Module[{bYuk, n, b, c, d, k, k1, k2, k3, k4, A},
 		Switch[loop
 		,0,
-			Return[- \[Epsilon] / 2 Yuk[$a, $i, $j] ];
+			Return[- Global`\[Epsilon] / 2 Yuk[$a, $i, $j] ];
 		,1,
 			bYuk[1, 1] := 0 (*Yuk[b, $i, $j] C2S[$a, b] // Expand*);
 			bYuk[1, 2] := Tdot[C2Ft[$i, k1], Yuk[$a, k1, $j]] // Sym[$i, $j];
@@ -321,7 +321,7 @@ QuarticTensors[loop_Integer] := QuarticTensors[loop] =
 	Module[{bl, n, b1, b2, b3, b4, A1, A2, A3, k1, k2, k3, k4, k5, k6},
 		Switch[loop
 		,0,
-			Return[- \[Epsilon] Lam[$a, $b, $c, $d] ];
+			Return[- Global`\[Epsilon] Lam[$a, $b, $c, $d] ];
 		,1,
 			bl[1, 1] := FourGLam[$a, $b, $c, $d] // Sym[$b, $c, $d];
 			bl[1, 2] := C2S[$a, b1] Lam[b1, $b, $c, $d] // Expand // Sym4[$a, $b, $c, $d];
@@ -390,7 +390,7 @@ ScalarMassiveTensors[loop_Integer] := ScalarMassiveTensors[loop] =
 	Module[{bl, n, b1, b2, b3, b4, A1, A2, k1, k2, k3, k4, k5, k6},
 		Switch[loop
 		,0,
-			Return[- \[Epsilon]/2 Lam[$a, $b, $c, $d, True] ];
+			Return[- Global`\[Epsilon]/2 Lam[$a, $b, $c, $d, True] ];
 		,1,
 			bl[1, 1] := 0;
 			bl[1, 2] := C2S[$a, b1] Lam[b1, $b, $c, $d, True] // Expand // Sym4[$a, $b, $c, $d];
