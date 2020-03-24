@@ -80,6 +80,9 @@ eps::usage =
 fStruct::usage = 
 	"fStruct[group, A, B, C] represents the structure constant of the group with indices A, B, and C."
 
+lcSymb::usage =
+	"Levi-Civita symbol"
+
 sDelF::usage = 
 	"sDelF[field, generalIndex, specificIndex] represents the structure delta for a fermionic field."
 
@@ -148,26 +151,14 @@ Bcoef::usage =
 Casimir2::usage = 
 	"Casimir2[rep] sets the quadratic casimir of a given representation."
 
-CasimirSig::usage =
-	"CasimirSig is internal function used to determined the relative sign of the contraction of two structure constants."
-
 CheckProjection::usage =
 	"CheckProjection[coupling] returns the result of the automatic projection operator of the coupling on the corresponding generalized coupling."
 
 CouplingPermutations::usage = 
 	"CouplingPermutations[fields, invariant] provides at list of all unique permutations of a coupling of the fields (List) and with the given group invariance function."
 
-DefineU1Group::usage =
-	"DefineU1Group[group, n] defines group to be a U(1) group and defines representations accordingly."
-
-DefineSpGroup::usage =
-	"DefineSpGroup[group, n] defines group to be an Sp(n) group and sets defines invariants for several common representations accordingly."
-
-DefineSOGroup::usage =
-	"DefineSOGroup[group, n] defines group to be an SO(n) group and sets defines invariants for several common representations accordingly."
-
-DefineSUGroup::usage =
-	"DefineSUGroup[group, n] defines group to be an SU(n) group and sets defines invariants for several common representations accordingly."
+DefineLieGroup::usage = 
+	"DefineLieGroup[groupName, lieGroup[n]] sets groupName to be a lie group of type SU(n), SO(n), Sp(n), or U(1)^n and defines invariants for several common representations of said group."
 
 Dim::usage =
 	"Dim[rep] sets the dimension of a given representation."
@@ -292,7 +283,7 @@ End[] (* End Private Context *)
 General::invalidopt = "Option `1` for function `2` received invalid value `3`.";
 General::optexpectsval = "Option `1` for function `2` received invalid value `3`. A `4` is expected.";
 OptionMessage[opt_, func_, val_] := Message[General::invalidopt, opt, func, val];
-OptionMessage[Chirality, func_, val_] := Message[General::optexpectsval, Chirality, func, val, "Left or Right"];
+OptionMessage[Chirality, func_, val_] := Message[General::optexpectsval, Chirality, func, val, "Left or a Right"];
 OptionMessage[CouplingIndices, func_, val_] := Message[General::optexpectsval, CouplingIndices, func, val, Function];
 OptionMessage[FlavorIndices, func_, val_] := Message[General::optexpectsval, FlavorIndices, func, val, List];
 OptionMessage[GaugeRep, func_, val_] := Message[General::optexpectsval, GaugeRep, func, val, List];

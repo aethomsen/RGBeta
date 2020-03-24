@@ -25,6 +25,12 @@ Sym[a_, b_, c_][expr_] :=
 		perm = {a -> #[[1]], b -> #[[2]], c -> #[[3]]} & /@ Permutations[{a, b, c}];
 		Mean[expr/.perm]	
 	];
+AntiSym[indices__][expr_] := 
+	Block[{indList, subs, s},
+		indList = List[indices];
+		subs = MapThread[Rule, {indList, #}] & /@ Permutations @ indList;
+		Signature[indList] Sum[Signature[s[[;;, 2]] ] expr /.s, {s, subs}] / Factorial @Length @ indList
+	];
 	
 
 (*Functions that speed up evaluation by applying expand succesively to each couple of terms in the evaluation.*)
@@ -143,15 +149,15 @@ QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 		Print["The quartic couplings are ", couplings];
 		
 		(*Finds inversion matrix for the quartic projectors*)
-		qProjections = CheckProjection /@ couplings;
+		qProjections = CheckProjection /@ couplings // RefineGroupStructures;
 		invMatrix = Inverse @ Transpose @ Table[Simplify @ D[qProjections, c], {c, couplings}];
 		
 		(*Extracts beta functions*)
 		betaFunctions = Monitor[
-							Table[BetaFunction[c, loop, opt], {c, couplings}]
+							Table[BetaFunction[c, loop, opt] // RefineGroupStructures, {c, couplings}]
 						,StringForm["Evaluating the `` \[Beta]-function", c] ];
 		
-		Return[invMatrix . betaFunctions];
+		Return[invMatrix . betaFunctions // Expand];
 	];
 
 

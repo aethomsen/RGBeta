@@ -90,14 +90,20 @@ AddVector[name_, group_] :=
 (*----------Other functions----------*)
 (*###################################*)
 CouplingPermutations[fields_List, invariant_Function] :=
-	Block[{arg, fs, inv, number, perms, uniqueArrangements},
+	Block[{arg, fs, inv, number, perms, uniformSymbols, uniqueArrangements},
+		uniformSymbols = s_Symbol /; StringMatchQ[SymbolName@s, "*$*"] :> Symbol @ StringSplit[SymbolName@s, "$"][[1]];
 		number = Length @ fields;
 		perms = Permutations @ Table[n, {n, number}];
 		uniqueArrangements = {};
 		Return@ Reap[
 			Do[
 				fs = fields[[Ordering @ p]];
-				inv = (invariant @@ arg /@ p) /. del[rep_, a_, b_] /; ! OrderedQ @{a, b} -> del[rep, b, a]; 
+				inv = (invariant @@ arg /@ p) /.uniformSymbols /. 
+					{del[rep_, a__] :> del[rep, Sequence @@ Sort @ List @ a],
+					eps[rep_, a__] :> eps[rep, Sequence @@ Sort @ List @ a],
+					lcSymb[rep_, a__] :> lcSymb[rep, Sequence @@ Sort @ List @ a],
+					delA2[rep_, i_, a__] :> delA2[rep, i, Sequence @@ Sort @ List @ a],
+					delS2[rep_, i_, a__] :> delS2[rep, i, Sequence @@ Sort @ List @ a]}; 
 				If[MemberQ[uniqueArrangements, {fs, inv}],
 					Continue[];	
 				]; 
@@ -127,39 +133,26 @@ Options[AddGaugeGroup] = {CouplingMatrix -> Automatic, Field -> Automatic};
 AddGaugeGroup[coupling_Symbol, groupName_Symbol, U1, opts:OptionsPattern[]] :=
 	AddGaugeGroup[coupling, groupName, U1[1], opts]; 
 AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_Symbol[n_Integer|n_Symbol], OptionsPattern[]] ? OptionsCheck :=
-	Block[{cMatrix, projector, fieldName},
+	Block[{cMatrix, invalid, projector, fieldName},
+		(*Checks for mismatch between U1 power and coupling matrix*)
+		If[MatchQ[lieGroup[n], U1[x_] /; x > 1],
+			If[!SymmetricMatrixQ @ OptionValue @ CouplingMatrix || Length @ OptionValue @ CouplingMatrix =!= n,   
+				Message[AddGaugeGroup::dimensions];
+				Return @ $Failed;
+			];
+		];
+		
+		invalid = DefineLieGroup[groupName, lieGroup[n]];
+		If[invalid === $Failed,
+			Return @ $Failed;
+		];
+		
 		(*Decides on the field name*)
 		Switch[OptionValue @ Field
 		,Automatic,
 			fieldName = "A_" <> ToString @ groupName;
 		,_,
 			fieldName = OptionValue @ Field;
-		];
-		
-		(*Sets up the group symbols*)
-		Switch[lieGroup
-		,SO,
-			DefineSOGroup[groupName, n];
-		,Sp,
-			If[IntegerQ @n && !EvenQ @ n, 
-				Message[AddGaugeGroup::unkown, lieGroup[n] ];
-				Return @ Null;
-			];
-			DefineSpGroup[groupName, n];
-		,SU,
-			DefineSUGroup[groupName, n];
-		,U1,
-			(*Checks for mismatch between U1 power and coupling matrix*)	
-			If[n > 1 && OptionValue @ CouplingMatrix =!= Automatic,
-				If[!SymmetricMatrixQ @ OptionValue @ CouplingMatrix || Length @ OptionValue @ CouplingMatrix =!= n,   
-					Message[AddGaugeGroup::dimensions];
-					Return @ Null;
-				];
-			];
-			DefineU1Group[groupName, n];
-		,_,
-			Message[AddGaugeGroup::unkown, lieGroup[n] ];
-			Return @ Null;
 		];
 		
 		(*Sets up the gauge fields and 2-point projection*)
@@ -562,7 +555,7 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? Options
 		(*Defines the projection operator for extracting out the particular quartic coupling.*)
 		projection = With[{c = normalization / symmetryFactor,
 				gInv = OptionValue[GroupInvariant][s1, s2, s3, s4] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b] },
-			c sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[Bar@phi3, #3, s3] * sDelS[Bar@phi4, #4, s4] gInv &
+			c sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[Bar@phi3, #3, s3] sDelS[Bar@phi4, #4, s4] gInv &
 			];
 		
 		(*Adds the quartic coupling to the association*)

@@ -7,13 +7,6 @@ Begin["GroupsAndIndices`"]
 (*#############################################*)
 (*----------Generic tensor properties----------*)
 (*#############################################*)
-CasimirSig[group_, a_, b_] := 
-	Block[{common, ind1, ind2},
-		common = Intersection[a, b];
-		ind1 = Complement[a, common][[1]];
-		ind2 = Complement[b, common][[1]];
-		Signature[DeleteCases[a, ind1]] Signature[DeleteCases[b, ind2]] del[group[adj], ind1, ind2]
-	];
 
 (*An overall function which sets up the properties of symbols wrt. implicit summation. It flushes all previous definitions.*)
 ReInitializeSymbols[] :=
@@ -53,6 +46,13 @@ ReInitializeSymbols[] :=
 		Clear @ lcSymb;
 		lcSymb /: del[rep_, a___, x_, b___] lcSymb[rep_, c___, x_, d___] := lcSymb[rep, c, a, b, d];
 		lcSymb[rep_, a___, x_, b___, x_, c___] := 0;
+		lcSymb /: lcSymb[rep_, x:OrderlessPatternSequence[k__, i__]] lcSymb[rep_, y:OrderlessPatternSequence[k__, j__]] := 
+			Factorial @ Length @ List[k] * Signature@ List[j] * 
+			Signature[List@ x] Signature[List@ y] Signature[{k, i}] Signature[{k, j}] * 
+			Sum[Signature @ perm * Times @@ MapThread[ del[rep, #1, #2] &, {List[i], perm}], {perm, Permutations @ List[j] }];
+		(*lcSymb /: lcSymb[rep_, i__] lcSymb[rep_, j__] := 	Signature@ List[j] * 
+			Sum[Signature @ perm Times @@ Thread @ del[rep, List[i], perm], {perm, Permutations @ List[j] }];*)
+		lcSymb /: Power[lcSymb[rep_, i__], 2] = Factorial @ Dim @ rep;
 		
 		(*Invariant of S2 and fundamentals*)
 		Clear @ delS2;
@@ -86,8 +86,6 @@ ReInitializeSymbols[] :=
 		(*Default structure constant properties.*)
 		Clear @ fStruct;
 		fStruct /: del[group_[adj], A___, X_, B___] fStruct[group_, C___, X_, D___] := fStruct[group, C, A, B, D];
-		(*fStruct /: fStruct[group_, A___] fStruct[group_, B___] /; Length @ Intersection[List @A, List @B] === 2 := 
-			Casimir2 @ group[adj] CasimirSig[group, List@A, List@B];*)
 		fStruct /: fStruct[group_, x:OrderlessPatternSequence[A_, B_, C_] ] fStruct[group_, y:OrderlessPatternSequence[D_, B_, C_] ] := 
 			Signature[List@ x] Signature[List@ y] Signature[{A, B, C}] Signature[{D, B, C}] Casimir2[group@ adj] del[group@ adj, A, D];
 		fStruct[group_, a___, x_, b___, x_, c___] := 0;
@@ -101,9 +99,10 @@ RefineGroupStructures[expr_] := Block[{replace},
 			tGen[group_[S2], A_, a_, b_] :> 2 Sym[a@1, a@2] @ Sym[b@1, b@2][tGen[group@ fund, A, a@1, b@1] del[group@ fund, a@2, b@2]],
 			delS2[group_, a_, i_, j_] :> Sym[a@1, a@2][ del[group@ fund, a@1, i] del[group@ fund, a@2, j]],
 			tGen[group_[A2], A_, a_, b_] :> 2 AntiSym[a@1, a@2] @ AntiSym[b@1, b@2][tGen[group@ fund, A, a@1, b@1] del[group@ fund, a@2, b@2]],
-			delA2[group_, a_, i_, j_] :> AntiSym[a@1, a@2][ del[group@ fund, a@1, i] del[group@ fund, a@2, j]]  
+			delA2[group_, a_, i_, j_] :> AntiSym[a@1, a@2][ del[group@ fund, a@1, i] del[group@ fund, a@2, j]],
+			del[group_[A2], a_ ,b_] :> AntiSym[a @ 1, a @ 2 ][del[group@fund, a@1, b@1] del[group@fund, a@2, b@2] ] 
 		};
-	Return[expr /. replace];	
+	Return[expr /. replace // Expand];	
 ];
 
 (*Adds case to the system built in function Tr and Dot, to deal with substituting couplings for 0.*)
@@ -158,6 +157,34 @@ RefineGroupStructures[expr_] := Block[{replace},
 (*###########################################*)
 (*----------Gauge group definitions----------*)
 (*###########################################*)
+DefineLieGroup::unkown = "`1` is not a Lie group or has not been implemented.";
+DefineLieGroup::integerU1 = "U(1) groups should have a positive integer power";
+DefineLieGroup[groupName_Symbol, U1] = DefineLieGroup[groupName, U1 @ 1 ];
+DefineLieGroup[groupName_Symbol, lieGroup_Symbol[n_Integer|n_Symbol] ] :=
+	Block[{},
+		Switch[lieGroup
+		,SO,
+			DefineSOGroup[groupName, n];
+		,Sp,
+			If[IntegerQ @n && !EvenQ @ n, 
+				Message[DefineLieGroup::unkown, lieGroup[n] ];
+				Return @ $Failed;
+			];
+			DefineSpGroup[groupName, n];
+		,SU,
+			DefineSUGroup[groupName, n];
+		,U1,
+			If[!IntegerQ @ n ||  n <= 0,
+				Message[DefineLieGroup::integerU1];
+				Return @ $Failed;
+			];
+			DefineU1Group[groupName, n];
+		,_,
+			Message[DefineLieGroup::unkown, lieGroup[n] ];
+			Return @ $Failed;
+		];
+	];
+
 (*Initialization for an SO(n) gauge group.*)
 DefineSOGroup[group_Symbol, n_Integer|n_Symbol] := 
 	Block[{projection},		
@@ -227,7 +254,8 @@ DefineSUGroup[group_Symbol, n_Integer|n_Symbol] :=
 		Dim[group[A2]] = n (n -1) /2;
 		TraceNormalization[group[A2]] = (n - 2) / 2;
 		Casimir2[group[A2]] =  (n - 2) (n + 1) / n;
-		delA2 /: delA2[group, a_, i_ , j_] delA2[group, a_, k_, l_] = AntiSym[k, l][del[group@ fund, i, k] del[group@ fund, j, l]];  
+		delA2 /: delA2[group, a_, i_ , j_] delA2[group, a_, k_, l_] = AntiSym[k, l][del[group@ fund, i, k] del[group@ fund, j, l]];
+		(*del/: del[group @ A2, a_, b_] del[group @ fund, a_[[1]], b_]*)     
 		
 		(*Adjoint*)
 		Dim[group[adj]] = n^2 - 1;
