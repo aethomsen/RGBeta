@@ -304,6 +304,7 @@ Options[AddYukawa] = {CouplingIndices -> (Null &),
 	Chirality -> Left, 
 	CheckInvariance -> False}; 
 AddYukawa::unkown = "`1` does not match any of the `2`s."; 
+AddYukawa::projection0 = "The projcetion operator does not pick out the coupling. Please check the GroupInvariant for errors."
 AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 	Block[{g, group, normalization, projection, symmetryFactor, temp, test, yuk, yukbar, y}, 
 		(*Tests if the fields have been defined*)
@@ -357,23 +358,7 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 				];
 			,{group, $gaugeGroups}];
 		];
-		
-		(*The symmetry factor is the total of all the different ways the GroupInvariant function can be contracted into the quartic coupling.*)
-		symmetryFactor = Expand[ OptionValue[GroupInvariant][a, i, j] 
-			* (Plus@@ OptionValue[GroupInvariant]@@@ DeleteCases[ Permutations@{{phi, a}, {psi1, i}, {psi2, j}}, 
-					_?(#[[;; , 1]] =!= {phi, psi1, psi2} &)][[;; , ;; , 2]] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]
-				) ] //Simplify;
-		(*Defines the projection operator for extracting out the particular quartic coupling.*)
-		projection = With[
-			{c = normalization /symmetryFactor,	gInv = OptionValue[GroupInvariant][s1, f1, f2] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]}, 
-			Switch[OptionValue @ Chirality
-			,Left,
-				c sDelS[Bar@ phi, #1, s1] sDelF[Bar@ psi1, #2, f1] sDelF[Bar@ psi2, #3, f2] gInv &	
-			,Right,
-				c sDelS[phi, #1, s1] sDelF[psi1, #2, f1] sDelF[psi2, #3, f2]  gInv &
-			]
-		];
-		
+				
 		(*Adds the Yukawa coupling to the association*)
 		AppendTo[$yukawas, coupling -> 
 			<|Chirality -> OptionValue @ Chirality,
@@ -381,8 +366,26 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 			CouplingBar -> yukbar, 
 			Fields -> {phi, psi1, psi2},
 			Indices -> OptionValue @ CouplingIndices,
-			Invariant -> OptionValue @ GroupInvariant,
-			Projector -> projection|>];
+			Invariant -> OptionValue @ GroupInvariant|>];
+		
+		(*Constructs the projection operator*)
+		projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, f1, f2] *
+			Switch[OptionValue @ Chirality
+			,Left,
+				sDelS[Bar@ phi, #1, s1] sDelF[Bar@ psi1, #2, f1] sDelF[Bar@ psi2, #3, f2]	
+			,Right,
+				sDelS[phi, #1, s1] sDelF[psi1, #2, f1] sDelF[psi2, #3, f2]
+			] ] &;
+		symmetryFactor = ReplaceAll[Rule[#, 0] & /@ DeleteCases[Keys @ $yukawas, coupling]] @ RefineGroupStructures @  
+			Expand[projection[$a, $i, $j] Switch[OptionValue @ Chirality, Left, YukawaLeft[$a, $i, $j], Right, YukawaRight[$a, $i, $j]	] ] /.
+				Matrix[x_][__] -> x /. coupling -> 1 // Simplify;
+		If[symmetryFactor === 0,
+			Message[AddYukawa::projection0];
+			KeyDropFrom[$yukawas, coupling];
+			Return @ $Failed;
+		];
+		projection = Evaluate[projection[#1, #2, #3] / symmetryFactor] &;
+		AppendTo[$yukawas @ coupling, Projector -> projection];		
 		AppendTo[$couplings, coupling -> Yukawa];
 		
 		FlushBetas[];
@@ -394,6 +397,7 @@ Options[AddFermionMass] = {MassIndices -> (Null &),
 	GroupInvariant -> (1 &),
 	Chirality -> Left}; 
 AddFermionMass::unkown = "`1` does not match any of the `2`s.";
+AddFermionMass::projection0 = "The projcetion operator does not pick out the coupling. Please check the GroupInvariant for errors."
 AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 	Block[{g, group, projection, symmetryFactor, temp, test, yuk, yukbar, y}, 
 		(*Tests if the fields have been defined*)
@@ -426,23 +430,6 @@ AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 			];
 		];
 		
-		(*The symmetry factor is the total of all the different ways the GroupInvariant function can be contracted into the quartic coupling.*)
-		symmetryFactor = Expand[ OptionValue[GroupInvariant][a, b] 
-			* (Plus@@ OptionValue[GroupInvariant]@@@ DeleteCases[ Permutations@{{psi1, a}, {psi2, b}}, 
-					_?(#[[;; , 1]] =!= {psi1, psi2} &)][[;; , ;; , 2]] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]
-				) ] //Simplify;
-		(*Defines the projection operator for extracting out the particular quartic coupling.*)
-		projection = With[
-			{c = 1 /symmetryFactor,	gInv = OptionValue[GroupInvariant][f1, f2] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]}, 
-			Switch[OptionValue @ Chirality
-			,Left,
-				c sDelS[$vevSelect, #1, s1] sDelF[Bar@ psi1, #2, f1] sDelF[Bar@ psi2, #3, f2] gInv &	
-			,Right,
-				c sDelS[$vevSelect, #1, s1] sDelF[psi1, #2, f1] sDelF[psi2, #3, f2]  gInv &
-			]
-		];
-		
-		
 		(*Adds the Yukawa coupling to the association*)
 		AppendTo[$fermionMasses, mass -> 
 			<|Chirality -> OptionValue @ Chirality,
@@ -450,8 +437,26 @@ AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 			CouplingBar -> yukbar, 
 			Fields -> {psi1, psi2},
 			Indices -> OptionValue @ MassIndices,
-			Invariant -> OptionValue @ GroupInvariant,
-			Projector -> projection|>];
+			Invariant -> OptionValue @ GroupInvariant|>];
+		
+		(*Constructs the projection operator*)
+		projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, f1, f2] *
+			Switch[OptionValue @ Chirality
+			,Left,
+				sDelS[$vevSelect, #1, s1] sDelF[Bar@ psi1, #2, f1] sDelF[Bar@ psi2, #3, f2]	
+			,Right,
+				sDelS[$vevSelect, #1, s1] sDelF[psi1, #2, f1] sDelF[psi2, #3, f2]
+			] ] &;
+		symmetryFactor = ReplaceAll[Rule[#, 0] & /@ DeleteCases[Keys @ $fermionMasses, mass]] @ RefineGroupStructures @  
+			Expand[projection[$a, $i, $j] Switch[OptionValue @ Chirality, Left, YukawaLeft[$a, $i, $j, True], 
+				Right, YukawaRight[$a, $i, $j, True] ] ] /. Matrix[x_][__] -> x /. mass -> 1 // Simplify;
+		If[symmetryFactor === 0,
+			Message[AddFermionMass::projection0];
+			KeyDropFrom[$fermionMasses, mass];
+			Return @ $Failed;
+		];
+		projection = Evaluate[projection[#1, #2, #3] / symmetryFactor] &;
+		AppendTo[$fermionMasses @ mass, Projector -> projection];
 		AppendTo[$couplings, mass -> FermionMass];
 		
 		FlushBetas[];
@@ -498,6 +503,7 @@ YukTil[a_, i_, j_, massive_:False] := {{YukawaRight[a, i, j, massive], 0}, {0, Y
 
 (*Function for defining the quartic couplings of the theory*)
 AddQuartic::unkown = "`1` does not match any of the scalars.";
+AddQuartic::projection0 = "The projcetion operator does not pick out the coupling. Please check the GroupInvariant for errors.";
 Options[AddQuartic] = {CouplingIndices -> (Null &),
 	GroupInvariant -> (1 &),
 	SelfConjugate -> True, 
@@ -508,7 +514,7 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? Options
 		Do[
 			If[!MemberQ[Keys@ $scalars, temp /. Bar[x_] -> x],
 				Message[AddQuartic::unkown, temp /. Bar[x_] -> x];
-				Return[Null];
+				Return[$Failed];
 			];
 		,{temp, {phi1, phi2, phi3, phi4}}];
 		
@@ -546,17 +552,6 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? Options
 				];
 			,{group, $gaugeGroups}];
 		];
-				
-		(*The symmetry factor is the total of all the different ways the GroupInvariant function can be contracted into the quartic coupling.*)
-		symmetryFactor = Expand[ OptionValue[GroupInvariant][a, b, c, d] 
-			* (Plus@@ OptionValue[GroupInvariant]@@@ DeleteCases[ Permutations@{{phi1, a}, {phi2, b}, {phi3, c}, {phi4, d}}, 
-					_?(#[[;; , 1]] =!= {phi1, phi2, phi3, phi4} &)][[;; , ;; , 2]] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]
-				) ] //Simplify;
-		(*Defines the projection operator for extracting out the particular quartic coupling.*)
-		projection = With[{c = normalization / symmetryFactor,
-				gInv = OptionValue[GroupInvariant][s1, s2, s3, s4] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b] },
-			c sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[Bar@phi3, #3, s3] sDelS[Bar@phi4, #4, s4] gInv &
-			];
 		
 		(*Adds the quartic coupling to the association*)
 		AppendTo[$quartics, coupling -> 
@@ -565,9 +560,21 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? Options
 			Fields -> {phi1, phi2, phi3, phi4},
 			Indices -> OptionValue @ CouplingIndices,
 			Invariant -> OptionValue @ GroupInvariant,
-			Projector -> projection,
 			SelfConjugate -> OptionValue @ SelfConjugate,
 			UniqueArrangements -> CouplingPermutations[{phi1, phi2, phi3, phi4}, OptionValue @ GroupInvariant]|>];
+		
+		(*Constructs the projection operator*)
+		projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, s2, s3, s4] *
+			sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[Bar@phi3, #3, s3] sDelS[Bar@phi4, #4, s4]] &;
+		symmetryFactor = ReplaceAll[Rule[#, 0] & /@ DeleteCases[Keys @ $quartics, coupling]] @ RefineGroupStructures @  
+			Expand[projection[$a, $b, $c, $d] Lam[$a, $b, $c, $d] ] /. Matrix[x_][__] -> x /. coupling -> 1 // Simplify;
+		If[symmetryFactor === 0,
+			Message[AddQuartic::projection0];
+			KeyDropFrom[$quartics, coupling];
+			Return @ $Failed;
+		];
+		projection = Evaluate[projection[#1, #2, #3, #4] / symmetryFactor] &;
+		AppendTo[$quartics @ coupling, Projector -> projection];
 		AppendTo[$couplings, coupling -> Quartic];
 		
 		FlushBetas[];
@@ -576,6 +583,7 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? Options
 
 (*Function for defining the trilinear scalar couplings of the theory*)
 AddTrilinear::unkown = "`1` does not match any of the scalars.";
+AddTrilinear::projection0 = "The projcetion operator does not pick out the coupling. Please check the GroupInvariant for errors.";
 Options[AddTrilinear] = {CouplingIndices -> (Null &),
 	GroupInvariant -> (1 &),
 	SelfConjugate -> True}; 
@@ -607,17 +615,6 @@ AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] ? OptionsCheck
 				lambar = n Bar[coupling] @ ## &
 			];
 		];
-			
-		(*The symmetry factor is the total of all the different ways the GroupInvariant function can be contracted into the quartic coupling.*)
-		symmetryFactor = Expand[ OptionValue[GroupInvariant][a, b, c] 
-			* (Plus@@ OptionValue[GroupInvariant]@@@ DeleteCases[ Permutations@{{phi1, a}, {phi2, b}, {phi3, c}}, 
-					_?(#[[;; , 1]] =!= {phi1, phi2, phi3} &)][[;; , ;; , 2]] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]
-				) ] //Simplify;
-		(*Defines the projection operator for extracting out the particular quartic coupling.*)
-		projection = With[{c = normalization / symmetryFactor,
-				gInv = OptionValue[GroupInvariant][s1, s2, s3] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b] },
-			c sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[Bar@phi3, #3, s3] * sDelS[$vevSelect, #4, s4] gInv &
-			];
 		
 		(*Adds the quartic coupling to the association*)
 		AppendTo[$trilinears, coupling -> 
@@ -626,9 +623,21 @@ AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] ? OptionsCheck
 			Fields -> {phi1, phi2, phi3},
 			Indices -> OptionValue @ CouplingIndices,
 			Invariant -> OptionValue @ GroupInvariant,
-			Projector -> projection,
 			SelfConjugate -> OptionValue @ SelfConjugate,
 			UniqueArrangements -> CouplingPermutations[{phi1, phi2, phi3, $vev}, OptionValue @ GroupInvariant]|>];
+			
+		(*Constructs the projection operator*)
+		projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, s2, s3, s4] *
+			sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[Bar@phi3, #3, s3] sDelS[$vevSelect, #4, s4]] &;
+		symmetryFactor = ReplaceAll[Rule[#, 0] & /@ DeleteCases[Keys @ $trilinears, coupling]] @ RefineGroupStructures @  
+			Expand[projection[$a, $b, $c, $d] Lam[$a, $b, $c, $d, True] ] /. Matrix[x_][__] -> x /. coupling -> 1 // Simplify;
+		If[symmetryFactor === 0,
+			Message[AddTrilinear::projection0];
+			KeyDropFrom[$trilinears, coupling];
+			Return @ $Failed;
+		];
+		projection = Evaluate[projection[#1, #2, #3, #4] / symmetryFactor] &;
+		AppendTo[$trilinears @ coupling, Projector -> projection];
 		AppendTo[$couplings, coupling -> Trilinear];
 		
 		FlushBetas[];
@@ -636,6 +645,7 @@ AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] ? OptionsCheck
 
 (*Function for defining the Scalar mass terms of the theory*)
 AddScalarMass::unkown = "`1` does not match any of the scalars.";
+AddScalarMass::projection0 = "The projcetion operator does not pick out the coupling. Please check the GroupInvariant for errors.";
 Options[AddScalarMass] = {MassIndices -> (Null &),
 	GroupInvariant -> (1 &),
 	SelfConjugate -> True}; 
@@ -667,17 +677,6 @@ AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] ? OptionsCheck:=
 				lambar = n Bar[coupling] @ ## &
 			];
 		];
-				
-		(*The symmetry factor is the total of all the different ways the GroupInvariant function can be contracted into the quartic coupling.*)
-		symmetryFactor = 2 * Expand[ OptionValue[GroupInvariant][a, b] (*there's an extra factor 2 from the 2 vevs.*)
-			* (Plus@@ OptionValue[GroupInvariant]@@@ DeleteCases[ Permutations@{{phi1, a}, {phi2, b}}, 
-					_?(#[[;; , 1]] =!= {phi1, phi2} &)][[;; , ;; , 2]] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b]
-				) ] //Simplify;
-		(*Defines the projection operator for extracting out the mass from the quartic couplings.*)
-		projection = With[{c = normalization / symmetryFactor,
-				gInv = OptionValue[GroupInvariant][s1, s2] /. tGen[rep_, A_, a_, b_] -> tGen[Bar @ rep, A, a, b] },
-			c sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[$vevSelect, #3, s3] * sDelS[$vevSelect, #4, s4] gInv &
-			];
 		
 		(*Adds the quartic coupling to the association*)
 		AppendTo[$scalarMasses, coupling -> 
@@ -686,9 +685,21 @@ AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] ? OptionsCheck:=
 			Fields -> {phi1, phi2},
 			Indices -> OptionValue @ MassIndices,
 			Invariant -> OptionValue @ GroupInvariant,
-			Projector -> projection,
 			SelfConjugate -> OptionValue @ SelfConjugate,
 			UniqueArrangements -> CouplingPermutations[{phi1, phi2, $vev, $vev}, OptionValue @ GroupInvariant]|>];
+		
+		(*Constructs the projection operator*)
+		projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, s2, s3, s4] *
+			sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[$vevSelect, #3, s3] sDelS[$vevSelect, #4, s4]]& ;
+		symmetryFactor = ReplaceAll[Rule[#, 0] & /@ DeleteCases[Keys @ $scalarMasses, coupling]] @ RefineGroupStructures @  
+			Expand[projection[$a, $b, $c, $d] Lam[$a, $b, $c, $d, True] ] /. Matrix[x_][__] -> x /. coupling -> 1 // Simplify;
+		If[symmetryFactor === 0,
+			Message[AddScalarMass::projection0];
+			KeyDropFrom[$scalarMasses, coupling];
+			Return @ $Failed;
+		];
+		projection = Evaluate[projection[#1, #2, #3, #4] / symmetryFactor] &;
+		AppendTo[$scalarMasses @ coupling, Projector -> projection];
 		AppendTo[$couplings, coupling -> ScalarMass];
 		
 		FlushBetas[];

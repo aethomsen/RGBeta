@@ -143,6 +143,7 @@ BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
 	];
 
 (*Fuction for diagonalizing the quartic beta functions. It inherits the options from BetaFunction*)
+QuarticBetaFunctions::singular = "The projection matrix is singular. Some of the couplings may be redundant."
 QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 	Block[{betaFunctions, couplings, qProjections, invMatrix},
 		couplings = Keys @ $quartics;
@@ -150,7 +151,12 @@ QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 		
 		(*Finds inversion matrix for the quartic projectors*)
 		qProjections = CheckProjection /@ couplings // RefineGroupStructures;
-		invMatrix = Inverse @ Transpose @ Table[Simplify @ D[qProjections, c], {c, couplings}];
+		invMatrix = Transpose @ Table[Simplify @ D[qProjections, c], {c, couplings}];
+		If[Det @ invMatrix === 0,
+			Message[QuarticBetaFunctions::singular];
+			Return @ $Failed;
+		];
+		invMatrix = Inverse @ invMatrix;
 		
 		(*Extracts beta functions*)
 		betaFunctions = Monitor[
