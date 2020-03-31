@@ -1,7 +1,7 @@
 (*
 ################################################################
 This is RGBeta, Version 0.2x. 
-Last modefied 24-03-2020
+Last modefied 31-03-2020
 
 Released under the MIT license (see 'MIT_license.txt').
 
@@ -220,6 +220,9 @@ Sym::usage =
 Sym4::usage =
 	"Sym4[a1, a2, a3, a4][expr] averages the expression over the 4 ways of switching a1 with one of the indices."
 
+Tensor::usage =
+	"Tensor[x][i,...] represents the tensor x with open indices i,..."
+
 Tferm::usage = 
 	"Tferm[A, i, j] is a function that generates the general gauge generator matrix for the fermions."
 
@@ -254,7 +257,7 @@ YukTil::usage =
 (*---------------Loads components---------------*)
 (*##############################################*) 
 Begin["`Private`"] (* Begin Private Context *) 
-	$RGBetaVersion = "RGBeta 0.2x";
+	$RGBetaVersion = "RGBeta v0.2x";
 	Print[$RGBetaVersion, " by Anders Eller Thomsen"];
 	
 	(*Loads package files*)

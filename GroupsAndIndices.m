@@ -150,6 +150,8 @@ RefineGroupStructures[expr_] := Block[{replace},
 			forms = {Dot[m], Trans /@ Reverse @ Dot[m]};
 			Sort[forms][[1]]	
 		];
+(*Tensor head for tensor coupling contractions*)
+	Tensor /: del[ind_, a___, x_, b___] Tensor[t_][c___, ind_[x_], d___] := Tensor[t][c, ind[a, b], d];
 	
 (*Formating*)
 	Format[Trans[x_]] := HoldForm[x^Global`T];

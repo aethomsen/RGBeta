@@ -57,7 +57,7 @@ BetaTerm[coupling_, loop_Integer] :=
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
 			If[loop > 3, 
 				Message[BetaTerm::loopNumber, "gauge", 3];
-				Return[Null];
+				Return @ $Failed;
 			];
 			group = $couplings @ coupling;
 			beta = Ttimes[G2Matrix[C1, $A] ,GaugeTensors[loop], G2Matrix[$B, C2], $gaugeGroups[group, Projector][C1, C2] ];
@@ -69,7 +69,7 @@ BetaTerm[coupling_, loop_Integer] :=
 		,Yukawa,
 			If[loop > 2, 
 				Message[BetaTerm::loopNumber, "Yukawa", 2];
-				Return[Null];
+				Return @ $Failed;
 			];
 			
 			Switch[$yukawas[coupling, Chirality]
@@ -83,14 +83,14 @@ BetaTerm[coupling_, loop_Integer] :=
 		,Quartic,
 			If[loop > 2, 
 				Message[BetaTerm::loopNumber, "quartic", 2];
-				Return[Null];
+				Return @ $Failed;
 			];
 			
 			beta = QuarticTensors[loop] $quartics[coupling, Projector][$a, $b, $c, $d] // Expand // Expand;
 		,FermionMass,
 			If[loop > 2, 
 				Message[BetaTerm::loopNumber, "fermion mass", 2];
-				Return[Null];
+				Return @ $Failed;
 			];
 			
 			Switch[$fermionMasses[coupling, Chirality]
@@ -104,14 +104,14 @@ BetaTerm[coupling_, loop_Integer] :=
 		,Trilinear,
 			If[loop > 2, 
 				Message[BetaTerm::loopNumber, "trilinear scalar", 2];
-				Return[Null];
+				Return @ $Failed;
 			];
 			
 			beta = ScalarMassiveTensors[loop] $trilinears[coupling, Projector][$a, $b, $c, $d] // Expand // Expand;
 		,ScalarMass,
 			If[loop > 2, 
 				Message[BetaTerm::loopNumber, "scalar mass", 2];
-				Return[Null];
+				Return @ $Failed;
 			];
 			If[loop === 0,
 				Return @ 0;
@@ -120,10 +120,12 @@ BetaTerm[coupling_, loop_Integer] :=
 			beta = ScalarMassiveTensors[loop] $scalarMasses[coupling, Projector][$a, $b, $c, $d] // Expand // Expand;
 		,_Missing,
 			Message[BetaTerm::unkown, coupling];
-			Return[Null];
+			Return @ $Failed;
 		];
 		
-		Return @ beta;
+		(*Canonically order coupling indices if any*)
+		ReplaceAll[Matrix[y__][a_[f1_], b_[f2_]] /; !OrderedQ[{f1, f2}] :> 
+			Matrix[Sequence @@ Reverse[Trans /@ List@ y]][b[f2], a[f1]] ] @ beta
 	];
 
 (*Function that produces the beta function for the requested coupling*)
@@ -181,7 +183,7 @@ QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 							Table[BetaFunction[c, loop, opt] // RefineGroupStructures, {c, couplings}]
 						,StringForm["Evaluating the `` \[Beta]-function", c] ];
 		
-		Return[invMatrix . betaFunctions // Expand];
+		invMatrix . betaFunctions // Expand
 	];
 
 
@@ -206,10 +208,10 @@ Finalize[expr_, OptionsPattern[{Parameterizations -> {}}] ] :=
 (*Function to check the projected value of a coupling*)
 CheckProjection::unkown = "The coupling `1` has not been defined."
 CheckProjection[coupling_Symbol] :=
-	Module[{cop, tensor, A, B, a, i, j, b, c, d},
+	Module[{tensor, A, B, a, i, j, b, c, d},
 		Switch[$couplings @ coupling
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
-			cop = Ttimes[G2Matrix[A, B], $gaugeGroups[$couplings @ coupling, Projector][B, A] ] // Expand;
+			Ttimes[G2Matrix[A, B], $gaugeGroups[$couplings @ coupling, Projector][B, A] ] // Expand
 		,Yukawa,			
 			Switch[$yukawas[coupling, Chirality]
 			,Left,
@@ -217,9 +219,9 @@ CheckProjection[coupling_Symbol] :=
 			,Right,
 				tensor = Yuk[a, i, j][[2, 2]];
 			];
-			cop = tensor $yukawas[coupling, Projector][a, i, j] // Expand // Expand;
+			tensor $yukawas[coupling, Projector][a, i, j] // Expand // Expand
 		,Quartic,
-			cop = Lam[a, b, c, d] $quartics[coupling, Projector][a, b, c, d] // Expand // Expand;
+			Lam[a, b, c, d] $quartics[coupling, Projector][a, b, c, d] // Expand // Expand
 		,FermionMass,
 			Switch[$fermionMasses[coupling, Chirality]
 			,Left,
@@ -227,16 +229,15 @@ CheckProjection[coupling_Symbol] :=
 			,Right,
 				tensor = Yuk[a, i, j, True][[2, 2]];
 			];
-			cop = tensor $fermionMasses[coupling, Projector][a, i, j] // Expand // Expand;
+			tensor $fermionMasses[coupling, Projector][a, i, j] // Expand // Expand
 		,Trilinear,
-			cop = Lam[a, b, c, d, True] $trilinears[coupling, Projector][a, b, c, d] // Expand // Expand;
+			Lam[a, b, c, d, True] $trilinears[coupling, Projector][a, b, c, d] // Expand // Expand
 		,ScalarMass,
-			cop = Lam[a, b, c, d, True] $scalarMasses[coupling, Projector][a, b, c, d] // Expand // Expand;
+			Lam[a, b, c, d, True] $scalarMasses[coupling, Projector][a, b, c, d] // Expand // Expand
 		,_Missing,
 			Message[CheckProjection::unkown, coupling];
-			Return @ Null;
-		];
-		Return @ cop;
+			$Failed
+		]
 	];
 
 

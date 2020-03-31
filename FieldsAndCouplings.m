@@ -21,7 +21,7 @@ AddScalar[field_, OptionsPattern[] ] ? OptionsCheck :=
 		(*Checks gauge representations*)
 		If[! And @@ Table[RepresentationCheck @ rep, {rep, OptionValue[GaugeRep]}],
 			Message[AddScalar::failure];
-			Return @ Null;
+			Return @ $Failed;
 		];
 		
 		(*Adds field options to the list of scalar fields*)
@@ -58,7 +58,7 @@ AddFermion[field_, OptionsPattern[] ] ? OptionsCheck :=
 		(*Checks gauge representations*)
 		If[! And @@ Table[RepresentationCheck @ rep, {rep, OptionValue[GaugeRep]}],
 			Message[AddFermion::failure];
-			Return @ Null;
+			Return @ $Failed;
 		];
 		
 		(*Adds field options to the list of fermion fields*)
@@ -80,10 +80,7 @@ AddFermion[field_, OptionsPattern[] ] ? OptionsCheck :=
 	];
 
 (*Initiates a vector field*)	
-AddVector[name_, group_] :=
-	Block[{},
-		sDelV/: sDelV[name, ind_, v1_] sDelV[name, ind_, v2_] = del[group[adj], v1, v2];
-	];
+AddVector[name_, group_] := (sDelV/: sDelV[name, ind_, v1_] sDelV[name, ind_, v2_] = del[group[adj], v1, v2]);
 
 
 (*###################################*)
@@ -95,7 +92,7 @@ CouplingPermutations[fields_List, invariant_Function] :=
 		number = Length @ fields;
 		perms = Permutations @ Table[n, {n, number}];
 		uniqueArrangements = {};
-		Return@ Reap[
+		Reap[
 			Do[
 				fs = fields[[Ordering @ p]];
 				inv = (invariant @@ arg /@ p) /.uniformSymbols /. 
@@ -110,7 +107,7 @@ CouplingPermutations[fields_List, invariant_Function] :=
 				AppendTo[uniqueArrangements, {fs, inv}];
 				Sow @ p;
 			,{p, perms}];
-		][[2,1]];
+		][[2,1]]
 	];
 
 AveragePermutations[indices_List, permutations_List][expr_] :=
@@ -157,13 +154,8 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_Symbol[n_Integer|n_Sym
 		
 		(*Sets up the gauge fields and 2-point projection*)
 		AddVector[fieldName, groupName];
-		projector = With[{V = fieldName, 
-			gStruct = If[lieGroup =!= U1,
-				del[groupName[adj], v1, v2] / Dim @ groupName[adj]
-				, 1]
-			}, 
-			sDelV[V, #1, v1] sDelV[V, #2, v2] gStruct &
-		]; 
+		projector = Evaluate[If[lieGroup =!= U1, del[groupName[adj], v1, v2] / Dim @ groupName[adj], 1] *
+			sDelV[fieldName, #1, v1] sDelV[fieldName, #2, v2] ] &;  
 		
 		(*Adds the group information and the coupling to the repsective lists*)
 		AppendTo[$gaugeGroups, groupName -> 
@@ -203,10 +195,10 @@ RepresentationCheck::representation = "`1` is not a reckognized representation o
 RepresentationCheck::noGroup = "The `1` gauge group has not been defined.";
 RepresentationCheck[rep_] := 
 	Block[{group, gName},
-		If[! MatchQ[rep, g_[r_]], 
+		If[! MatchQ[rep, _@_], (*Checks form*)
 			Message[RepresentationCheck::invalid, rep];
 			Return @ False; 
-		]; (*Checks form*)
+		]; 
 		
 		gName = Head@ If[Head@ rep === Bar, rep[[1]], rep];
 		group = $gaugeGroups[gName, LieGroup];
@@ -310,15 +302,15 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 		(*Tests if the fields have been defined*)
 		If[!MemberQ[Keys @ $scalars, phi /. Bar[x_] -> x],
 			Message[AddYukawa::unkown, phi /. Bar[x_] -> x, "scalar"];
-			Return @ Null;
+			Return @ $Failed;
 		];
 		If[!MemberQ[Keys@ $fermions, psi1],
 			Message[AddYukawa::unkown, psi1, "fermion"];
-			Return @ Null;
+			Return @ $Failed;
 		];
 		If[!MemberQ[Keys@ $fermions, psi2],
 			Message[AddYukawa::unkown, psi2, "fermion"];
-			Return @ Null;
+			Return @ $Failed;
 		];
 		
 		(*If the chirality is right handed, the coupling is written with the barred fields*)
@@ -330,17 +322,15 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 		];
 		
 		(*Constructs the coupling structure*)
-		normalization = 1; (*To account for the structure deltas working with real/complex scalars in Yuk[a, i, j]*)
+		normalization = 2; (*To account for the structure deltas working with real/complex scalars in Yuk[a, i, j]*)
 		If[!$scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization *= 1/Sqrt[2];];
 		
-		With[{n = 2 * normalization, g0 = g},
-			If[Length @ coupling <= 2,
-				yuk = n Matrix[g0]@ ## &;
-				yukbar = n Matrix[Bar @g0]@ ## &
-			,
-				yuk = n * g0 @ ## &;
-				yukbar = n Bar[g0]@ ## &
-			];
+		If[Length @ OptionValue[CouplingIndices][s1, f1, f2] <= 2,
+			yuk = Evaluate[normalization Matrix[g] @ ##] &;
+			yukbar = Evaluate[normalization Matrix[Bar @ g] @ ##] &
+		,
+			yuk = Evaluate[normalization Tensor[g] @ ##] &;
+			yukbar = Evaluate[normalization Tensor[Bar @ g] @ ##] &
 		];
 		
 		(*Tests whether the Yukawa coupling satisfy gauge invariance*)
@@ -420,14 +410,12 @@ AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 		
 		(*Constructs the coupling structure*)
 		(*The normalization is 2 to account for the symmetrization in Yukawa[a, i, j]*)
-		With[{g0 = g},
-			If[Length @ mass <= 2,
-				yuk = 2 Matrix[g0]@ ## &;
-				yukbar = 2 Matrix[Bar @g0]@ ## &
-			,
-				yuk = 2 * g0 @ ## &;
-				yukbar = 2 Bar[g0]@ ## &
-			];
+		If[Length @ OptionValue[MassIndices][f1, f2] <= 2,
+			yuk = Evaluate[2 Matrix[g] @ ##] &;
+			yukbar = Evaluate[2 Matrix[Bar @ g] @ ##] &
+		,
+			yuk = Evaluate[2 Tensor[g] @ ##] &;
+			yukbar = Evaluate[2 Tensor[Bar @ g] @ ##] &
 		];
 		
 		(*Adds the Yukawa coupling to the association*)
@@ -522,23 +510,22 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? Options
 			Bar @ coupling = coupling;
 		];
 		
-		normalization = 1; (*To account for the structure deltas working with real/complex scalars in Lam[a, b, c, d]*)
+		normalization = 24; (*To account for the structure deltas working with real/complex scalars in Lam[a, b, c, d]*)
 		Do[
 			If[!$scalars[phi, SelfConjugate]|| Head @ phi === Bar, normalization *= 1/Sqrt[2];];
 		,{phi, {phi1, phi2, phi3, phi4}}];
 		
-		With[{n = 24 * normalization},
-			If[Length @ coupling <= 2,
-				lam = n Matrix[coupling]@ ## &;
-				lambar = n Matrix[Bar @ coupling]@ ## &
-			,
-				lam = n coupling @ ## &;
-				lambar = n Bar[coupling] @ ## &
-			];
+		If[Length @ OptionValue[CouplingIndices][s1, s2, s3, s4] <= 2,
+			lam = Evaluate[normalization Matrix[coupling] @ ##] &;
+			lambar = Evaluate[normalization Matrix[Bar @ coupling] @ ## ] &
+		,
+			lam = Evaluate[normalization Tensor[coupling] @ ##] &;
+			lambar = Evaluate[normalization Tensor[Bar @ coupling] @ ## ] &
 		];
+
 		(*Tests whether the quartic coupling satisfy gauge invariance*)
 		If[OptionValue @ InvarianceCheck,
-			lambda = With[{l1 = lam, ind = Sequence@@ OptionValue @ CouplingIndices[s1, s2, s3, s4], 
+			lambda = With[{l1 = lam, ind = Sequence@@ OptionValue[CouplingIndices][s1, s2, s3, s4], 
 				gi = OptionValue[GroupInvariant][s1, s2, s3, s4]},
 				Sym[#1, #2, #3, #4][l1[ind] sDelS[phi1, #1, s1] sDelS[phi2, #2, s2] sDelS[phi3, #3, s3] sDelS[phi4, #4, s4] gi] &];
 			test = Tscal[A, a, e] lambda[e, b, c, d] + Tscal[A, b, e] lambda[a, e, c, d] 
@@ -567,7 +554,7 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? Options
 		projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, s2, s3, s4] *
 			sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[Bar@phi3, #3, s3] sDelS[Bar@phi4, #4, s4]] &;
 		symmetryFactor = ReplaceAll[Rule[#, 0] & /@ DeleteCases[Keys @ $quartics, coupling]] @ RefineGroupStructures @  
-			Expand[projection[$a, $b, $c, $d] Lam[$a, $b, $c, $d] ] /. Matrix[x_][__] -> x /. coupling -> 1 // Simplify;
+			Expand[projection[$a, $b, $c, $d] Lam[$a, $b, $c, $d] ] /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 // Simplify;
 		If[symmetryFactor === 0,
 			Message[AddQuartic::projection0];
 			KeyDropFrom[$quartics, coupling];
@@ -601,19 +588,17 @@ AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] ? OptionsCheck
 			Bar @ coupling = coupling;
 		];
 		
-		normalization = 1; (*To account for the structure deltas working with real/complex scalars in Lam[a, b, c, d]*)
+		normalization = 24; (*To account for the structure deltas working with real/complex scalars in Lam[a, b, c, d]*)
 		Do[
 			If[!$scalars[phi, SelfConjugate] || Head @ phi === Bar, normalization *= 1/Sqrt[2];];
 		,{phi, {phi1, phi2, phi3}}];
 		
-		With[{n = 24 * normalization},
-			If[Length @ coupling <= 2,
-				lam = n Matrix[coupling]@ ## &;
-				lambar = n Matrix[Bar @ coupling]@ ## &
-			,
-				lam = n coupling @ ## &;
-				lambar = n Bar[coupling] @ ## &
-			];
+		If[Length @ OptionValue[CouplingIndices][s1, s2, s3] <= 2,
+			lam = Evaluate[normalization Matrix[coupling] @ ##] &;
+			lambar = Evaluate[normalization Matrix[Bar @ coupling] @ ## ] &
+		,
+			lam = Evaluate[normalization Tensor[coupling] @ ##] &;
+			lambar = Evaluate[normalization Tensor[Bar @ coupling] @ ## ] &
 		];
 		
 		(*Adds the quartic coupling to the association*)
@@ -627,10 +612,10 @@ AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] ? OptionsCheck
 			UniqueArrangements -> CouplingPermutations[{phi1, phi2, phi3, $vev}, OptionValue @ GroupInvariant]|>];
 			
 		(*Constructs the projection operator*)
-		projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, s2, s3, s4] *
+		projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, s2, s3] *
 			sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[Bar@phi3, #3, s3] sDelS[$vevSelect, #4, s4]] &;
 		symmetryFactor = ReplaceAll[Rule[#, 0] & /@ DeleteCases[Keys @ $trilinears, coupling]] @ RefineGroupStructures @  
-			Expand[projection[$a, $b, $c, $d] Lam[$a, $b, $c, $d, True] ] /. Matrix[x_][__] -> x /. coupling -> 1 // Simplify;
+			Expand[projection[$a, $b, $c, $d] Lam[$a, $b, $c, $d, True] ] /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 // Simplify;
 		If[symmetryFactor === 0,
 			Message[AddTrilinear::projection0];
 			KeyDropFrom[$trilinears, coupling];
@@ -663,19 +648,17 @@ AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] ? OptionsCheck:=
 			Bar @ coupling = coupling;
 		];
 		
-		normalization = 1; (*To account for the structure deltas working with real/complex scalars in Lam[a, b, c, d]*)
+		normalization = 24; (*To account for the structure deltas working with real/complex scalars in Lam[a, b, c, d]*)
 		Do[
 			If[!$scalars[phi, SelfConjugate] || Head @ phi === Bar, normalization *= 1/Sqrt[2];];
 		,{phi, {phi1, phi2}}];
 		
-		With[{n = 24 * normalization},
-			If[Length @ coupling <= 2,
-				lam = n Matrix[coupling]@ ## &;
-				lambar = n Matrix[Bar @ coupling]@ ## &
-			,
-				lam = n coupling @ ## &;
-				lambar = n Bar[coupling] @ ## &
-			];
+		If[Length @ OptionValue[MassIndices][s1, s2] <= 2,
+			lam = Evaluate[normalization Matrix[coupling] @ ##] &;
+			lambar = Evaluate[normalization Matrix[Bar @ coupling] @ ## ] &
+		,
+			lam = Evaluate[normalization Tensor[coupling] @ ##] &;
+			lambar = Evaluate[normalization Tensor[Bar @ coupling] @ ## ] &
 		];
 		
 		(*Adds the quartic coupling to the association*)
@@ -689,10 +672,10 @@ AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] ? OptionsCheck:=
 			UniqueArrangements -> CouplingPermutations[{phi1, phi2, $vev, $vev}, OptionValue @ GroupInvariant]|>];
 		
 		(*Constructs the projection operator*)
-		projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, s2, s3, s4] *
+		projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, s2] *
 			sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[$vevSelect, #3, s3] sDelS[$vevSelect, #4, s4]]& ;
 		symmetryFactor = ReplaceAll[Rule[#, 0] & /@ DeleteCases[Keys @ $scalarMasses, coupling]] @ RefineGroupStructures @  
-			Expand[projection[$a, $b, $c, $d] Lam[$a, $b, $c, $d, True] ] /. Matrix[x_][__] -> x /. coupling -> 1 // Simplify;
+			Expand[projection[$a, $b, $c, $d] Lam[$a, $b, $c, $d, True] ] /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 // Simplify;
 		If[symmetryFactor === 0,
 			Message[AddScalarMass::projection0];
 			KeyDropFrom[$scalarMasses, coupling];
@@ -826,7 +809,7 @@ RemoveField[field_] :=
 			,{coupling, Keys @ $quartics}];
 		,_,
 			Message[RemoveField::unkown, field];
-			Return[Null];
+			Return @ $Failed;
 		];
 	];
 (*For simmultaneous removal of multiple fields*)
@@ -873,7 +856,7 @@ RemoveInteraction[coupling_] :=
 			$scalarMasses = Delete[$scalarMasses, Key @ coupling];
 		,_Missing,
 			Message[RemoveInteraction::unkown, coupling];
-			Return[Null];
+			Return @ $Failed;
 		];
 		$couplings = Delete[$couplings, Key @ coupling];
 		FlushBetas[];
