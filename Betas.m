@@ -129,11 +129,23 @@ BetaTerm[coupling_, loop_Integer] :=
 (*Function that produces the beta function for the requested coupling*)
 Options[BetaFunction] = {RescaledCouplings -> False, FourDimensions -> True};
 BetaFunction::unkown = "The coupling `1` has not been defined."
+BetaFunction::loopNumber = "The `1` beta function is only implemented up to `2` loops."
 BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
 	Block[{coef = 4 Pi, firstTerm = 0, l},
-		If[Head @ $couplings @ coupling === Missing, 
+		Switch[$couplings @ coupling
+		,gr_ /; MemberQ[Keys @ $gaugeGroups, gr],	
+			If[loop > 3,
+				Message[BetaFunction::loopNumber, "gauge", 3];
+				Return @ $Failed;
+			];
+		,Yukawa|Quartic|ScalarMass|Trilinear|FermionMass,	
+			If[loop > 2,
+				Message[BetaFunction::loopNumber, $couplings @ coupling, 2];
+				Return @ $Failed;
+			];
+		,_,
 			Message[BetaFunction::unkown, coupling];
-			Return @ Null;
+			Return @ $Failed;
 		];
 		
 		If[OptionValue @ RescaledCouplings, coef = 1; ];
@@ -144,8 +156,14 @@ BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
 
 (*Fuction for diagonalizing the quartic beta functions. It inherits the options from BetaFunction*)
 QuarticBetaFunctions::singular = "The projection matrix is singular. Some of the couplings may be redundant."
+QuarticBetaFunctions::loopNumber = "The quartic beta function is only implemented up to 2 loops."
 QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 	Block[{betaFunctions, couplings, qProjections, invMatrix},
+		If[loop > 2,
+			Message[QuarticBetaFunctions::loopNumber];
+			Return @ $Failed;
+		];
+		
 		couplings = Keys @ $quartics;
 		Print["The quartic couplings are ", couplings];
 		
