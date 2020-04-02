@@ -31,7 +31,9 @@ AntiSym[indices__][expr_] :=
 		subs = MapThread[Rule, {indList, #}] & /@ Permutations @ indList;
 		Signature[indList] Sum[Signature[s[[;;, 2]] ] expr /.s, {s, subs}] / Factorial @Length @ indList
 	];
-	
+
+CanonizeMatrices[expr_] := ReplaceAll[Matrix[y__][h1_[i1_], h2_[i2_]] /; !OrderedQ[{i1, i2}] :> 
+	Matrix[Sequence @@ Reverse[Trans /@ List@ y]][h1 @ i2, h2 @ i1] ] @ expr;
 
 (*Functions that speed up evaluation by applying expand succesively to each couple of terms in the evaluation.*)
 Ttimes[a_, b_, c___] := Ttimes[Expand[a b], c];
@@ -124,8 +126,7 @@ BetaTerm[coupling_, loop_Integer] :=
 		];
 		
 		(*Canonically order coupling indices if any*)
-		ReplaceAll[Matrix[y__][a_[f1_], b_[f2_]] /; !OrderedQ[{f1, f2}] :> 
-			Matrix[Sequence @@ Reverse[Trans /@ List@ y]][b[f2], a[f1]] ] @ beta
+		CanonizeMatrices @ RefineGroupStructures @ beta
 	];
 
 (*Function that produces the beta function for the requested coupling*)
@@ -170,7 +171,7 @@ QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 		Print["The quartic couplings are ", couplings];
 		
 		(*Finds inversion matrix for the quartic projectors*)
-		qProjections = CheckProjection /@ couplings // RefineGroupStructures;
+		qProjections = CheckProjection /@ couplings;
 		invMatrix = Transpose @ Table[Simplify @ D[qProjections, c], {c, couplings}];
 		If[Det @ invMatrix === 0,
 			Message[QuarticBetaFunctions::singular];
@@ -180,7 +181,7 @@ QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 		
 		(*Extracts beta functions*)
 		betaFunctions = Monitor[
-							Table[BetaFunction[c, loop, opt] // RefineGroupStructures, {c, couplings}]
+							Table[BetaFunction[c, loop, opt], {c, couplings}]
 						,StringForm["Evaluating the `` \[Beta]-function", c] ];
 		
 		invMatrix . betaFunctions // Expand
@@ -191,17 +192,15 @@ QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 further Mathematica manipulations. Can also be used to specify particular cases for coupling matrices.*)
 Finalize[expr_, OptionsPattern[{Parameterizations -> {}}] ] :=
 	Internal`InheritedBlock[{out, Bar, Trans, Matrix},
-		out = expr /. OptionValue @ Parameterizations;
+		out = CanonizeMatrices @ expr /. OptionValue @ Parameterizations;
 			Bar[a_List] := Bar /@ a;
 			Bar[Times[a__]] := Bar /@ Times[a];
 			Bar[Plus[a__]] := Bar /@ Plus[a];
 			Bar[a_Symbol] := Conjugate @ a;
 			Bar[a_] /; NumberQ[a] := Conjugate @ a;
-			Trans[a_List] /; MatrixQ[a] === True := Transpose @ a;
-		Matrix[y__][a_[f1_], b_[f2_]] /; !OrderedQ[{f1, f2}] :=
-			Matrix[Sequence @@ Reverse[Trans /@ List@ y]][b[f2], a[f1]];
-		Matrix[y__][a_[f1], b_[f2]] := Dot[y];
-		(*Matrix /: Matrix[u_List][_[v1]] Matrix[w_List][_[v2]] := List /@ u . List @ w;*)
+			Trans[a_List] /; MatrixQ[a] := Transpose @ a;
+			Trans[a_List] /; VectorQ[a] := a;
+		Matrix[y__][__] := Dot[y];
 		out
 	];
 
@@ -237,7 +236,7 @@ CheckProjection[coupling_Symbol] :=
 		,_Missing,
 			Message[CheckProjection::unkown, coupling];
 			$Failed
-		]
+		] //RefineGroupStructures //CanonizeMatrices
 	];
 
 

@@ -167,7 +167,7 @@ FermionMassTensors::usage =
 	"FermionMassTensors[loop] is a function that computes all the tensor contractions used the general fermion mass beta function at the given loop order."
 
 Finalize::usage = 
-	"Finalize[expr] performs additional refinement of beta function expressions."
+	"Finalize[expr] performs additional refinement of beta function expressions. Only works for expressions with up to 2 nontrivial flavor indices."
 
 FGauge::usage = 
 	"FGauge[A, B, C] is a function that generates the general gauge structure constants."

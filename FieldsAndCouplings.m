@@ -132,7 +132,7 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, U1, opts:OptionsPattern[]] :=
 AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_Symbol[n_Integer|n_Symbol], OptionsPattern[]] ? OptionsCheck :=
 	Block[{cMatrix, invalid, projector, fieldName},
 		(*Checks for mismatch between U1 power and coupling matrix*)
-		If[MatchQ[lieGroup[n], U1[x_] /; x > 1],
+		If[MatchQ[lieGroup[n], U1[x_] /; x > 1] && OptionValue @ CouplingMatrix =!= Automatic,
 			If[!SymmetricMatrixQ @ OptionValue @ CouplingMatrix || Length @ OptionValue @ CouplingMatrix =!= n,   
 				Message[AddGaugeGroup::dimensions];
 				Return @ $Failed;

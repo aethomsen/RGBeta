@@ -108,7 +108,7 @@ RefineGroupStructures[expr_] := Block[{replace},
 			del[group_[A2], a_ ,b_] :> twoIndexRepDelta[group @ A2, a ,b]
 			(*del[group_[A2], a_ ,b_] :> AntiSym[a @ 1, a @ 2 ][del[group@fund, a@1, b@1] del[group@fund, a@2, b@2] ]*) 
 		};
-	Return[expr /. replace // Expand];	
+	expr /. replace // Expand	
 ];
 
 (*Adds case to the system built in function Tr and Dot, to deal with substituting couplings for 0.*)
@@ -133,8 +133,8 @@ RefineGroupStructures[expr_] := Block[{replace},
 	Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][c_, b_] := Matrix[m1, Sequence @@ Reverse[Trans /@ List@m2]][a, c];
 	Matrix /: Matrix[m1__][b_, a_] Matrix[m2__][b_, c_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][a, c];
 	Matrix[a_List, b_List] = Matrix[Dot[a, b]];
-	Matrix[m_][] := m;
-	Matrix[m_][Null] := m;
+	Matrix[m_][] = m;
+	Matrix[m_][Null] = m;
 	Matrix[___, 0, ___][___] = 0;
 	(*Matrix[m__][a_, a_] := Tr @ Dot[m];*)
 	Matrix[m__][a_, a_] :=
@@ -150,6 +150,7 @@ RefineGroupStructures[expr_] := Block[{replace},
 			forms = {Dot[m], Trans /@ Reverse @ Dot[m]};
 			Sort[forms][[1]]	
 		];
+			
 (*Tensor head for tensor coupling contractions*)
 	Tensor /: del[ind_, a___, x_, b___] Tensor[t_][c___, ind_[x_], d___] := Tensor[t][c, ind[a, b], d];
 	
@@ -158,6 +159,7 @@ RefineGroupStructures[expr_] := Block[{replace},
 	Format[Bar[x_]] := OverBar @ x;
 	Format[Trans[Bar[x_]] ] := x^Style[Global`\[Dagger], Bold, 12];
 	(*Format[Matrix[x_, y__][] ] := HoldForm @Dot[x, y];*)
+	Format[Matrix[x_, y__][h1_[i1_] ] ] := Subscript[(Dot[x, y]), i1];
 	Format[Matrix[x__][h1_[i1_] ] ] := Subscript[Dot[x], i1];
 	Format[Matrix[x__][h1_[i1_], h2_[i2_]] ] := Subscript[Dot[x], i1, i2];
 	
