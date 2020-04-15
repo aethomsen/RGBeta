@@ -46,7 +46,7 @@ ReInitializeSymbols[] :=
 		Clear @ lcSymb;
 		lcSymb /: del[rep_, a___, x_, b___] lcSymb[rep_, c___, x_, d___] := lcSymb[rep, c, a, b, d];
 		lcSymb[rep_, a___, x_, b___, x_, c___] := 0;
-		lcSymb /: lcSymb[rep_, x:OrderlessPatternSequence[k__, i__]] lcSymb[rep_, y:OrderlessPatternSequence[k__, j__]] := 
+		lcSymb /: lcSymb[rep_, x:OrderlessPatternSequence[k__, i___]] lcSymb[rep_, y:OrderlessPatternSequence[k__, j___]] := 
 			Factorial @ Length @ List[k] * Signature@ List[j] * 
 			Signature[List@ x] Signature[List@ y] Signature[{k, i}] Signature[{k, j}] * 
 			Sum[Signature @ perm * Times @@ MapThread[ del[rep, #1, #2] &, {List[i], perm}], {perm, Permutations @ List[j] }];
@@ -120,6 +120,8 @@ RefineGroupStructures[expr_] := Block[{replace},
 (*Complex conjugation and transposition of matrices*)
 	Bar[Bar[x_]] = x;
 	Bar[0] = 0;	
+	SetReal[x_] := (Bar @ x = x;);
+	SetReal[x_, y__] := (SetReal @ x; SetReal @ y );
 	Trans[Trans[x_]] := x;
 	Trans[0] = 0;
 	Trans[a_List] /; VectorQ[a] := a;

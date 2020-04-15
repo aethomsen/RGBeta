@@ -368,7 +368,7 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 			] ] &;
 		symmetryFactor = ReplaceAll[Rule[#, 0] & /@ DeleteCases[Keys @ $yukawas, coupling]] @ RefineGroupStructures @  
 			Expand[projection[$a, $i, $j] Switch[OptionValue @ Chirality, Left, YukawaLeft[$a, $i, $j], Right, YukawaRight[$a, $i, $j]	] ] /.
-				Matrix[x_][__] -> x /. coupling -> 1 // Simplify;
+				(Matrix|Tensor)[x_][__] -> x /. coupling -> 1 // Simplify;
 		If[symmetryFactor === 0,
 			Message[AddYukawa::projection0];
 			KeyDropFrom[$yukawas, coupling];
@@ -437,7 +437,7 @@ AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 			] ] &;
 		symmetryFactor = ReplaceAll[Rule[#, 0] & /@ DeleteCases[Keys @ $fermionMasses, mass]] @ RefineGroupStructures @  
 			Expand[projection[$a, $i, $j] Switch[OptionValue @ Chirality, Left, YukawaLeft[$a, $i, $j, True], 
-				Right, YukawaRight[$a, $i, $j, True] ] ] /. Matrix[x_][__] -> x /. mass -> 1 // Simplify;
+				Right, YukawaRight[$a, $i, $j, True] ] ] /. (Matrix|Tensor)[x_][__] -> x /. mass -> 1 // Simplify;
 		If[symmetryFactor === 0,
 			Message[AddFermionMass::projection0];
 			KeyDropFrom[$fermionMasses, mass];

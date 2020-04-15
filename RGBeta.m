@@ -1,7 +1,7 @@
 (*
 ################################################################
-This is RGBeta, Version 0.2x. 
-Last modefied 31-03-2020
+This is RGBeta, Version 0.3. 
+Last modefied 03-04-2020
 
 Released under the MIT license (see 'MIT_license.txt').
 
@@ -214,6 +214,9 @@ RepresentationCheck::usage =
 ScalarMassiveTensors::usage =
 	"ScalarMassiveTensors[loop] is a function that computes all the tensor contractions used in the the trillinear and scalar mass beta functions at the given loop order."
 
+SetReal::usage = 
+	"SetReal[x1,...] makes x1,... behave as real parameters under complex conjugation (the Bar function)."
+
 Sym::usage =
 	"Sym[a1, a2, a3, a4][expr] is an internal function for symmetrizing expr over up to four dummy indices."
 
@@ -257,7 +260,7 @@ YukTil::usage =
 (*---------------Loads components---------------*)
 (*##############################################*) 
 Begin["`Private`"] (* Begin Private Context *) 
-	$RGBetaVersion = "RGBeta v0.2x";
+	$RGBetaVersion = "RGBeta v0.3";
 	Print[$RGBetaVersion, " by Anders Eller Thomsen"];
 	
 	(*Loads package files*)
