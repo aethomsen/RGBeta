@@ -1,7 +1,7 @@
 (*
 ################################################################
-This is RGBeta, Version 0.3.
-Last modefied 03-04-2020
+This is RGBeta, Version 0.4.
+Last modefied 23-04-2020
 
 Released under the MIT license (see 'MIT_license.txt').
 
@@ -172,6 +172,9 @@ Finalize::usage =
 FGauge::usage =
 	"FGauge[A, B, C] is a function that generates the general gauge structure constants."
 
+ResetBetas::usage =
+	"FlsuhBetas[] is a function used to dump all internally stored beta computations from the kernel."
+
 G2Matrix::usage =
 	"G2Matrix[a, b] is a function that generates the general gauge coupling matrix."
 
@@ -260,7 +263,7 @@ YukTil::usage =
 (*---------------Loads components---------------*)
 (*##############################################*)
 Begin["`Private`"] (* Begin Private Context *)
-	$RGBetaVersion = "RGBeta v0.3";
+	$RGBetaVersion = "RGBeta v0.4";
 	Print[$RGBetaVersion, " by Anders Eller Thomsen"];
 
 	(*Loads package files*)

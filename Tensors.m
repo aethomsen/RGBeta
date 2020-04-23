@@ -127,14 +127,42 @@ FourGLam[a_, b_, c_, d_] := Module[{A1, A2, b1, b2},
 (*#################################*)
 << AdditionalTensors.m
 GaugeTensors[coupling_Symbol, loop_Integer] :=
-	Module[{diagrams = {3, 7, 33}[[loop]], n, C1, C2},
+	Module[{diagrams = {1, 3, 7, 33}[[loop + 1]], n, C1, C2, proj},
+		proj = Ttimes[G2Matrix[$A, C1], $gaugeGroups[$couplings @ coupling, Projector][C1, C2], G2Matrix[C2, $B]];
 		Monitor[
 			Sum[
-				Bcoef[1, loop, n] Ttimes[G2Matrix[$A, C1], $gaugeGroups[$couplings @ coupling, Projector][C1, C2],
-				G2Matrix[C2, $B], BetaTensor[1, loop, n] ],
+				Bcoef[1, loop, n] Ttimes[proj, BetaTensor[1, loop, n] ],
 			{n, diagrams}]
 		,StringForm["Evaluating term `` / ``", n, diagrams]]
-	]
+	];
+
+YukawaTensors[coupling_Symbol, loop_Integer] :=
+	Module[{diagrams = {1, 5, 33}[[loop + 1]], n},
+		Monitor[
+			Switch[$yukawas[coupling, Chirality]
+			,Left,
+				Sum[
+					Bcoef[2, loop, n] Ttimes[$yukawas[coupling, Projector][$a, $i, $j],
+					BetaTensor[2, loop, n][[1, 1]] ],
+				{n, diagrams}]
+			,Right,
+				Sum[
+					Bcoef[2, loop, n] Ttimes[$yukawas[coupling, Projector][$a, $i, $j],
+					BetaTensor[2, loop, n][[2, 2]] ],
+				{n, diagrams}]
+			]
+		,StringForm["Evaluating term `` / ``", n, diagrams] ]
+	];
+
+QuarticTensors[coupling_Symbol, loop_Integer] :=
+	Module[{diagrams = {1, 5, 33}[[loop + 1]], n},
+		Monitor[
+			Sum[
+				Bcoef[3, loop, n] Ttimes[$quartics[coupling, Projector][$a, $b, $c, $d],
+				BetaTensor[3, loop, n] ],
+			{n, diagrams}]
+		,StringForm["Evaluating term `` / ``", n, diagrams]]
+	];
 
 (*Evaluates the tensors involved in the gauge beta function*)
 GaugeTensors[loop_Integer] := GaugeTensors[loop] =
