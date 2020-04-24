@@ -89,7 +89,7 @@ BetaTerm[coupling_, loop_Integer] :=
 				Message[BetaTerm::loopNumber, "quartic", 2];
 				Return @ $Failed;
 			];
-			beta = QuarticTensors[coupling, loop] /. $quarticCoefficients;
+			beta = QuarticTensors[coupling, loop] /. $quarticCoefficients // Expand;
 
 			(* beta = QuarticTensors[loop] $quartics[coupling, Projector][$a, $b, $c, $d] // Expand // Expand; *)
 		,FermionMass,
@@ -97,22 +97,22 @@ BetaTerm[coupling_, loop_Integer] :=
 				Message[BetaTerm::loopNumber, "fermion mass", 2];
 				Return @ $Failed;
 			];
-
-			Switch[$fermionMasses[coupling, Chirality]
+			beta = FermionMassTensors[coupling, loop] /. $yukawaCoefficients // Expand;
+			(* Switch[$fermionMasses[coupling, Chirality]
 			,Left,
 				tensor = FermionMassTensors[loop][[1, 1]];
 			,Right,
 				tensor = FermionMassTensors[loop][[2, 2]];
 			];
 
-			beta = tensor $fermionMasses[coupling, Projector][$a, $i, $j] // Expand // Expand;
+			beta = tensor $fermionMasses[coupling, Projector][$a, $i, $j] // Expand // Expand; *)
 		,Trilinear,
 			If[loop > 2,
 				Message[BetaTerm::loopNumber, "trilinear scalar", 2];
 				Return @ $Failed;
 			];
-
-			beta = ScalarMassiveTensors[loop] $trilinears[coupling, Projector][$a, $b, $c, $d] // Expand // Expand;
+			beta = ScalarMassiveTensors[coupling, loop] /. $quarticCoefficients // Expand;
+			(* beta = ScalarMassiveTensors[loop] $trilinears[coupling, Projector][$a, $b, $c, $d] // Expand // Expand; *)
 		,ScalarMass,
 			If[loop > 2,
 				Message[BetaTerm::loopNumber, "scalar mass", 2];
@@ -121,8 +121,8 @@ BetaTerm[coupling_, loop_Integer] :=
 			If[loop === 0,
 				Return @ 0;
 			];
-
-			beta = ScalarMassiveTensors[loop] $scalarMasses[coupling, Projector][$a, $b, $c, $d] // Expand // Expand;
+			beta = ScalarMassiveTensors[coupling, loop] /. $quarticCoefficients // Expand;
+			(* beta = ScalarMassiveTensors[loop] $scalarMasses[coupling, Projector][$a, $b, $c, $d] // Expand // Expand; *)
 		,_Missing,
 			Message[BetaTerm::unkown, coupling];
 			Return @ $Failed;
