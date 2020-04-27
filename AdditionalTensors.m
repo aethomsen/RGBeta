@@ -1,5 +1,8 @@
-ResetBetas := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17,A18,A19,A20,A21,A22,
+ResetBetas[] := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17,A18,A19,A20,A21,A22,
     k1,k2,k3,k4,k5,k6,k7,k8,b1,b2,b3,b4,b5,b6,b7,b8},
+(*###################################*)
+(*-----------Gauge Tensors-----------*)
+(*###################################*)
     BetaTensor[1, 0, 1] := BetaTensor[1, 0, 1] = - Global`\[Epsilon] / 2 G2Matrix[$A, $B, -1];
 
     BetaTensor[1, 1, 1] := BetaTensor[1, 1, 1] = C2G[$A, $B];
@@ -13,7 +16,7 @@ ResetBetas := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17
     BetaTensor[1, 2, 5] := BetaTensor[1, 2, 5] = Ttimes[C2G[$A, A1], G2Matrix[A1, A2], S2S[A2, $B]];
     BetaTensor[1, 2, 6] := BetaTensor[1, 2, 6] = S2FY2F[$A, $B];
     BetaTensor[1, 2, 7] := BetaTensor[1, 2, 7] = 0 (*S2SY2S[$A, $B]*);
-    (*y^0 terms*)
+(*y^0 terms*)
     BetaTensor[1, 3, 1] := BetaTensor[1, 3, 1] = Tr@Tdot[Tferm[$B, k4, k1], Tferm[$A, k1, k2], C2F[k2, k3], C2F[k3, k4]];
     BetaTensor[1, 3, 2] := BetaTensor[1, 3, 2] = Ttimes[Tscal[$B, b4, b1], Tscal[$A, b1, b2], C2S[b2, b3], C2S[b3, b4]];
     BetaTensor[1, 3, 3] := BetaTensor[1, 3, 3] = Tr@Tdot[Tferm[$B, k3, k1], Tferm[$A, k1, k2], C2FC2G[k2, k3]];
@@ -32,7 +35,7 @@ ResetBetas := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17
     BetaTensor[1, 3, 16] := BetaTensor[1, 3, 16] = Ttimes[S2F[$A, A1], G2Matrix[A1, A2], C2G[A2, A3], G2Matrix[A3, A4], S2S[A4, $B]];
     BetaTensor[1, 3, 17] := BetaTensor[1, 3, 17] = Ttimes[Tscal[$A, b1, b2], TsG2[A1, b2, b3], Lam[b1, b3, b4, b6], Tscal[$B, b4, b5], Tscal[A1, b5, b6]];
     BetaTensor[1, 3, 18] := BetaTensor[1, 3, 18] = Ttimes[Tscal[$A, b1, b2], Lam2[b2, b3], Tscal[$B, b3, b1]];
-    (*y^2 terms*)
+(*y^2 terms*)
     BetaTensor[1, 3, 19] := BetaTensor[1, 3, 19] = Tr @ Tdot[Tferm[$B, k4, k1], Tferm[$A, k1, k2], Y2Ft[k2, k3], C2F[k3, k4]];
     BetaTensor[1, 3, 20] := BetaTensor[1, 3, 20] = Tr @ Tdot[Tferm[$B, k3, k1], Tferm[$A, k1, k2], Y2FC2Ft[k2, k3]];
     BetaTensor[1, 3, 21] := BetaTensor[1, 3, 21] = Ttimes[Tscal[$B, b3, b1], Tscal[$A, b1, b2], Y2SC2F[b2, b3]];
@@ -40,7 +43,7 @@ ResetBetas := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17
     BetaTensor[1, 3, 23] := BetaTensor[1, 3, 23] = Ttimes[Tscal[$B, b4, b1], Tscal[$A, b1, b2], Y2S[b2, b3], C2S[b3, b4]];
     BetaTensor[1, 3, 24] := BetaTensor[1, 3, 24] = Ttimes[S2FY2F[$A, A1], G2Matrix[A1, A2], C2G[A2, $B]];
     BetaTensor[1, 3, 25] := BetaTensor[1, 3, 25] = Ttimes[S2SY2S[$A, A1], G2Matrix[A1, A2], C2G[A2, $B]];
-    (*y^4 terms*)
+(*y^4 terms*)
     BetaTensor[1, 3, 26] := BetaTensor[1, 3, 26] = Tr @ Tdot[Yuk[b1, b6, k1], Tferm[$A, k1, k2], YukTil[b1, k2, k3] Yuk[b2, k3, k4], Tferm[$B, k4, b5], YukTil[b2, b5, b6]];
     BetaTensor[1, 3, 27] := BetaTensor[1, 3, 27] = Ttimes[Tscal[$B, b3, b1], Tscal[$A, b1, b2], Y4cS[b2, b3]];
     BetaTensor[1, 3, 28] := BetaTensor[1, 3, 28] = Tr @ Tdot[Tferm[$B, k3, k1], Tferm[$A, k1, k2], Y4cFt[k2, k3]];
@@ -248,8 +251,15 @@ ResetBetas := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17
     BetaTensor[1, 4, 196] := BetaTensor[1, 4, 196] = Tr[Tdot[TfermTil[$B, k1, k2], Y2F[k2, k3], Y2F[k3, k4], Y2F[k4, k5], TfermTil[$A, k5, k1]]];
     BetaTensor[1, 4, 197] := BetaTensor[1, 4, 197] = Tr[Tdot[YukTil[b1, k1, k2], Y2F[k1, k3], Y2F[k3, k4], Yuk[b1, k4, k5], Tferm[$A, k5, k6], Tferm[$B, k6, k2]]];
     BetaTensor[1, 4, 198] := BetaTensor[1, 4, 198] = Ttimes[Tscal[$A, b1, b2], Tscal[$B, b3, b1], Y2S[b4, b2], Y2S[b5, b3], Y2S[b5, b4]];
+(* gamma_5 terms*)
+    BetaTensor[1, 4, 199] := BetaTensor[1, 4, 199] = Tr@Tdot[Tferm[$A, k1, k2], TfG2[A1, k2, k3], sig3Til, YukTil[b1, k3, k4], Yuk[b2, k4, k1]] Tr@Tdot[Tferm[$B, k5, k6], Tferm[A1, k6, k7], sig3Til, YukTil[b1, k7, k8], Yuk[b2, k8, k5]] // Expand;
+    BetaTensor[1, 4, 200] := BetaTensor[1, 4, 200] = Tr@Tdot[Tferm[$A, k1, k2], sig3Til, YukTil[b1, k2, k3], TfG2t[A1, k3, k4], Yuk[b2, k4, k1]] Tr@Tdot[Tferm[$B, k5, k6], sig3Til, YukTil[b1, k6, k7], TfermTil[A1, k7, k8], Yuk[b2, k8, k5]] // Expand;
+    BetaTensor[1, 4, 201] := BetaTensor[1, 4, 201] = Tr@Tdot[Tferm[$A, k1, k2], TfG2[A1, k2, k3], sig3Til, YukTil[b1, k3, k4], Yuk[b2, k4, k1]] Tr@Tdot[Tferm[$B, k5, k6], Tferm[A1, k6, k7], YukTil[b2, k7, k8], sig3, Yuk[b1, k8, k5]] // Expand;
+    BetaTensor[1, 4, 202] := BetaTensor[1, 4, 202] = Tr@Tdot[Tferm[$A, k1, k2], TfG2[A1, k2, k3], YukTil[b1, k3, k4], sig3, Yuk[b2, k4, k1]] Tr@Tdot[Tferm[$B, k5, k6], YukTil[b1, k6, k7], TfermTil[A1, k7, k8], sig3, Yuk[b2, k8, k5]] // Expand;
 
-    (* Yukawas *)
+(*####################################*)
+(*-----------Yukawa Tensors-----------*)
+(*####################################*)
     BetaTensor[2, 0, 1] := BetaTensor[2, 0, 1] = - Global`\[Epsilon] / 2 Yuk[$a, $i, $j];
 
     BetaTensor[2, 1, 1] := BetaTensor[2, 1, 1] = {{0, 0}, {0, 0}} (*Yuk[b2, $i, $j] C2S[$a, b2] // Expand*);
@@ -257,7 +267,7 @@ ResetBetas := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17
     BetaTensor[2, 1, 3] := BetaTensor[2, 1, 3] = Tdot[Yuk[b1, $i, k1], YukTil[$a, k1, k2], Yuk[b1, k2, $j]];
     BetaTensor[2, 1, 4] := BetaTensor[2, 1, 4] = Tdot[Y2F[$i, k1], Yuk[$a, k1, $j]] // Sym[$i, $j];
     BetaTensor[2, 1, 5] := BetaTensor[2, 1, 5] = Yuk[b1, $i, $j] Y2S[b1, $a] // Expand;
-    (* y^1 terms*)
+(* y^1 terms*)
     BetaTensor[2, 2, 1] := BetaTensor[2, 2, 1] = Ttimes[Yuk[b3, $i, $j], C2S[b3, b2], C2S[b2, $a]];
     BetaTensor[2, 2, 2] := BetaTensor[2, 2, 2] = Tdot[C2Ft[$i, k1], Yuk[b2, k1, $j]] C2S[b2, $a] // Expand // Sym[$i, $j];
     BetaTensor[2, 2, 3] := BetaTensor[2, 2, 3] = {{0, 0}, {0, 0}} (*Tdot[C2Ft[$i, k1], Yuk[$a, k1, k2], C2F[k2, $j]]*);
@@ -269,7 +279,7 @@ ResetBetas := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17
     BetaTensor[2, 2, 9] := BetaTensor[2, 2, 9] = C2FS2St[$i, k1]. Yuk[$a, k1, $j] // Expand // Sym[$i, $j];
     BetaTensor[2, 2, 10] := BetaTensor[2, 2, 10] = C2FS2Ft[$i, k1]. Yuk[$a, k1, $j] // Expand // Sym[$i, $j];
     BetaTensor[2, 2, 11] := BetaTensor[2, 2, 11] = Yuk[b2, $i, $j] Lam2[b2, $a] // Expand;
-    (*y^3 terms*)
+(*y^3 terms*)
     BetaTensor[2, 2, 12] := BetaTensor[2, 2, 12] = Tdot[TfermTil[A1, $i, k1], Yuk[$a, k1, k2], YukTil[b2, k2, k3], TfG2t[A1, k3, k4], Yuk[b2, k4, $j]] // Sym[$i, $j];
     BetaTensor[2, 2, 13] := BetaTensor[2, 2, 13] = {{0, 0}, {0, 0}} (*Tdot[Y2F[$i, k1], TfermTil[A1, k1, k2], Yuk[$a, k2, k3], TfG2[A1, k3, $j]] // Sym[$i, $j]*);
     BetaTensor[2, 2, 14] := BetaTensor[2, 2, 14] = Tdot[Yuk[b2, $i, k1], YukTil[$a, k1, k2], Yuk[b3, k2, $j]] C2S[b2, b3] // Expand;
@@ -282,7 +292,7 @@ ResetBetas := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17
     BetaTensor[2, 2, 21] := BetaTensor[2, 2, 21] = Tdot[Yuk[$a, $i, k1], Y2Ft[k1, k2], C2F[k2, $j]] // Sym[$i, $j];
     BetaTensor[2, 2, 22] := BetaTensor[2, 2, 22] = {{0, 0}, {0, 0}} (*Ttimes[Yuk[b3, $i, $j], Y2S[b3, b2], C2S[b2, $a]]*);
     BetaTensor[2, 2, 23] := BetaTensor[2, 2, 23] = Tdot[Yuk[b2, $i, k1], YukTil[b3, k1, k2], Yuk[b4, k2, $j]] Lam[$a, b2, b3, b4] // Expand;
-    (*y^5 terms*)
+(*y^5 terms*)
     BetaTensor[2, 2, 24] := BetaTensor[2, 2, 24] = Tdot[Yuk[b2, $i, k1], YukTil[b3, k1, k2], Yuk[$a, k2, k3], YukTil[b2, k3, k4], Yuk[b3, k4, $j]];
     BetaTensor[2, 2, 25] := BetaTensor[2, 2, 25] = {{0, 0}, {0, 0}} (*Tdot[Yuk[b2, $i, k1], YukTil[$a, k1, k2], Yuk[b3, k2, k3], YukTil[b2, k3, k4], Yuk[b3, k4, $j]] // Sym[$i, $j]*);
     BetaTensor[2, 2, 26] := BetaTensor[2, 2, 26] = Tdot[Yuk[b3, $i, k1], YukTil[b2, k1, k2], Yuk[$a, k2, k3], YukTil[b2, k3, k4], Yuk[b3, k4, $j]];
@@ -597,8 +607,16 @@ ResetBetas := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17
     BetaTensor[2, 3, 301] := BetaTensor[2, 3, 301] = Ttimes[Tdot[Yuk[$a, $i, k1], YukTil[b1, k2, k1], Y2F[k2, k3], Yuk[b2, k3, $j]], Y2S[b1, b2]];
     BetaTensor[2, 3, 302] := BetaTensor[2, 3, 302] = Ttimes[Tdot[Yuk[b1, k1, $i], YukTil[$a, k1, k2], Yuk[b2, k2, $j]], Y2S[b1, b3], Y2S[b2, b3]];
     BetaTensor[2, 3, 303] := BetaTensor[2, 3, 303] = Ttimes[Tdot[Yuk[$a, $i, k1], YukTil[b1, k1, k2], Yuk[b2, $j, k2]], Y2S[b1, b3], Y2S[b2, b3]];
+(* gamma_5 terms *)
+    BetaTensor[2, 3, 304] := BetaTensor[2, 3, 304] = Tdot[sig3, Yuk[b1, $i, k1], TfG2[A1, k1, k2], TfG2[A2, k2, $j]] Tr@Tdot[sig3, Yuk[b1, k3, k4], Tferm[A1, k4, k5], Tferm[A2, k5, k6], YukTil[$a, k6, k3]] // Expand // Sym[$i, $j];
+    BetaTensor[2, 3, 305] := BetaTensor[2, 3, 305] = Tdot[TfG2t[A1, $i, k1], sig3, Yuk[b1, k1, k2], TfG2[A2, k2, $j]] Tr@Tdot[sig3, Yuk[b1, k3, k4], Tferm[A2, k4, k5], YukTil[$a, k5, k6], TfermTil[A1, k6, k3]] // Expand // Sym[$i, $j];
+    BetaTensor[2, 3, 306] := BetaTensor[2, 3, 306] = Tdot[sig3, Yuk[b1, $i, k1], TfG2[A2, k1, k2], TfG2[A1, k2, $j]] Tr@Tdot[sig3, Yuk[b1, k3, k4], Tferm[A1, k4, k5], Tferm[A2, k5, k6], YukTil[$a, k6, k3]] // Expand // Sym[$i, $j];
+    BetaTensor[2, 3, 307] := BetaTensor[2, 3, 307] = Tdot[sig3, Yuk[b1, $i, k1], TfG2[A1, k1, k2], TfG2[A2, k2, $j]] Tr@Tdot[sig3, Yuk[b1, k3, k4], Tferm[A2, k4, k5], YukTil[$a, k5, k6], TfermTil[A1, k6, k3]] // Expand // Sym[$i, $j];
+    BetaTensor[2, 3, 308] := BetaTensor[2, 3, 308] = Tdot[TfG2t[A1, $i, k1], sig3, Yuk[b1, k1, k2], TfG2[A2, k2, $j]] Tr@Tdot[sig3, Yuk[b1, k3, k4], Tferm[A1, k4, k5], Tferm[A2, k5, k6], YukTil[$a, k6, k3]] // Expand // Sym[$i, $j];
 
-    (* Quartics *)
+    (*#####################################*)
+    (*-----------Quartic Tensors-----------*)
+    (*#####################################*)
     BetaTensor[3, 0, 1] := BetaTensor[3, 0, 1] = - Global`\[Epsilon] Lam[$a, $b, $c, $d];
 
     BetaTensor[3, 1, 1] := BetaTensor[3, 1, 1] = FourGLam[$a, $b, $c, $d] // Sym[$b, $c, $d];
@@ -620,20 +638,20 @@ ResetBetas := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17
     BetaTensor[3, 2, 10] := BetaTensor[3, 2, 10] = Ttimes[C2SC2G[$a, b1], Lam[b1, $b, $c, $d] ]  // Sym4[$a, $b, $c, $d];
     BetaTensor[3, 2, 11] := BetaTensor[3, 2, 11] = Ttimes[C2SS2S[$a, b1], Lam[b1, $b, $c, $d] ]  // Sym4[$a, $b, $c, $d];
     BetaTensor[3, 2, 12] := BetaTensor[3, 2, 12] = Ttimes[C2SS2F[$a, b1], Lam[b1, $b, $c, $d] ]  // Sym4[$a, $b, $c, $d];
-    (* y^0, lam^{n>0} terms*)
+(* y^0, lam^{n>0} terms*)
     BetaTensor[3, 2, 13] := BetaTensor[3, 2, 13] = Ttimes[Tscal[A1, $a, b1], Lam[b1, b2, b3, b4], TsG2[A1, $b, b2], Lam[b3, b4, $c, $d]] // Sym[$a, $b, $c, $d];
     BetaTensor[3, 2, 14] := BetaTensor[3, 2, 14] = Ttimes[Lam[$a, $b, b1, b2], C2S[b2, b3], Lam[b3, b1, $c, $d]] // Sym[$b, $c, $d];
     BetaTensor[3, 2, 15] := BetaTensor[3, 2, 15] = Ttimes[C2S[$a, b1], Lam[b1, $b, b2, b3], Lam[b2, b3, $c, $d]]  // Sym[$a, $b, $c, $d];
     BetaTensor[3, 2, 16] := BetaTensor[3, 2, 16] = Ttimes[Lam2[$a, b1], Lam[b1,$b, $c, $d]]  // Sym4[$a, $b, $c, $d];
     BetaTensor[3, 2, 17] := BetaTensor[3, 2, 17] = Ttimes[Lam[$a, b1, b2, b3], Lam[$b, b4, b2, b3], Lam[b1, b4, $c, $d]] // Sym[$a, $b, $c, $d];
     BetaTensor[3, 2, 18] := BetaTensor[3, 2, 18] = 0 (*Ttimes[Lam[$a, $b, b1, b2], Lam[b1, b2, b3, b4], Lam[b3, b4, $c, $d]] // Sym[$b, $c, $d]*);
-    (*y^2 terms*)
+(*y^2 terms*)
     BetaTensor[3, 2, 19] := BetaTensor[3, 2, 19] = Ttimes[Tr @ Tdot[Yuk[$a, k4, k1], Tferm[A1, k1, k2], Tferm[A2, k2, k3], YukTil[$b, k3, k4]], TsG2[A1, $c, b1], TsG2[A2, b1, $d]] // Sym[$a, $b, $c, $d];
     BetaTensor[3, 2, 20] := BetaTensor[3, 2, 20] = Ttimes[Y2S[$a, b1], FourGLam[b1, $b, $c, $d]] // Sym[$a, $b, $c, $d];
     BetaTensor[3, 2, 21] := BetaTensor[3, 2, 21] = Ttimes[Y2SC2F[$a, b1], Lam[b1, $b, $c, $d]] // Sym4[$a, $b, $c, $d];
     BetaTensor[3, 2, 22] := BetaTensor[3, 2, 22] = 0 (*Ttimes[C2S[$a, b1], Y2S[b1, b2], Lam[b2, $b, $c, $d] ]  // Sym4[$a, $b, $c, $d]*);
     BetaTensor[3, 2, 23] := BetaTensor[3, 2, 23] = Ttimes[Lam[$a, $b, b1, b2], Y2S[b2, b3], Lam[b3, b1, $c, $d]] // Sym[$b, $c, $d];
-    (*y^4 terms*)
+(*y^4 terms*)
     BetaTensor[3, 2, 24] := BetaTensor[3, 2, 24] = 0 (*Tr @ Tdot[Yuk[$a, k6, k1], Tferm[A1, k1, k2], YukTil[$b, k2, k3], Yuk[$c, k3, k4], TfG2[A1, k4, k5], YukTil[$d, k5, k6]] // Sym[$b, $c, $d]*);
     BetaTensor[3, 2, 25] := BetaTensor[3, 2, 25] = Tr @ Tdot[Yuk[b1, k4, k1], YukTil[$b, k1, k2], Yuk[$c, k2, k3], YukTil[$d, k3, k4]] C2S[$a, b1] // Expand // Sym[$a, $b, $c, $d];
     BetaTensor[3, 2, 26] := BetaTensor[3, 2, 26] = Tr @ Tdot[Yuk[$a, k5, k1], YukTil[$b, k1, k2], Yuk[$c, k2, k3], YukTil[$d, k3, k4], C2Ft[k4, k5]] // Sym[$a, $b, $c, $d];
@@ -641,12 +659,14 @@ ResetBetas := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17
     BetaTensor[3, 2, 28] := BetaTensor[3, 2, 28] = 0 (*Tr @ Tdot[Yuk[$a, k4, k1], YukTil[$b, k1, k2], Yuk[b1, k2, k3], YukTil[b2, k3, k4]] Lam[b1, b2, $c, $d] // Sym[$a, $b, $c, $d]*);
     BetaTensor[3, 2, 29] := BetaTensor[3, 2, 29] = Y4cS[$a, b1] Lam[b1, $b, $c, $d] // Sym4[$a, $b, $c, $d];
     BetaTensor[3, 2, 30] := BetaTensor[3, 2, 30] = Y2SY2F[$a, b1] Lam[b1, $b, $c, $d] // Sym4[$a, $b, $c, $d];
-    (*y^6 terms*)
+(*y^6 terms*)
     BetaTensor[3, 2, 31] := BetaTensor[3, 2, 31] = Tr @ Tdot[Yuk[b1, k6, k1], YukTil[$a, k1, k2], Yuk[b1, k2, k3], YukTil[$b, k3, k4], Yuk[$c, k4, k5], YukTil[$d, k5, k6]] // Sym[$a, $b, $c, $d];
     BetaTensor[3, 2, 32] := BetaTensor[3, 2, 32] = Tr @ Tdot[Yuk[$a, k6, k1], YukTil[b1, k1, k2], Yuk[$b, k2, k3], YukTil[$c, k3, k4], Yuk[b1, k4, k5], YukTil[$d, k5, k6]] // Sym[$b, $c, $d];
     BetaTensor[3, 2, 33] := BetaTensor[3, 2, 33] = Tr @ Tdot[Yuk[$a, k5, k1], YukTil[$b, k1, k2], Yuk[$c, k2, k3], YukTil[$d, k3, k4], Y2F[k4, k5]] // Sym[$a, $b, $c, $d];
 
-    (* Yukawa Massive *)
+(*########################################*)
+(*---------Massive Yukawa Tensors---------*)
+(*########################################*)
     BetaTensor[4, 0, 1] := BetaTensor[4, 0, 1] = {{0, 0}, {0, 0}};
 
     BetaTensor[4, 1, 1] := BetaTensor[4, 1, 1] = {{0, 0}, {0, 0}};
@@ -691,7 +711,9 @@ ResetBetas := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17
     BetaTensor[4, 2, 32] := BetaTensor[4, 2, 32] = Tdot[Yuk[b1, $i, k1], YukTil[$a, k1, k2, True], Yuk[b2, k2, $j]] Y2S[b1, b2] // Expand;
     BetaTensor[4, 2, 33] := BetaTensor[4, 2, 33] = Tdot[Yuk[$a, $i, k1, True], Y2FY2St[k1, $j]] // Sym[$i, $j];
 
-    (* Quartic Massive *)
+(*#######################################*)
+(*--------Massive Quartic Tensors--------*)
+(*#######################################*)
     BetaTensor[5, 0, 1] := BetaTensor[5, 0, 1] = - Global`\[Epsilon]/2 Lam[$a, $b, $c, $d, True];
     BetaTensor[5, 1, 1] := BetaTensor[5, 1, 1] = 0;
     BetaTensor[5, 1, 2] := BetaTensor[5, 1, 2] = C2S[$a, b1] Lam[b1, $b, $c, $d, True] // Expand // Sym4[$a, $b, $c, $d];

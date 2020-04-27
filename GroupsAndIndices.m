@@ -1,5 +1,5 @@
 (*
-	Author: Anders Eller Thomsen 
+	Author: Anders Eller Thomsen
 	Released under the MIT license (see 'MIT_license.txt').
 *)
 Begin["GroupsAndIndices`"]
@@ -14,25 +14,25 @@ ReInitializeSymbols[] :=
 		(*Dim[rep] is the dimension of a given representation*)
 		Clear @ Dim;
 		Dim[Bar[rep_]] := Dim[rep];
-		
+
 		(*Group constants for certain representations.*)
 		Clear @ TraceNormalization;
 		Clear @ Casimir2;
-		
+
 		(*del[rep, a, b] is the symbol for Kronecker delta \delta_{a,b} belong to the indices specified by the representation.*)
 		Clear @ del;
 		del /: del[rep_, a___, x_, b___] del[rep_, c___, x_, d___] := del[rep, c, a, b, d];
 		del /: Power[del[rep_, a_, b_], 2] := Dim[rep];
 		del[rep_, a_, a_] = Dim[rep];
 		del[Bar[rep_], a_, b_] = del[rep, a, b];
-		
+
 		(*del for taking specific index*)
 		Clear @ delIndex;
 		delIndex /: del[rep_, a___, x_Symbol, b___] delIndex[rep_, c___, x_Symbol, d___] = delIndex[rep, c, a, b, d];
 		delIndex /: delIndex[rep_, a___, x_Symbol, b___] delIndex[rep_, c___, x_Symbol, d___] = delIndex[rep, c, a, b, d];
 		delIndex /: Power[delIndex[rep_, a_, b_], 2] = 1;
 		delIndex[rep_, a_Integer, b_Integer] := KroneckerDelta[a, b];
-		
+
 		(*Default properties for anti-symmetric inavariants.*)
 		Clear @ eps;
 		eps /: del[rep_, a___, x_, b___] eps[rep_, c___, x_, d___] := eps[rep, c, a, b, d];
@@ -41,19 +41,19 @@ ReInitializeSymbols[] :=
 		eps /: eps[rep_ ,b_, a_] eps[rep_ ,b_, c_] := del[rep, a, c];
 		eps /: Power[eps[rep_, a_, b_], 2] := Dim[rep];
 		eps[rep_, a_, a_] := 0;
-		
+
 		(*Levi-Civita symbols*)
 		Clear @ lcSymb;
 		lcSymb /: del[rep_, a___, x_, b___] lcSymb[rep_, c___, x_, d___] := lcSymb[rep, c, a, b, d];
 		lcSymb[rep_, a___, x_, b___, x_, c___] := 0;
-		lcSymb /: lcSymb[rep_, x:OrderlessPatternSequence[k__, i___]] lcSymb[rep_, y:OrderlessPatternSequence[k__, j___]] := 
-			Factorial @ Length @ List[k] * Signature@ List[j] * 
-			Signature[List@ x] Signature[List@ y] Signature[{k, i}] Signature[{k, j}] * 
+		lcSymb /: lcSymb[rep_, x:OrderlessPatternSequence[k__, i___]] lcSymb[rep_, y:OrderlessPatternSequence[k__, j___]] :=
+			Factorial @ Length @ List[k] * Signature@ List[j] *
+			Signature[List@ x] Signature[List@ y] Signature[{k, i}] Signature[{k, j}] *
 			Sum[Signature @ perm * Times @@ MapThread[ del[rep, #1, #2] &, {List[i], perm}], {perm, Permutations @ List[j] }];
-		(*lcSymb /: lcSymb[rep_, i__] lcSymb[rep_, j__] := 	Signature@ List[j] * 
+		(*lcSymb /: lcSymb[rep_, i__] lcSymb[rep_, j__] := 	Signature@ List[j] *
 			Sum[Signature @ perm Times @@ Thread @ del[rep, List[i], perm], {perm, Permutations @ List[j] }];*)
 		lcSymb /: Power[lcSymb[rep_, i__], 2] = Factorial @ Dim @ rep;
-		
+
 		(*Invariant of S2 and fundamentals*)
 		Clear @ delS2;
 		delS2 /: del[group_[S2], a___, x_ , b___] delS2[group_, x_, i_, j_]=  delS2[group, a, b, i, j];
@@ -61,7 +61,7 @@ ReInitializeSymbols[] :=
 		delS2 /: delS2[group_, a_, i_ , j_] delS2[group_, b_, i_, j_] = del[group@ S2, a, b];
 		delS2 /: delS2[group_, a_, i_ , j_] delS2[group_, b_, j_, i_] = del[group@ S2, a, b];
 		delS2 /: Power[delS2[group_, a_, i_ , j_], 2] = Dim[group@ S2];
-		
+
 		(*Invariant of A2 and fundamentals*)
 		Clear @ delA2;
 		delA2 /: del[group_[A2], a___, x_ , b___] delA2[group_, x_, i_, j_]=  delA2[group, a, b, i, j];
@@ -69,7 +69,7 @@ ReInitializeSymbols[] :=
 		delA2 /: delA2[group_, a_, i_ , j_] delA2[group_, b_, i_, j_] = del[group@ A2, a, b];
 		delA2 /: delA2[group_, a_, i_ , j_] delA2[group_, b_, j_, i_] = - del[group@ A2, a, b];
 		delA2 /: Power[delA2[group_, a_, i_ , j_], 2] = Dim[group@ A2];
-		
+
 		(*Default group generator properties.*)
 		Clear @ tGen;
 		tGen /: del[rep_, a___, x_, b___] tGen[rep_, A_, c___, x_, d___] := tGen[rep, A, c, a, b, d];
@@ -81,24 +81,24 @@ ReInitializeSymbols[] :=
 		tGen /: tGen[rep_, A_, a_, b_] tGen[rep_, A_, c_, b_] := - Casimir2[rep] del[rep, a, c];
 		tGen /: tGen[rep_, A_, b_, a_] tGen[rep_, A_, b_, c_] := - Casimir2[rep] del[rep, a, c];
 		tGen[rep_, A_, a_, a_] = 0;
-		tGen[Bar[rep_], A_, a_, b_ ] = - tGen[rep, A, b, a]; 
-		
+		tGen[Bar[rep_], A_, a_, b_ ] = - tGen[rep, A, b, a];
+
 		(*Default structure constant properties.*)
 		Clear @ fStruct;
 		fStruct /: del[group_[adj], A___, X_, B___] fStruct[group_, C___, X_, D___] := fStruct[group, C, A, B, D];
-		fStruct /: fStruct[group_, x:OrderlessPatternSequence[A_, B_, C_] ] fStruct[group_, y:OrderlessPatternSequence[D_, B_, C_] ] := 
+		fStruct /: fStruct[group_, x:OrderlessPatternSequence[A_, B_, C_] ] fStruct[group_, y:OrderlessPatternSequence[D_, B_, C_] ] :=
 			Signature[List@ x] Signature[List@ y] Signature[{A, B, C}] Signature[{D, B, C}] Casimir2[group@ adj] del[group@ adj, A, D];
 		fStruct[group_, a___, x_, b___, x_, c___] := 0;
-		
-		(*two-index delta*)
-		Clear @ twoIndexRepDelta; 
+
+		(*Two-index delta*)
+		Clear @ twoIndexRepDelta;
 		twoIndexRepDelta[rep_, a_, b_] = 0;
 	];
 
 (*Function applying the group *)
 RefineGroupStructures[expr_] := Block[{replace},
 	replace = {
-			tGen[group_[adj], A_, B_, C_] :> - Module[{a, b, c}, 2 AntiSym[A, B][tGen[group@ fund, A, a, b] tGen[group@ fund, B, b, c]] tGen[group@ fund, C , c, a] 
+			tGen[group_[adj], A_, B_, C_] :> - Module[{a, b, c}, 2 AntiSym[A, B][tGen[group@ fund, A, a, b] tGen[group@ fund, B, b, c]] tGen[group@ fund, C , c, a]
 				] / TraceNormalization @ group @ fund,
 			tGen[group_[S2], A_, a_, b_] :> 2 Sym[a@1, a@2] @ Sym[b@1, b@2][tGen[group@ fund, A, a@1, b@1] del[group@ fund, a@2, b@2]],
 			delS2[group_, a_, i_, j_] :> Sym[a@1, a@2][ del[group@ fund, a@1, i] del[group@ fund, a@2, j]],
@@ -106,9 +106,9 @@ RefineGroupStructures[expr_] := Block[{replace},
 			delA2[group_, a_, i_, j_] :> AntiSym[a@1, a@2][ del[group@ fund, a@1, i] del[group@ fund, a@2, j]],
 			del[group_[S2], a_ ,b_] :> twoIndexRepDelta[group @ S2, a ,b],
 			del[group_[A2], a_ ,b_] :> twoIndexRepDelta[group @ A2, a ,b]
-			(*del[group_[A2], a_ ,b_] :> AntiSym[a @ 1, a @ 2 ][del[group@fund, a@1, b@1] del[group@fund, a@2, b@2] ]*) 
+			(*del[group_[A2], a_ ,b_] :> AntiSym[a @ 1, a @ 2 ][del[group@fund, a@1, b@1] del[group@fund, a@2, b@2] ]*)
 		};
-	expr /. replace // Expand	
+	expr /. replace // Expand
 ];
 
 (*Adds case to the system built in function Tr and Dot, to deal with substituting couplings for 0.*)
@@ -119,7 +119,7 @@ RefineGroupStructures[expr_] := Block[{replace},
 
 (*Complex conjugation and transposition of matrices*)
 	Bar[Bar[x_]] = x;
-	Bar[0] = 0;	
+	Bar[0] = 0;
 	SetReal[x_] := (Bar @ x = x;);
 	SetReal[x_, y__] := (SetReal @ x; SetReal @ y );
 	Trans[Trans[x_]] := x;
@@ -143,19 +143,19 @@ RefineGroupStructures[expr_] := Block[{replace},
 		Block[{matrices, permutations},
 			matrices = List @ m;
 			permutations = NestList[RotateLeft, matrices, Length@ matrices];
-			permutations = Join[permutations, Map[Trans, Reverse[permutations, 2], {2}] ]; 
+			permutations = Join[permutations, Map[Trans, Reverse[permutations, 2], {2}] ];
 			matrices = permutations[[Ordering[permutations, 1][[1]] ]];
 			Tr @ Dot[Sequence @@ matrices]
 		];
-	Matrix[m__][] := 
+	Matrix[m__][] :=
 		Block[{forms},
 			forms = {Dot[m], Trans /@ Reverse @ Dot[m]};
-			Sort[forms][[1]]	
+			Sort[forms][[1]]
 		];
-			
+
 (*Tensor head for tensor coupling contractions*)
 	Tensor /: del[ind_, a___, x_, b___] Tensor[t_][c___, ind_[x_], d___] := Tensor[t][c, ind[a, b], d];
-	
+
 (*Formating*)
 	Format[Trans[x_]] := HoldForm[x^Global`T];
 	Format[Bar[x_]] := OverBar @ x;
@@ -164,7 +164,7 @@ RefineGroupStructures[expr_] := Block[{replace},
 	Format[Matrix[x_, y__][h1_[i1_] ] ] := Subscript[(Dot[x, y]), i1];
 	Format[Matrix[x__][h1_[i1_] ] ] := Subscript[Dot[x], i1];
 	Format[Matrix[x__][h1_[i1_], h2_[i2_]] ] := Subscript[Dot[x], i1, i2];
-	
+
 
 (*###########################################*)
 (*----------Gauge group definitions----------*)
@@ -178,7 +178,7 @@ DefineLieGroup[groupName_Symbol, lieGroup_Symbol[n_Integer|n_Symbol] ] :=
 		,SO,
 			DefineSOGroup[groupName, n];
 		,Sp,
-			If[IntegerQ @n && !EvenQ @ n, 
+			If[IntegerQ @n && !EvenQ @ n,
 				Message[DefineLieGroup::unkown, lieGroup[n] ];
 				Return @ $Failed;
 			];
@@ -198,8 +198,8 @@ DefineLieGroup[groupName_Symbol, lieGroup_Symbol[n_Integer|n_Symbol] ] :=
 	];
 
 (*Initialization for an SO(n) gauge group.*)
-DefineSOGroup[group_Symbol, n_Integer|n_Symbol] := 
-	Block[{projection},		
+DefineSOGroup[group_Symbol, n_Integer|n_Symbol] :=
+	Block[{projection},
 		(*Fundamental*)
 		Dim[group[fund]] = n;
 		TraceNormalization[group[fund]] = 1/2;
@@ -207,16 +207,16 @@ DefineSOGroup[group_Symbol, n_Integer|n_Symbol] :=
 		(*Fierz identitiy*)
 		tGen /: tGen[group[fund], A_, a_, b_] tGen[group[fund], A_, c_, d_] = TraceNormalization[group[fund]] / 2 *
 			(del[group[fund], a, d] del[group[fund], c, b] - del[group[fund], a, c] del[group[fund], b, d]);
-		
+
 		(*Symmetric traceless*)
 		Dim[group[S2]] = (n - 1) (n + 2) / 2 ;
 		TraceNormalization[group[S2]] = (n + 2) / 2;
-		Casimir2[group[S2]] =  n / 2; 
-		delS2 /: delS2[group, a_, i_ , j_] delS2[group, a_, k_, l_] = Sym[k, l][del[group@ fund, i, k] del[group@ fund, j, l]] 
+		Casimir2[group[S2]] =  n / 2;
+		delS2 /: delS2[group, a_, i_ , j_] delS2[group, a_, k_, l_] = Sym[k, l][del[group@ fund, i, k] del[group@ fund, j, l]]
 			- del[group@ fund, i, j] del[group@ fund, k, l] / n;
-		twoIndexRepDelta[group @ S2, a_, b_] = Sym[a @ 1, a @ 2 ][del[group@ fund, a@ 1, b@ 1] del[group@ fund, a@ 2, b@ 2] ] - 
+		twoIndexRepDelta[group @ S2, a_, b_] = Sym[a @ 1, a @ 2 ][del[group@ fund, a@ 1, b@ 1] del[group@ fund, a@ 2, b@ 2] ] -
 			del[group@ fund, a@ 1, a@ 2] del[group@ fund, b@ 1, b@ 2] / n;
-		
+
 		(*Adjoint*)
 		Dim[group[adj]] = n (n - 1) / 2;
 		TraceNormalization[group[adj]] = (n - 2) / 2;
@@ -224,8 +224,8 @@ DefineSOGroup[group_Symbol, n_Integer|n_Symbol] :=
 	];
 
 (*Initialization for an Sp(n) gauge group.*)
-DefineSpGroup[group_Symbol, n_Integer|n_Symbol] := 
-	Block[{projection},		
+DefineSpGroup[group_Symbol, n_Integer|n_Symbol] :=
+	Block[{projection},
 		(*Fundamental*)
 		Dim[group[fund]] = n;
 		TraceNormalization[group[fund]] = 1/2;
@@ -233,16 +233,16 @@ DefineSpGroup[group_Symbol, n_Integer|n_Symbol] :=
 		(*Fierz identitiy*)
 		tGen /: tGen[group[fund], A_, a_, b_] tGen[group[fund], A_, c_, d_] = TraceNormalization[group[fund]] / 2 *
 			(del[group[fund], a, d] del[group[fund], c, b] - eps[group[fund], a, c] eps[group[fund], b, d]);
-		
+
 		(*Antisymmetric "traceless"*)
 		Dim[group[A2]] = (n - 2) (n + 1) / 2 ;
 		TraceNormalization[group[A2]] = (n - 2) / 2;
-		Casimir2[group[A2]] =  n / 2;  
-		delA2 /: delA2[group, a_, i_ , j_] delA2[group, a_, k_, l_] = AntiSym[k, l][del[group@ fund, i, k] del[group@ fund, j, l]] - 
+		Casimir2[group[A2]] =  n / 2;
+		delA2 /: delA2[group, a_, i_ , j_] delA2[group, a_, k_, l_] = AntiSym[k, l][del[group@ fund, i, k] del[group@ fund, j, l]] -
 			eps[group@ fund, i, j] eps[group@ fund, k, l] / n;
-		twoIndexRepDelta[group @ A2, a_, b_] = AntiSym[a @ 1, a @ 2 ][del[group@ fund, a@ 1, b@ 1] del[group@ fund, a@ 2, b@ 2] ] - 
+		twoIndexRepDelta[group @ A2, a_, b_] = AntiSym[a @ 1, a @ 2 ][del[group@ fund, a@ 1, b@ 1] del[group@ fund, a@ 2, b@ 2] ] -
 			eps[group@ fund, a@ 1, a@ 2] eps[group@ fund, b@ 1, b@ 2] / n;
-		
+
 		(*Adjoint*)
 		Dim[group[adj]] = n (n + 1) / 2;
 		TraceNormalization[group[adj]] = (n + 2) / 2;
@@ -259,48 +259,44 @@ DefineSUGroup[group_Symbol, n_Integer|n_Symbol] :=
 		(*Fierz identitiy*)
 		tGen /: tGen[group[fund], A_, a_, b_] tGen[group[fund], A_, c_, d_] = TraceNormalization[group[fund]] *
 			(del[group[fund], a, d] del[group[fund], c, b] - del[group[fund], a, b] del[group[fund], c, d] / n);
-		
+
 		(*Symmetric*)
 		Dim[group[S2]] = n (n +1) /2;
 		TraceNormalization[group[S2]] = (n + 2) / 2;
 		Casimir2[group[S2]] =  (n - 1) (n + 2) / n;
 		delS2 /: delS2[group, a_, i_ , j_] delS2[group, a_, k_, l_] = Sym[k, l][del[group@ fund, i, k] del[group@ fund, j, l]];
 		twoIndexRepDelta[group @ S2, a_, b_] = Sym[a @ 1, a @ 2 ][del[group@fund, a@1, b@1] del[group@fund, a@2, b@2] ];
-		
+
 		(*Anti-Symmetric*)
 		Dim[group[A2]] = n (n -1) /2;
 		TraceNormalization[group[A2]] = (n - 2) / 2;
 		Casimir2[group[A2]] =  (n - 2) (n + 1) / n;
 		delA2 /: delA2[group, a_, i_ , j_] delA2[group, a_, k_, l_] = AntiSym[k, l][del[group@ fund, i, k] del[group@ fund, j, l]];
 		twoIndexRepDelta[group @ A2, a_, b_] = AntiSym[a @ 1, a @ 2 ][del[group@fund, a@1, b@1] del[group@fund, a@2, b@2] ];
-		(*del/: del[group @ A2, a_, b_] del[group @ fund, a_[[1]], b_]*)     
-		
+		(*del/: del[group @ A2, a_, b_] del[group @ fund, a_[[1]], b_]*)
+
 		(*Adjoint*)
 		Dim[group[adj]] = n^2 - 1;
 		TraceNormalization[group[adj]] = n;
 		Casimir2[group[adj]] = n;
 	];
 
-(*Initialization for a U(1) gauge group.*)	
-DefineU1Group[group_Symbol, power_Integer:1] := 
+(*Initialization for a U(1) gauge group.*)
+DefineU1Group[group_Symbol, power_Integer:1] :=
 	Block[{},
 		Switch[power
 		,1,
 			del[group[_], ___] = 1;
 			Dim[group[_]] = 1;
-			tGen[group[x_], ___] = x; 
+			tGen[group[x_], ___] = x;
 		,n_ /; n > 1,
 			tGen[group[x_List], A_, a_, b_] = Matrix[x][group[adj][A]];
-			Dim[group[adj]] = power; 
+			Dim[group[adj]] = power;
 			del[group[_List], ___] = 1;
-			Dim[group[_List]] = 1; 
+			Dim[group[_List]] = 1;
 		];
-		fStruct[group, __] = 0; 
+		fStruct[group, __] = 0;
 	];
 
 
 End[]
-
-
-
-	

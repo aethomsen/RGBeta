@@ -62,7 +62,6 @@ BetaTerm[coupling_, loop_Integer] :=
 				Return @ $Failed;
 			];
 			group = $couplings @ coupling;
-			(* beta = Ttimes[G2Matrix[C1, $A] ,GaugeTensors[loop], G2Matrix[$B, C2], $gaugeGroups[group, Projector][C1, C2] ]; *)
 			beta = GaugeTensors[coupling, loop] /. $gaugeCoefficients // Expand;
 
 			(*Puts U1-mixing matrix on matrix form*)
@@ -76,14 +75,6 @@ BetaTerm[coupling_, loop_Integer] :=
 			];
 			beta = YukawaTensors[coupling, loop] /. $yukawaCoefficients // Expand;
 
-			(* Switch[$yukawas[coupling, Chirality]
-			,Left,
-				tensor = YukawaTensors[loop][[1, 1]];
-			,Right,
-				tensor = YukawaTensors[loop][[2, 2]];
-			];
-
-			beta = tensor $yukawas[coupling, Projector][$a, $i, $j] // Expand // Expand; *)
 		,Quartic,
 			If[loop > 2,
 				Message[BetaTerm::loopNumber, "quartic", 2];
@@ -91,28 +82,20 @@ BetaTerm[coupling_, loop_Integer] :=
 			];
 			beta = QuarticTensors[coupling, loop] /. $quarticCoefficients // Expand;
 
-			(* beta = QuarticTensors[loop] $quartics[coupling, Projector][$a, $b, $c, $d] // Expand // Expand; *)
 		,FermionMass,
 			If[loop > 2,
 				Message[BetaTerm::loopNumber, "fermion mass", 2];
 				Return @ $Failed;
 			];
 			beta = FermionMassTensors[coupling, loop] /. $yukawaCoefficients // Expand;
-			(* Switch[$fermionMasses[coupling, Chirality]
-			,Left,
-				tensor = FermionMassTensors[loop][[1, 1]];
-			,Right,
-				tensor = FermionMassTensors[loop][[2, 2]];
-			];
 
-			beta = tensor $fermionMasses[coupling, Projector][$a, $i, $j] // Expand // Expand; *)
 		,Trilinear,
 			If[loop > 2,
 				Message[BetaTerm::loopNumber, "trilinear scalar", 2];
 				Return @ $Failed;
 			];
 			beta = ScalarMassiveTensors[coupling, loop] /. $quarticCoefficients // Expand;
-			(* beta = ScalarMassiveTensors[loop] $trilinears[coupling, Projector][$a, $b, $c, $d] // Expand // Expand; *)
+
 		,ScalarMass,
 			If[loop > 2,
 				Message[BetaTerm::loopNumber, "scalar mass", 2];
@@ -122,7 +105,7 @@ BetaTerm[coupling_, loop_Integer] :=
 				Return @ 0;
 			];
 			beta = ScalarMassiveTensors[coupling, loop] /. $quarticCoefficients // Expand;
-			(* beta = ScalarMassiveTensors[loop] $scalarMasses[coupling, Projector][$a, $b, $c, $d] // Expand // Expand; *)
+
 		,_Missing,
 			Message[BetaTerm::unkown, coupling];
 			Return @ $Failed;
