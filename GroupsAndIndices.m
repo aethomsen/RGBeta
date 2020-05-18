@@ -21,7 +21,8 @@ ReInitializeSymbols[] :=
 
 		(*del[rep, a, b] is the symbol for Kronecker delta \delta_{a,b} belong to the indices specified by the representation.*)
 		Clear @ del;
-		del /: del[rep_, a___, x_, b___] del[rep_, c___, x_, d___] := del[rep, c, a, b, d];
+		(* del /: del[rep_, a___, x_, b___] del[rep_, c___, x_, d___] := del[rep, c, a, b, d]; *)
+		del /: del[rep_, OrderlessPatternSequence[x_, a_]] del[rep_, OrderlessPatternSequence[x_, b_]] := del[rep, a, b];
 		del /: Power[del[rep_, a_, b_], 2] := Dim[rep];
 		del[rep_, a_, a_] = Dim[rep];
 		del[Bar[rep_], a_, b_] = del[rep, a, b];
@@ -35,16 +36,18 @@ ReInitializeSymbols[] :=
 
 		(*Default properties for anti-symmetric inavariants.*)
 		Clear @ eps;
-		eps /: del[rep_, a___, x_, b___] eps[rep_, c___, x_, d___] := eps[rep, c, a, b, d];
-		eps /: eps[rep_ ,a_, b_] eps[rep_ ,b_, c_] := -del[rep, a, c];
-		eps /: eps[rep_ ,a_, b_] eps[rep_ ,c_, b_] := del[rep, a, c];
-		eps /: eps[rep_ ,b_, a_] eps[rep_ ,b_, c_] := del[rep, a, c];
+		(* eps /: del[rep_, a___, x_, b___] eps[rep_, c___, x_, d___] := eps[rep, c, a, b, d]; *)
+		eps /: del[rep_, OrderlessPatternSequence[x_, a_]] eps[rep_, b___, x_, c___] := eps[rep, b, a, c];
+		eps /: eps[rep_, a_, b_] eps[rep_, b_, c_] := -del[rep, a, c];
+		eps /: eps[rep_, a_, b_] eps[rep_, c_, b_] := del[rep, a, c];
+		eps /: eps[rep_, b_, a_] eps[rep_, b_, c_] := del[rep, a, c];
 		eps /: Power[eps[rep_, a_, b_], 2] := Dim[rep];
 		eps[rep_, a_, a_] := 0;
 
 		(*Levi-Civita symbols*)
 		Clear @ lcSymb;
-		lcSymb /: del[rep_, a___, x_, b___] lcSymb[rep_, c___, x_, d___] := lcSymb[rep, c, a, b, d];
+		(* lcSymb /: del[rep_, a___, x_, b___] lcSymb[rep_, c___, x_, d___] := lcSymb[rep, c, a, b, d]; *)
+		lcSymb /: del[rep_, OrderlessPatternSequence[x_, a_]] lcSymb[rep_, b___, x_, c___] := lcSymb[rep, b, a, c];
 		lcSymb[rep_, a___, x_, b___, x_, c___] := 0;
 		lcSymb /: lcSymb[rep_, x:OrderlessPatternSequence[k__, i___]] lcSymb[rep_, y:OrderlessPatternSequence[k__, j___]] :=
 			Factorial @ Length @ List[k] * Signature@ List[j] *
@@ -72,8 +75,10 @@ ReInitializeSymbols[] :=
 
 		(*Default group generator properties.*)
 		Clear @ tGen;
-		tGen /: del[rep_, a___, x_, b___] tGen[rep_, A_, c___, x_, d___] := tGen[rep, A, c, a, b, d];
-		tGen /: del[group_[adj], A___, X_, B___] tGen[group_[rep_], X_, c__] := tGen[group[rep], A, B, c];
+		(* tGen /: del[rep_, a___, x_, b___] tGen[rep_, A_, c___, x_, d___] := tGen[rep, A, c, a, b, d];
+		tGen /: del[group_[adj], A___, X_, B___] tGen[group_[rep_], X_, c__] := tGen[group[rep], A, B, c]; *)
+		tGen /: del[rep_, OrderlessPatternSequence[x_, a_]] tGen[rep_, A_, b___, x_, c___] := tGen[rep, A, b, a, c];
+		tGen /: del[group_[adj], OrderlessPatternSequence[X_, A_]] tGen[group_[rep_], X_, c__] := tGen[group[rep], A, c];
 		tGen /: tGen[rep_, A_, a_, b_] tGen[rep_, A_, b_, c_] := Casimir2[rep] del[rep, a, c];
 		tGen /: tGen[rep_, A_, a_, b_] tGen[rep_, B_, b_, a_] := TraceNormalization[rep] del[Head[rep][adj], A, B];
 		(*For the real representation we need*)
@@ -85,7 +90,8 @@ ReInitializeSymbols[] :=
 
 		(*Default structure constant properties.*)
 		Clear @ fStruct;
-		fStruct /: del[group_[adj], A___, X_, B___] fStruct[group_, C___, X_, D___] := fStruct[group, C, A, B, D];
+		(* fStruct /: del[group_[adj], A___, X_, B___] fStruct[group_, C___, X_, D___] := fStruct[group, C, A, B, D]; *)
+		fStruct /: del[group_[adj], OrderlessPatternSequence[X_, A_]] fStruct[group_, B___, X_, C___] := fStruct[group, B, A, C];
 		fStruct /: fStruct[group_, x:OrderlessPatternSequence[A_, B_, C_] ] fStruct[group_, y:OrderlessPatternSequence[D_, B_, C_] ] :=
 			Signature[List@ x] Signature[List@ y] Signature[{A, B, C}] Signature[{D, B, C}] Casimir2[group@ adj] del[group@ adj, A, D];
 		fStruct[group_, a___, x_, b___, x_, c___] := 0;
@@ -157,13 +163,11 @@ RefineGroupStructures[expr_] := Block[{replace},
 	Tensor /: del[ind_, a___, x_, b___] Tensor[t_][c___, ind_[x_], d___] := Tensor[t][c, ind[a, b], d];
 
 (*Formating*)
-	Format[Trans[x_]] := HoldForm[x^Global`T];
-	Format[Bar[x_]] := OverBar @ x;
-	Format[Trans[Bar[x_]] ] := x^Style[Global`\[Dagger], Bold, 12];
-	(*Format[Matrix[x_, y__][] ] := HoldForm @Dot[x, y];*)
-	Format[Matrix[x_, y__][h1_[i1_] ] ] := Subscript[(Dot[x, y]), i1];
-	Format[Matrix[x__][h1_[i1_] ] ] := Subscript[Dot[x], i1];
-	Format[Matrix[x__][h1_[i1_], h2_[i2_]] ] := Subscript[Dot[x], i1, i2];
+	Format[Trans[x_], StandardForm] := HoldForm[x^Global`T];
+	Format[Bar[x_], StandardForm] := OverBar @ x;
+	Format[Trans[Bar[x_]], StandardForm] := x^Style[Global`\[Dagger], Bold, 12];
+	Format[Matrix[x__][h1_[i1_] ], StandardForm] := Subscript[Dot[x], i1];
+	Format[Matrix[x__][h1_[i1_], h2_[i2_]], StandardForm] := Subscript[Dot[x], i1, i2];
 
 
 (*###########################################*)
