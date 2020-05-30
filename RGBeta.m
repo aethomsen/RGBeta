@@ -313,6 +313,7 @@ OptionTest[_, MassIndices] = MatchQ[_Function];
 OptionTest[_, Parameterizations] = MatchQ[_List];
 OptionTest[_, RescaledCouplings] = BooleanQ;
 OptionTest[_, SelfConjugate] = BooleanQ;
+OptionTest[_, CheckInvariance] = BooleanQ;
 
 Attributes @ OptionsCheck = {HoldFirst};
 OptionsCheck @ func_[___, opts : OptionsPattern[]] :=

@@ -86,6 +86,7 @@ AddVector[name_, group_] := (sDelV/: sDelV[name, ind_, v1_] sDelV[name, ind_, v2
 (*###################################*)
 (*----------Other functions----------*)
 (*###################################*)
+(* Determines all unique permutations of fields with a given invariant *)
 CouplingPermutations[fields_List, invariant_Function] :=
 	Block[{arg, fs, inv, number, perms, uniformSymbols, uniqueArrangements},
 		uniformSymbols = s_Symbol /; StringMatchQ[SymbolName@s, "*$*"] :> Symbol @ StringSplit[SymbolName@s, "$"][[1]];
@@ -116,6 +117,20 @@ AveragePermutations[indices_List, permutations_List][expr_] :=
 		Mean[expr/.subs]
 	];
 
+(* Puts a tensor on canonical form---Brute force *)
+CanonizeTensor[symbForm_List][expr_] :=
+	Block[{symb, newSymbs, indexAssignments, temp},
+		symb = DeleteDuplicates @ Cases[expr, _Symbol?(StringMatchQ[SymbolName@ #, Alternatives @@ symbForm] &), Infinity];
+		newSymbs = Table[Symbol["internal$" <> ToString@ n], {n, Length @ symb}];
+		indexAssignments = (Thread@Rule[#, newSymbs] &) /@ Permutations @ symb;
+		Sort[Flatten @ Table[
+			expr /. assign /. {eps[rep_, a_, c_] tGen[rep_, A_, c_, b_] /; !OrderedQ[{a, b}] -> eps[rep, b, c] tGen[rep, A, c, a],
+			eps[rep_, c_, a_] tGen[rep_, A_, c_, b_] /; !OrderedQ@{a, b} -> eps[rep, c, b] tGen[rep, A, c, a]} /.
+			{eps[rep_, a_, b_] /; ! OrderedQ@{a, b} -> -eps[rep, b, a],
+			del[rep_, a_, b_] /; ! OrderedQ@{a, b} -> del[rep, b, a] }
+		, {assign, indexAssignments}]][[1]]
+	];
+CanonizeTensor[symbForm_List][Plus[x_, y__]] := CanonizeTensor[symbForm]@ x + CanonizeTensor[symbForm] @ Plus@ y;
 
 (*###################################*)
 (*----------Gauge couplings----------*)
@@ -294,11 +309,12 @@ FGauge[A_, B_, C_] :=
 Options[AddYukawa] = {CouplingIndices -> (Null &),
 	GroupInvariant -> (1 &),
 	Chirality -> Left,
-	CheckInvariance -> False};
+	CheckInvariance -> True};
 AddYukawa::unkown = "`1` does not match any of the `2`s.";
 AddYukawa::projection0 = "The projcetion operator does not pick out the coupling. Please check the GroupInvariant for errors."
+AddYukawa::gaugeInv = "Could not verify invariance under the `1` group. Plase check the GroupInvariant for errors.";
 AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
-	Block[{g, group, normalization, projection, symmetryFactor, temp, test, yuk, yukbar, y},
+	Block[{g, group, normalization, projection, symmetryFactor, temp, test, yuk, yukawa, yukbar, y},
 		(*Tests if the fields have been defined*)
 		If[!MemberQ[Keys @ $scalars, phi /. Bar[x_] -> x],
 			Message[AddYukawa::unkown, phi /. Bar[x_] -> x, "scalar"];
@@ -333,22 +349,6 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 			yukbar = Evaluate[normalization Tensor[Bar @ g] @ ##] &
 		];
 
-		(*Tests whether the Yukawa coupling satisfy gauge invariance*)
-		If[OptionValue @ CheckInvariance,
-			y = With[{y1 = yuk, ind = Sequence@@ OptionValue[CouplingIndices][s, f1, f2],
-				gi = OptionValue[GroupInvariant][s, f1, f2]},
-				Sym[#2, #3][y1[ind] sDelS[phi, #1, s] sDelF[psi1, #2, f1] sDelF[psi2, #3, f2] gi ] &];
-			test = TfLeft[A, k, i] y[a, k ,j] + y[a, i, k] TfLeft[A, k, j] + y[b, i, j] Tscal[A, b, a] //Expand;
-			test *= sDelS[Bar@phi, a, scal] sDelF[Bar@psi1, i, ferm1] sDelF[Bar@psi2, j, ferm2] //Expand;
-			Do[
-				temp = test sDelV[group @ Field, A, vec1] //Expand;
-				If [temp =!= 0,
-					Print[coupling,"---Gauge invarinace check inconclusive for the ", group @ Field, " field:"];
-					Print["0 = ", temp];
-				];
-			,{group, $gaugeGroups}];
-		];
-
 		(*Adds the Yukawa coupling to the association*)
 		AppendTo[$yukawas, coupling ->
 			<|Chirality -> OptionValue @ Chirality,
@@ -376,8 +376,25 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 		];
 		projection = Evaluate[projection[#1, #2, #3] / symmetryFactor] &;
 		AppendTo[$yukawas @ coupling, Projector -> projection];
-		AppendTo[$couplings, coupling -> Yukawa];
 
+		(*Tests whether the coupling satisfy gauge invariance*)
+		If[OptionValue @ CheckInvariance,
+			Block[{A,i1,i2,i3,a1,a2},
+				yukawa[$da_, $di_, $dj_] = sDelS[phi, $da, s1$1] sDelF[psi1, $di, f1$1] sDelF[psi2, $dj, f2$1] OptionValue[GroupInvariant][s1$1, f1$1, f2$1];
+				test = yukawa[a2, i1, i2] Tscal[A, a2, a1] + yukawa[a1, i3, i2] TfLeft[A, i3, i1] + yukawa[a1, i1, i3] TfLeft[A, i3, i2] //Expand;
+				(* test = TfLeft[A, k, i] YukawaLeft[a, k ,j] + YukawaLeft[a, i, k] TfLeft[A, k, j] + YukawaLeft[b, i, j] Tscal[A, b, a] //Expand; *)
+				test *= sDelS[Bar@phi, a1, s1] sDelF[Bar@psi1, i1, f1] sDelF[Bar@psi2, i2, f2] //Expand;
+				Do[
+					temp = CanonizeTensor[{"s1$*","s2$*","s3$*","s4$*","f1$*","f2$*"}][ test sDelV[$gaugeGroups[group, Field], A, v1] //Expand ];
+					If [temp =!= 0,
+						Message[AddYukawa::gaugeInv, group];
+						Print["0 != ", temp];
+					];
+				,{group, Keys@ $gaugeGroups}];
+			];
+		];
+
+		AppendTo[$couplings, coupling -> Yukawa];
 		ResetBetas[];
 	];
 
@@ -491,11 +508,12 @@ YukTil[a_, i_, j_, massive_:False] := {{YukawaRight[a, i, j, massive], 0}, {0, Y
 
 (*Function for defining the quartic couplings of the theory*)
 AddQuartic::unkown = "`1` does not match any of the scalars.";
+AddQuartic::gaugeInv = "Could not verify invariance under the `1` group. Plase check the GroupInvariant for errors.";
 AddQuartic::projection0 = "The projcetion operator does not pick out the coupling. Please check the GroupInvariant for errors.";
 Options[AddQuartic] = {CouplingIndices -> (Null &),
 	GroupInvariant -> (1 &),
 	SelfConjugate -> True,
-	InvarianceCheck -> False};
+	CheckInvariance -> True};
 AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? OptionsCheck :=
 	Block[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
 		(*Tests if the fields have been defined*)
@@ -523,23 +541,6 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? Options
 			lambar = Evaluate[normalization Tensor[Bar @ coupling] @ ## ] &
 		];
 
-		(*Tests whether the quartic coupling satisfy gauge invariance*)
-		If[OptionValue @ InvarianceCheck,
-			lambda = With[{l1 = lam, ind = Sequence@@ OptionValue[CouplingIndices][s1, s2, s3, s4],
-				gi = OptionValue[GroupInvariant][s1, s2, s3, s4]},
-				Sym[#1, #2, #3, #4][l1[ind] sDelS[phi1, #1, s1] sDelS[phi2, #2, s2] sDelS[phi3, #3, s3] sDelS[phi4, #4, s4] gi] &];
-			test = Tscal[A, a, e] lambda[e, b, c, d] + Tscal[A, b, e] lambda[a, e, c, d]
-				+ Tscal[A, c, e] lambda[a, b, e, d] + Tscal[A, d, e] lambda[a, b, c, e]//Expand;
-			test = test sDelS[Bar@phi1, a, scal1] sDelS[Bar@phi2, b, scal2] sDelS[Bar@phi3, c, scal3] sDelS[Bar@phi4, d, scal4] //Expand;
-			Do[
-				temp = test sDelV[group @ Field, A, vec1] //Expand;
-				If [temp =!= 0,
-					Print[coupling,"---Gauge invarinace check inconclusive for the ", group @ Field, " field:"];
-					Print["0 = ", temp//S];
-				];
-			,{group, $gaugeGroups}];
-		];
-
 		(*Adds the quartic coupling to the association*)
 		AppendTo[$quartics, coupling ->
 			<|Coupling -> lam,
@@ -562,8 +563,25 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? Options
 		];
 		projection = Evaluate[projection[#1, #2, #3, #4] / symmetryFactor] &;
 		AppendTo[$quartics @ coupling, Projector -> projection];
-		AppendTo[$couplings, coupling -> Quartic];
 
+		(*Tests whether the coupling satisfy gauge invariance*)
+		If[OptionValue @ CheckInvariance,
+			Block[{A,a1,a2,a3,a4,a5},
+				lambda[$da_, $db_, $dc_, $dd_] = sDelS[phi1, $da, s1$1] sDelS[phi2, $db, s2$1] sDelS[phi3, $dc, s3$1] sDelS[phi4, $dd, s4$1] OptionValue[GroupInvariant][s1$1, s2$1, s3$1, s4$1];
+				test = lambda[a5,a2,a3,a4] Tscal[A, a5, a1] + lambda[a1,a5,a3,a4] Tscal[A, a5, a2] + lambda[a1,a2,a5,a4] Tscal[A, a5, a3] + lambda[a1,a2,a3,a5] Tscal[A, a5, a4] //Expand;
+				(* test = Tscal[A, a1, a5] Lam[a5,a2,a3,a4] //Expand //Sym4[a1,a2,a3,a4]; *)
+				test *= sDelS[Bar@phi1, a1, s1] sDelS[Bar@phi2, a2, s2] sDelS[Bar@phi3, a3, s3] sDelS[Bar@phi4, a4, s4] //Expand;
+				Do[
+					temp = CanonizeTensor[{"s1$*","s2$*","s3$*","s4$*","f1$*","f2$*"}][ test sDelV[$gaugeGroups[group, Field], A, v1] //Expand ];
+					If [temp =!= 0,
+						Message[AddQuartic::gaugeInv, group];
+						Print["0 != ", temp];
+					];
+				,{group, Keys@ $gaugeGroups}];
+			];
+		];
+
+		AppendTo[$couplings, coupling -> Quartic];
 		ResetBetas[];
 	];
 
