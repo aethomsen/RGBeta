@@ -2,7 +2,8 @@
 	Author: Anders Eller Thomsen
 	Released under the MIT license (see 'MIT_license.txt').
 *)
-Begin["Tensors`"]
+Begin["TensorCalculations`"]
+<< BetaTensors`; (*Loads all the tensors from ancillary file*)
 
 sig1 = {{0, 1}, {1, 0}};
 sig3 = {{1, 0}, {0, -1}};
@@ -142,7 +143,6 @@ NewIdentities[expr_] := Block[{fStruct, tGen, n},
 (*#################################*)
 (*----------Gauge tensors----------*)
 (*#################################*)
-<< AdditionalTensors.m
 GaugeTensors[coupling_Symbol, loop_Integer] :=
 	Module[{diagrams = {1, 3, 7, 33, 202}[[loop + 1]], n, C1, C2, proj, betaTerm},
 		proj = Ttimes[G2Matrix[$A, C1], $gaugeGroups[$couplings @ coupling, Projector][C1, C2], G2Matrix[C2, $B]];

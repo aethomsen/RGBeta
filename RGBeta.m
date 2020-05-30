@@ -272,7 +272,7 @@ Begin["`Private`"] (* Begin Private Context *)
 		<< Betas`;
 		<< FieldsAndCouplings`;
 		<< GroupsAndIndices`;
-		<< Tensors`;
+		<< TensorCalculations`;
 	];
 
 	(*Initializes dummy index notation and global model information*)
