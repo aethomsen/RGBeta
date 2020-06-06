@@ -1,9 +1,9 @@
 (*
 ################################################################
-This is RGBeta, Version 0.4.
-Last modefied 23-04-2020
+This is RGBeta, Version 0.4.1.
+Last modefied 06-06-2020
 
-Released under the MIT license (see 'MIT_license.txt').
+Released under the MIT license (see 'LICENSE').
 
 Author: Anders Eller Thomsen
 ################################################################
@@ -263,7 +263,7 @@ YukTil::usage =
 (*---------------Loads components---------------*)
 (*##############################################*)
 Begin["`Private`"] (* Begin Private Context *)
-	$RGBetaVersion = "RGBeta v0.4";
+	$RGBetaVersion = "RGBeta v0.4.1";
 	Print[$RGBetaVersion, " by Anders Eller Thomsen"];
 
 	(*Loads package files*)
