@@ -95,7 +95,7 @@ sDelV::usage =
 tGen::usage =
 	"tGen[rep, A, a, b] represents a group generator of the representation \"rep\" with adjoint index A. a and b are the two indices of rep. "
 
-Chirality::usage = Coupling::usage = CouplingBar::usage = CouplingIndices::usage = CouplingMatrix::usage = FermionMass::usage = Field::usage =
+BarToConjugate::usage = Chirality::usage = Coupling::usage = CouplingBar::usage = CouplingIndices::usage = CouplingMatrix::usage = FermionMass::usage = Field::usage =
 Fields::usage = FlavorIndices::usage = FourDimensions::usage = GaugeRep::usage = GroupInvariant::usage = Indices::usage = Invariant::usage = LieGroup::usage = Mass::usage=
 MassIndices::usage = Parameterizations::usage = Projector::usage = Quartic::usage = RescaledCouplings::usage = ScalarMass::usage = SelfConjugate::usage = Trilinear::usage = UniqueArrangements::ussage = Yukawa::usage =
 	"Function option and/or key used in global association lists of fields and/or couplings."
@@ -268,7 +268,7 @@ Begin["`Private`"] (* Begin Private Context *)
 
 	(*Loads package files*)
 	dir = DirectoryName @ $InputFileName;
-	Block[{$Path = {dir}},
+	Block[{$Path = {FileNameJoin@ {dir,"Core"} }},
 		<< Betas`;
 		<< FieldsAndCouplings`;
 		<< GroupsAndIndices`;

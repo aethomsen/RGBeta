@@ -309,7 +309,7 @@ FGauge[A_, B_, C_] :=
 Options[AddYukawa] = {CouplingIndices -> (Null &),
 	GroupInvariant -> (1 &),
 	Chirality -> Left,
-	CheckInvariance -> True};
+	CheckInvariance -> False};
 AddYukawa::unkown = "`1` does not match any of the `2`s.";
 AddYukawa::projection0 = "The projcetion operator does not pick out the coupling. Please check the GroupInvariant for errors."
 AddYukawa::gaugeInv = "Could not verify invariance under the `1` group. Plase check the GroupInvariant for errors.";
@@ -385,8 +385,8 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 				(* test = TfLeft[A, k, i] YukawaLeft[a, k ,j] + YukawaLeft[a, i, k] TfLeft[A, k, j] + YukawaLeft[b, i, j] Tscal[A, b, a] //Expand; *)
 				test *= sDelS[Bar@phi, a1, s1] sDelF[Bar@psi1, i1, f1] sDelF[Bar@psi2, i2, f2] //Expand;
 				Do[
-					temp = CanonizeTensor[{"s1$*","s2$*","s3$*","s4$*","f1$*","f2$*"}][ test sDelV[$gaugeGroups[group, Field], A, v1] //Expand ];
-					If [temp =!= 0,
+					temp = CanonizeTensor[{"s1$*","s2$*","s3$*","s4$*","f1$*","f2$*"}][ test sDelV[$gaugeGroups[group, Field], A, v1] //Expand ] /. Matrix[x_][_[v1]] -> x;
+					If [temp =!= 0 && !MatchQ[temp, {0 ..}],
 						Message[AddYukawa::gaugeInv, group];
 						Print["0 != ", temp];
 					];
@@ -513,7 +513,7 @@ AddQuartic::projection0 = "The projcetion operator does not pick out the couplin
 Options[AddQuartic] = {CouplingIndices -> (Null &),
 	GroupInvariant -> (1 &),
 	SelfConjugate -> True,
-	CheckInvariance -> True};
+	CheckInvariance -> False};
 AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? OptionsCheck :=
 	Block[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
 		(*Tests if the fields have been defined*)
@@ -525,7 +525,7 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? Options
 		,{temp, {phi1, phi2, phi3, phi4}}];
 
 		If[OptionValue @ SelfConjugate,
-			Bar @ coupling = coupling;
+			SetReal @ coupling;
 		];
 
 		normalization = 24; (*To account for the structure deltas working with real/complex scalars in Lam[a, b, c, d]*)
@@ -572,8 +572,8 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? Options
 				(* test = Tscal[A, a1, a5] Lam[a5,a2,a3,a4] //Expand //Sym4[a1,a2,a3,a4]; *)
 				test *= sDelS[Bar@phi1, a1, s1] sDelS[Bar@phi2, a2, s2] sDelS[Bar@phi3, a3, s3] sDelS[Bar@phi4, a4, s4] //Expand;
 				Do[
-					temp = CanonizeTensor[{"s1$*","s2$*","s3$*","s4$*","f1$*","f2$*"}][ test sDelV[$gaugeGroups[group, Field], A, v1] //Expand ];
-					If [temp =!= 0,
+					temp = CanonizeTensor[{"s1$*","s2$*","s3$*","s4$*","f1$*","f2$*"}][ test sDelV[$gaugeGroups[group, Field], A, v1] //Expand ] /. Matrix[x_][_[v1]] -> x;
+					If [temp =!= 0 && !MatchQ[temp, {0 ..}],
 						Message[AddQuartic::gaugeInv, group];
 						Print["0 != ", temp];
 					];
@@ -603,7 +603,7 @@ AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] ? OptionsCheck
 		,{temp, {phi1, phi2, phi3}}];
 
 		If[OptionValue @ SelfConjugate,
-			Bar @ coupling = coupling;
+			SetReal @ coupling;
 		];
 
 		normalization = 24; (*To account for the structure deltas working with real/complex scalars in Lam[a, b, c, d]*)
@@ -663,7 +663,7 @@ AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] ? OptionsCheck:=
 		,{temp, {phi1, phi2}}];
 
 		If[OptionValue @ SelfConjugate,
-			Bar @ coupling = coupling;
+			SetReal @ coupling;
 		];
 
 		normalization = 24; (*To account for the structure deltas working with real/complex scalars in Lam[a, b, c, d]*)

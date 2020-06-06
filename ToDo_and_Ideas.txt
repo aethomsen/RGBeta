@@ -1,5 +1,0 @@
-- Verify implementation of A2, S2, and adj representations.
-
-- Levi-Civita tensors
-
-- Fix cannonical form of matrix couplings and their contractions.
