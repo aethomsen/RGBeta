@@ -9,8 +9,11 @@ RGBeta can be run from a Mathematica notebook in the base directory with the fol
 > << RGBeta`
 
 Alternatively, one can load it from anywhere by providing the path to the directory of RGBeta with   
-> AppendTo[$Path, <Directory>];
+> AppendTo[$Path, " Directory "];
 > << RGBeta`
+
+using the appropriate directory.
+
 
 ## Author
  - Anders Eller Thomsen (@aethomsen) 
