@@ -445,7 +445,7 @@ AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 			Invariant -> OptionValue @ GroupInvariant|>];
 
 		(*Constructs the projection operator*)
-		projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, f1, f2] *
+		projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][f1, f2] *
 			Switch[OptionValue @ Chirality
 			,Left,
 				sDelS[$vevSelect, #1, s1] sDelF[Bar@ psi1, #2, f1] sDelF[Bar@ psi2, #3, f2]

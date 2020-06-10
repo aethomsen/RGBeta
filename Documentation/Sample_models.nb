@@ -803,7 +803,7 @@ Cell[BoxData[{
    RowBox[{"SelfConjugate", "\[Rule]", "False"}]}], "]"}]}], "Input",
  CellChangeTimes->{{3.7898972816948757`*^9, 3.789897415793888*^9}},
  CellLabel->"In[23]:=",ExpressionUUID->"7c941b4e-8793-4dd5-b448-7e0e234c476d"]
-}, Open  ]],
+}, Closed]],
 
 Cell[CellGroupData[{
 
@@ -1389,9 +1389,9 @@ Cell[19957, 502, 158, 3, 40, "Text",ExpressionUUID->"fdbd3180-8fa9-48ef-891c-054
 Cell[20118, 507, 5644, 154, 480, "Input",ExpressionUUID->"7d50b769-294a-4ecf-b3ca-492207a098e8"],
 Cell[25765, 663, 159, 3, 40, "Text",ExpressionUUID->"91ad4aeb-9757-4d69-85b9-690606407fba"],
 Cell[25927, 668, 4714, 136, 214, "Input",ExpressionUUID->"7c941b4e-8793-4dd5-b448-7e0e234c476d"]
-}, Open  ]],
+}, Closed]],
 Cell[CellGroupData[{
-Cell[30678, 809, 163, 3, 53, "Subsection",ExpressionUUID->"f0dd616c-8f0f-4a69-83fa-49e171dfc0cc"],
+Cell[30678, 809, 163, 3, 37, "Subsection",ExpressionUUID->"f0dd616c-8f0f-4a69-83fa-49e171dfc0cc"],
 Cell[30844, 814, 170, 3, 40, "Text",ExpressionUUID->"d5aa7db0-6594-40cc-bd14-bed90a99affa"],
 Cell[31017, 819, 509, 11, 62, "Input",ExpressionUUID->"81551614-9b5c-4483-a743-29c07bddfe1d"],
 Cell[31529, 832, 750, 18, 62, "Input",ExpressionUUID->"f71106cc-ed83-4e43-ac7c-fda04c2a2b15"],
