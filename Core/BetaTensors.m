@@ -618,9 +618,9 @@ ResetBetas[] := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A
     BetaTensor[2, 3, 307] := BetaTensor[2, 3, 307] = Tdot[sig3, Yuk[b1, $i, k1], TfG2[A1, k1, k2], TfG2[A2, k2, $j]] Tr@Tdot[sig3, Yuk[b1, k3, k4], Tferm[A2, k4, k5], YukTil[$a, k5, k6], TfermTil[A1, k6, k3]] // Expand // Sym[$i, $j];
     BetaTensor[2, 3, 308] := BetaTensor[2, 3, 308] = Tdot[TfG2t[A1, $i, k1], sig3, Yuk[b1, k1, k2], TfG2[A2, k2, $j]] Tr@Tdot[sig3, Yuk[b1, k3, k4], Tferm[A1, k4, k5], Tferm[A2, k5, k6], YukTil[$a, k6, k3]] // Expand // Sym[$i, $j];
 
-    (*#####################################*)
-    (*-----------Quartic Tensors-----------*)
-    (*#####################################*)
+(*#####################################*)
+(*-----------Quartic Tensors-----------*)
+(*#####################################*)
     BetaTensor[3, 0, 1] := BetaTensor[3, 0, 1] = - Global`\[Epsilon] Lam[$a, $b, $c, $d];
 
     BetaTensor[3, 1, 1] := BetaTensor[3, 1, 1] = FourGLam[$a, $b, $c, $d] // Sym[$b, $c, $d];
@@ -629,7 +629,7 @@ ResetBetas[] := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A
     BetaTensor[3, 1, 4] := BetaTensor[3, 1, 4] = Y2S[$a, b1] Lam[b1, $b, $c, $d] // Expand // Sym4[$a, $b, $c, $d];
     BetaTensor[3, 1, 5] := BetaTensor[3, 1, 5] = Tr @ Tdot[Yuk[$a, k4, k1], YukTil[$b, k1, k2], Yuk[$c, k2, k3], YukTil[$d, k3, k4]] // Sym[$b, $c, $d];
 
-    (* y^0, lam^0 terms*)
+(* y^0, lam^0 terms*)
     BetaTensor[3, 2, 1] := BetaTensor[3, 2, 1] = Ttimes[Tscal[A1, $a, b1], FourGLam[b1, b2, $b, $c], TsG2[A1, b2, $d]] // Sym[$a, $b, $c, $d];
     BetaTensor[3, 2, 2] := BetaTensor[3, 2, 2] = Ttimes[C2S[$a, b1], FourGLam[b1, $b, $c, $d]] // Sym[$a, $b, $c, $d];
     BetaTensor[3, 2, 3] := BetaTensor[3, 2, 3] = Ttimes[TsG2[A1, $a, b1], TsG2[A2, b1, $b], C2G[A2, A3], Tscal[A1, $c, b2], TsG2[A3, b2, $d]] // Sym[$a, $b, $c, $d];
@@ -762,4 +762,39 @@ ResetBetas[] := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A
     BetaTensor[5, 2, 31] := BetaTensor[5, 2, 31] = Tr @ Tdot[Yuk[b1, k6, k1], YukTil[$a, k1, k2, True], Yuk[b1, k2, k3], YukTil[$b, k3, k4, True], Yuk[$c, k4, k5, True], YukTil[$d, k5, k6, True]] // Sym[$a, $b, $c, $d];
     BetaTensor[5, 2, 32] := BetaTensor[5, 2, 32] = Tr @ Tdot[Yuk[$a, k6, k1, True], YukTil[b1, k1, k2], Yuk[$b, k2, k3, True], YukTil[$c, k3, k4, True], Yuk[b1, k4, k5], YukTil[$d, k5, k6, True]] // Sym[$b, $c, $d];
     BetaTensor[5, 2, 33] := BetaTensor[5, 2, 33] = Tr @ Tdot[Yuk[$a, k5, k1, True], YukTil[$b, k1, k2, True], Yuk[$c, k2, k3, True], YukTil[$d, k3, k4, True], Y2F[k4, k5]] // Sym[$a, $b, $c, $d];
+
+
+(*#################################################*)
+(*-----------Anomalous dimension tensors-----------*)
+(*#################################################*)
+(* Fermion field anomalous dimension *)
+    AnomalousTensor[1, 1, 1] = C2Ft[$i, $j];
+    AnomalousTensor[1, 1, 2] = Y2F[$i, $j];
+
+    AnomalousTensor[1, 2, 1] = Tdot[C2Ft[$i, k1], C2Ft[k1, $j] ];
+    AnomalousTensor[1, 2, 2] = C2FC2Gt[$i, $j];
+    AnomalousTensor[1, 2, 3] = C2FS2St[$i, $j];
+    AnomalousTensor[1, 2, 4] = C2FS2Ft[$i, $j];
+    AnomalousTensor[1, 2, 5] = Y2FC2St[$i, $j];
+    AnomalousTensor[1, 2, 6] = Y2FC2Ft[$i, $j];
+    AnomalousTensor[1, 2, 7] = Tdot[C2Ft[$i, k1], Y2F[k1, $j]];
+    AnomalousTensor[1, 2, 8] = Y2FY2Ft[$i, $j];
+    AnomalousTensor[1, 2, 8] = Y2FY2St[$i, $j];
+
+(* Fermion field anomalous dimension *)
+    AnomalousTensor[2, 1, 1] = C2S[$a, $b];
+    AnomalousTensor[2, 1, 2] = Y2S[$a, $b];
+
+    AnomalousTensor[2, 2, 1] = Ttimes[C2s[$a, b1], C2s[b1, $b]];
+    AnomalousTensor[2, 2, 2] = C2SC2G[$a, $b];
+    AnomalousTensor[2, 2, 3] = C2SS2S[$a, $b];
+    AnomalousTensor[2, 2, 4] = C2SS2F[$a, $b];
+    AnomalousTensor[2, 2, 5] = Lam2[$a, $b];
+    AnomalousTensor[2, 2, 6] = Y2SC2F[$a, $b];
+    AnomalousTensor[2, 2, 7] = Y4cS[$a, $b];
+    AnomalousTensor[2, 2, 8] = Y2SY2F[$a, $b];
+
+
+
+
 ];

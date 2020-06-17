@@ -367,8 +367,39 @@ $gaugeCoefficients = {
 	Bcoef[1, 3, 33] -> -1/8
 };
 
-Protect[$gaugeCoefficients, $quarticCoefficients, $yukawaCoefficients];
+$fermionAnomalousCoefficients = {
+	(* 1-loop *)
+	Acoef[1, 1, 1] -> Global`\[Xi],
+	Acoef[1, 1, 2] -> 1/2,
+	(* 2-loop *)
+	Acoef[1, 2, 1] -> -3/2,
+	Acoef[1, 2, 2] -> 25/4 + 2 Global`\[Xi] + Global`\[Xi]^2/4,
+	Acoef[1, 2, 3] -> -1/4,
+	Acoef[1, 2, 4] -> -1/2,
+	Acoef[1, 2, 5] -> 9/2,
+	Acoef[1, 2, 6] -> -1/4,
+	Acoef[1, 2, 7] -> -7/4,
+	Acoef[1, 2, 8] -> -1/8,
+	Acoef[1, 2, 9] -> -3/8
+};
+
+$scalarAnomalousCoefficients = {
+	(* 1-loop *)
+	Acoef[2, 1, 1] -> Global`\[Xi] - 3,
+	Acoef[2, 1, 2] -> 1/2,
+	(* 2-loop *)
+	Acoef[2, 2, 1] -> 3/2,
+	Acoef[2, 2, 2] -> Global`\[Xi]^2/4 + 2 Global`\[Xi] - 35/3,
+	Acoef[2, 2, 3] -> 11/12,
+	Acoef[2, 2, 4] -> 5/6,
+	Acoef[2, 2, 5] -> 1/12,
+	Acoef[2, 2, 6] -> 5/2,
+	Acoef[2, 2, 7] -> -1/2,
+	Acoef[2, 2, 8] -> -3/4,
+};
 
 
+Protect[$gaugeCoefficients, $quarticCoefficients, $yukawaCoefficients,
+	fermionAnomalousCoefficients, $scalarAnomalousCoefficients];
 
 End[]
