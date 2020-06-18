@@ -1,7 +1,7 @@
 (*
 ################################################################
-This is RGBeta, Version 0.4.2.
-Last modefied 10-06-2020
+This is RGBeta, Version 0.4.3.
+Last modefied 18-06-2020
 
 Released under the MIT license (see 'LICENSE').
 
@@ -139,6 +139,12 @@ AddYukawa::usage =
 AddVector::usage =
 	"AddVector[field, group] is an internal function used to define a vector field of a gauge group."
 
+AnomalousDimension::usage =
+	"AnomalousDimTerm[field, loop] gives the anomalous dimension of the given field up to the l-loop order."
+
+AnomalousDimTerm::usage =
+	"AnomalousDimTerm[field, loop] gives the l-loop contribution to the anomalous dimension of the given field."
+
 AntiSym::usage =
 	"AntiSym[a, b][expr] is an internal function for antisymmetrizing expr in a and b."
 
@@ -149,7 +155,7 @@ Bar::usage =
 	"Bar[x] rerpresents the conjugate of x. Used both for fields, couplings, and representations."
 
 BetaTerm::usage =
-	"BetaTerm[coupling, loop] computes the contribution to the beta function of the coupling at the given loop order."
+	"BetaTerm[coupling, loop] computes the l-loop contribution to the beta function of the coupling."
 
 BetaFunction::usage =
 	"BetaFunction[coupling, loop] computes the entire beta function of the coupling to the given loop order."
@@ -278,7 +284,7 @@ YukTil::usage =
 (*---------------Loads components---------------*)
 (*##############################################*)
 Begin["`Private`"] (* Begin Private Context *)
-	$RGBetaVersion = "RGBeta v0.4.2";
+	$RGBetaVersion = "RGBeta v0.4.3";
 	Print[$RGBetaVersion, " by Anders Eller Thomsen"];
 
 	(*Loads package files*)

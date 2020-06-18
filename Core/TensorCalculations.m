@@ -147,19 +147,28 @@ NewIdentities[expr_] := Block[{fStruct, tGen, n},
 (* These functions project out specific coupling beta functions from the general tensors.*)
 
 GaugeTensors[coupling_Symbol, loop_Integer] :=
-	Module[{diagrams = {1, 3, 7, 33, 202}[[loop + 1]], n, C1, C2, proj, betaTerm},
+	Module[{diagrams = {3, 7, 33, 202}[[loop]], n, C1, C2, proj, bTerm},
+		(* The 0-loop contribution in d = 4 - \epsilon dimensions *)
+		If[loop === 0,
+			bTerm = Expand[ - Global`\[Epsilon] $gaugeGroups[$couplings @ coupling, Projector][C1, C2] G2Matrix[C1, C2] ];
+			If[ MatchQ[ $gaugeGroups[$couplings @ coupling, LieGroup], U1[m_] /; m > 1],
+				bTerm = bTerm /. coupling -> $gaugeGroups[$couplings @ coupling, CouplingMatrix];
+			];
+			Return @ bTerm;
+		];
+
 		proj = Ttimes[G2Matrix[$A, C1], $gaugeGroups[$couplings @ coupling, Projector][C1, C2], G2Matrix[C2, $B]];
 		Monitor[
-			betaTerm = Sum[
+			bTerm = Sum[
 				Bcoef[1, loop, n] Ttimes[proj, BetaTensor[1, loop, n] ],
 			{n, diagrams}];
 		,StringForm["Evaluating term `` / ``", n, diagrams]];
 
 		(* At 4-loops additional identities are required.*)
 		If[loop > 3,
-			NewIdentities @ betaTerm
+			NewIdentities @ bTerm
 		,
-			betaTerm
+			bTerm
 		]
 	];
 

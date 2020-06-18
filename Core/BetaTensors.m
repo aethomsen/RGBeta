@@ -7,8 +7,6 @@ ResetBetas[] := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A
 (*###################################*)
 (*-----------Gauge Tensors-----------*)
 (*###################################*)
-    BetaTensor[1, 0, 1] := BetaTensor[1, 0, 1] = - Global`\[Epsilon] / 2 G2Matrix[$A, $B, -1];
-
     BetaTensor[1, 1, 1] := BetaTensor[1, 1, 1] = C2G[$A, $B];
     BetaTensor[1, 1, 2] := BetaTensor[1, 1, 2] = S2F[$A, $B];
     BetaTensor[1, 1, 3] := BetaTensor[1, 1, 3] = S2S[$A, $B];

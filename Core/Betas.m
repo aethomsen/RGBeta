@@ -46,18 +46,15 @@ Tdot[a_] = a;
 (*----------Beta functions----------*)
 (*##################################*)
 
-(*Function returns the beta function of the given coupling and loop order*)
-BetaTerm::gaugeLoops = "The gauge beta function is only implemented to 3 loops."
-BetaTerm::yukawaLoops = "The Yukawa beta function is only implemented to 2 loops."
-BetaTerm::quarticLoops = "The quartic beta function is only implemented to 2 loops."
-BetaTerm::loopNumber = "The `1` beta function is only implemented up to `2` loops."
+(*Function returns the l-loop contribution to the beta function of a given coupling*)
+BetaTerm::loopNumber = "The `1` beta function has only been implemented up to `2` loops."
 BetaTerm::unkown = "The coupling `1` has not been defined."
 BetaTerm[coupling_, loop_Integer] :=
 	Module[{beta, group, tensor, C1, C2},
 		(*Determines the correct tensor structure based on coupling type*)
 		Switch[$couplings @ coupling
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
-			If[loop > 3,
+			If[loop > 3 || loop < 0,
 				Message[BetaTerm::loopNumber, "gauge", 3];
 				Return @ $Failed;
 			];
@@ -66,38 +63,39 @@ BetaTerm[coupling_, loop_Integer] :=
 
 			(*Puts U1-mixing matrix on matrix form*)
 			If[MatchQ[$gaugeGroups[group, LieGroup], U1[n_] /; n >1],
-				beta = beta /. Matrix[l1_List][group[adj] @ v1] Matrix[l2_List][group[adj] @ v2] :> Outer[Times, l1, l2];
+				beta = beta /. {Matrix[l1_List][group[adj] @ v1] Matrix[l2_List][group[adj] @ v2] :> Outer[Times, l1, l2],
+					Matrix[mat_][group[adj] @ v1, group[adj] @ v2] /; MatrixQ @ mat :> mat};
 			];
 		,Yukawa,
-			If[loop > 2,
+			If[loop > 2 || loop < 0,
 				Message[BetaTerm::loopNumber, "Yukawa", 2];
 				Return @ $Failed;
 			];
 			beta = YukawaTensors[coupling, loop] /. $yukawaCoefficients // Expand;
 
 		,Quartic,
-			If[loop > 2,
+			If[loop > 2 || loop < 0,
 				Message[BetaTerm::loopNumber, "quartic", 2];
 				Return @ $Failed;
 			];
 			beta = QuarticTensors[coupling, loop] /. $quarticCoefficients // Expand;
 
 		,FermionMass,
-			If[loop > 2,
+			If[loop > 2 || loop < 0,
 				Message[BetaTerm::loopNumber, "fermion mass", 2];
 				Return @ $Failed;
 			];
 			beta = FermionMassTensors[coupling, loop] /. $yukawaCoefficients // Expand;
 
 		,Trilinear,
-			If[loop > 2,
+			If[loop > 2 || loop < 0,
 				Message[BetaTerm::loopNumber, "trilinear scalar", 2];
 				Return @ $Failed;
 			];
 			beta = ScalarMassiveTensors[coupling, loop] /. $quarticCoefficients // Expand;
 
 		,ScalarMass,
-			If[loop > 2,
+			If[loop > 2 || loop < 0,
 				Message[BetaTerm::loopNumber, "scalar mass", 2];
 				Return @ $Failed;
 			];
@@ -118,17 +116,17 @@ BetaTerm[coupling_, loop_Integer] :=
 (*Function that produces the beta function for the requested coupling*)
 Options[BetaFunction] = {RescaledCouplings -> False, FourDimensions -> True};
 BetaFunction::unkown = "The coupling `1` has not been defined."
-BetaFunction::loopNumber = "The `1` beta function is only implemented up to `2` loops."
+BetaFunction::loopNumber = "The `1` beta function has only been implemented up to `2` loops."
 BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
 	Block[{coef = 4 Pi, firstTerm = 0, l},
 		Switch[$couplings @ coupling
 		,gr_ /; MemberQ[Keys @ $gaugeGroups, gr],
-			If[loop > 3,
+			If[loop > 3 || loop < 0,
 				Message[BetaFunction::loopNumber, "gauge", 3];
 				Return @ $Failed;
 			];
 		,Yukawa|Quartic|ScalarMass|Trilinear|FermionMass,
-			If[loop > 2,
+			If[loop > 2 || loop < 0,
 				Message[BetaFunction::loopNumber, $couplings @ coupling, 2];
 				Return @ $Failed;
 			];
@@ -145,7 +143,7 @@ BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
 
 (*Fuction for diagonalizing the quartic beta functions. It inherits the options from BetaFunction*)
 QuarticBetaFunctions::singular = "The projection matrix is singular. Some of the couplings may be redundant."
-QuarticBetaFunctions::loopNumber = "The quartic beta function is only implemented up to 2 loops."
+QuarticBetaFunctions::loopNumber = "The quartic beta function has only been implemented up to 2 loops."
 QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 	Block[{betaFunctions, couplings, qProjections, invMatrix},
 		If[loop > 2,
@@ -173,6 +171,62 @@ QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 		invMatrix . betaFunctions // Expand
 	];
 
+(*Function returns the l-loop contribution to the beta function of a given coupling*)
+AnomalousDimTerm::loopNumber = "The `1` scalar anomalous dimension has only been implemented up to `2` loops."
+AnomalousDimTerm::unkown = "The field `1` has not been defined."
+AnomalousDimTerm[field_, loop_Integer] :=
+	Block[{anomDim},
+		(*Determines the correct tensor structure based on the field type*)
+		Switch[field
+		,x_ /; MemberQ[Keys @ $fermions, x],
+			If[loop > 2 || loop < 1,
+				Message[AnomalousDimTerm::loopNumber, "fermion", 2];
+				Return @ $Failed;
+			];
+			anomDim = FermionAnomalousTensors[field, loop] /. $fermionAnomalousCoefficients;
+
+		,x_ /; MemberQ[Keys @ $scalars, x],
+			If[loop > 2 || loop < 1,
+				Message[AnomalousDimTerm::loopNumber, "scalar", 2];
+				Return @ $Failed;
+			];
+			anomDim = ScalarAnomalousTensors[field, loop] /. $scalarAnomalousCoefficients;
+
+		,_,
+			Message[AnomalousDimTerm::unkown, field];
+			Return @ $Failed;
+		];
+
+		(*Canonically order coupling indices if any*)
+		CanonizeMatrices @ RefineGroupStructures @ anomDim
+	];
+
+(*Function that produces the anomalous dimension for a given field*)
+Options[AnomalousDimension] = {RescaledCouplings -> False};
+AnomalousDimension::unkown = "The coupling `1` has not been defined."
+AnomalousDimension::loopNumber = "The anomalous dimension has only been implemented up to `1` loops."
+AnomalousDimension[field_, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
+	Block[{coef = 4 Pi, l},
+		(* Checks if the input request has been implemented.*)
+		Switch[field
+		,x_ /; MemberQ[Keys @ $fermions, x] || MemberQ[Keys @ $scalars, x],
+			If[loop > 2 || loop < 1,
+				Message[AnomalousDimension::loopNumber, 2];
+				Return @ $Failed;
+			];
+		,_,
+			Message[AnomalousDimension::unkown, field];
+			Return @ $Failed;
+		];
+
+		If[OptionValue @ RescaledCouplings, coef = 1;];
+
+		Sum[ Power[coef, -2 l] AnomalousDimTerm[field, l], {l, loop}]
+	];
+
+(*###################################*)
+(*----------Extra functions----------*)
+(*###################################*)
 
 (*Function for finalizing a betafunction, bringing it from a nice compact output to a form more suitable for
 further Mathematica manipulations. Can also be used to specify particular cases for coupling matrices.*)
