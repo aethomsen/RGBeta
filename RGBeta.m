@@ -20,6 +20,9 @@ $a::usage = $b::usage = $c::usage = $d::usage = $i::usage = $j::usage = $A::usag
 $couplings::usage =
 	"$coupling is an association containing the types of all the couplings that have been defined in the model."
 
+$fermionAnomalousCoefficients::usage =
+	"$fermionAnomalousCoefficients is an internal replacement lsit containing the coefficients of all the tensors structures in the fermion anomalous dimension."
+
 $fermionMasses::usage =
 	"$fermionMasses is an association with all the fermion masses that have been declared in the model."
 
@@ -37,6 +40,9 @@ $quarticCoefficients::usage =
 
 $quartics::usage =
 	"$quartics is an association containing all internal information on the quartic couplings."
+
+$scalarAnomalousCoefficients::usage =
+	"$scalarAnomalousCoefficients is an internal replacement lsit containing the coefficients of all the tensors structures in the fermion anomalous dimension."
 
 $scalarMasses::usage =
 	"$scalarMasses is an association with all the scalar masses that have been declared in the model."
@@ -103,6 +109,9 @@ MassIndices::usage = Parameterizations::usage = Projector::usage = Quartic::usag
 SO::usage = Sp::usage = SU::usage = U1::usage =
 	"SO, Sp, SU, and U1 are used to specify different Lie groups."
 
+Acoef::usage =
+	"Acoef[i, j, k] is used internally to denote the coefficients of the differnet tensor contraction appering in the anomalous dimensions."
+
 AddFermion::usage =
 	"AddFermion[field] is a function used to define a fermion field in the model."
 
@@ -163,8 +172,11 @@ DefineLieGroup::usage =
 Dim::usage =
 	"Dim[rep] sets the dimension of a given representation."
 
+FermionAnomalousTensors::uasge =
+	"FermionAnomalousTensors[field, loop] evaluates all tensor contractions of the general anomalous dimension tensor and the field projector."
+
 FermionMassTensors::usage =
-	"FermionMassTensors[loop] is a function that computes all the tensor contractions used the general fermion mass beta function at the given loop order."
+	"FermionMassTensors[coupling, loop] is a function that computes all the tensor contractions used the general fermion mass beta function at the given loop order."
 
 Finalize::usage =
 	"Finalize[expr] performs additional refinement of beta function expressions. Only works for expressions with up to 2 nontrivial flavor indices."
@@ -172,14 +184,11 @@ Finalize::usage =
 FGauge::usage =
 	"FGauge[A, B, C] is a function that generates the general gauge structure constants."
 
-ResetBetas::usage =
-	"FlsuhBetas[] is a function used to dump all internally stored beta computations from the kernel."
-
 G2Matrix::usage =
 	"G2Matrix[a, b] is a function that generates the general gauge coupling matrix."
 
 GaugeTensors::usage =
-	"GaugeTensors[loop] is a function that computes all the tensor contractions used the general gauge beta function at the given loop order."
+	"GaugeTensors[coupling, loop] is a function that computes all the tensor contractions used the general gauge beta function at the given loop order."
 
 Lam::usage =
 	"Lam[a, b, c, d] is a function that generates the general quartic coupling."
@@ -194,13 +203,16 @@ QuarticBetaFunctions::usage =
 	"QuarticBetaFunctions[loop] returns all quartic beta functions to the given loop order using diagonalized projectors."
 
 QuarticTensors::usage =
-	"QuarticTensors[loop] is a function that computes all the tensor contractions used the general quartic beta function at the given loop order."
+	"QuarticTensors[coupling, loop] is a function that computes all the tensor contractions used the general quartic beta function at the given loop order."
 
 RemoveField::usage =
 	"RemoveField[field, ...] is a function that removes one or more scalar and fermion fields from the model."
 
 RemoveInteraction::usage =
 	"RemoveCoupling[coupling, ...] is a function that removes one or more couplings and corresponding interactions/gauge groups from the model."
+
+ResetBetas::usage =
+	"ResetBetas[] is a function used to dump all internally stored beta computations from the kernel."
 
 ResetModel::usage =
 	"ResetModel[] resets all tensors and removes all fields and coupling definitions made in the current instance of RGBeta."
@@ -214,8 +226,11 @@ ReInitializeSymbols::usage =
 RepresentationCheck::usage =
 	"RepresentationCheck[rep] returns True if rep is a valid representation given the gauge groups of the present model and False otherwise."
 
+ScalarAnomalousTensors::uasge =
+	"ScalarAnomalousTensors[field, loop] evaluates all tensor contractions of the general anomalous dimension tensor and the field projector."
+
 ScalarMassiveTensors::usage =
-	"ScalarMassiveTensors[loop] is a function that computes all the tensor contractions used in the the trillinear and scalar mass beta functions at the given loop order."
+	"ScalarMassiveTensors[coupling, loop] is a function that computes all the tensor contractions used in the the trillinear and scalar mass beta functions at the given loop order."
 
 SetReal::usage =
 	"SetReal[x1,...] makes x1,... behave as real parameters under complex conjugation (the Bar function)."
@@ -254,7 +269,7 @@ Yuk::usage =
 	"Yuk[a, i, j] is a function that generates the general yukawa coupling."
 
 YukawaTensors::usage =
-	"YukawaTensors[loop] is a function that computes all the tensor contractions used the general yukawa beta function at the given loop order."
+	"YukawaTensors[coupling, loop] is a function that computes all the tensor contractions used the general yukawa beta function at the given loop order."
 
 YukTil::usage =
 	"YukTil[a, i, j] is a function that generates the general yukawa coupling with an applied tilde."

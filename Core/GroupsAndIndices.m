@@ -34,7 +34,7 @@ ReInitializeSymbols[] :=
 		delIndex /: Power[delIndex[rep_, a_, b_], 2] = 1;
 		delIndex[rep_, a_Integer, b_Integer] := KroneckerDelta[a, b];
 
-		(*Default properties for anti-symmetric inavariants.*)
+		(*Default properties for 2-index anti-symmetric inavariants.*)
 		Clear @ eps;
 		(* eps /: del[rep_, a___, x_, b___] eps[rep_, c___, x_, d___] := eps[rep, c, a, b, d]; *)
 		eps /: del[rep_, OrderlessPatternSequence[x_, a_]] eps[rep_, b___, x_, c___] := eps[rep, b, a, c];

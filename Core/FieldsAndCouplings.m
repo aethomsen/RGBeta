@@ -17,17 +17,21 @@ Bar@ $vev = $vev;
 Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
 AddScalar::failure = "Failed to add scalar field.";
 AddScalar[field_, OptionsPattern[] ] ? OptionsCheck :=
-	Block[{rep, massTerm = 1},
+	Block[{rep, massTerm = 1, projector},
 		(*Checks gauge representations*)
 		If[! And @@ Table[RepresentationCheck @ rep, {rep, OptionValue[GaugeRep]}],
 			Message[AddScalar::failure];
 			Return @ $Failed;
 		];
 
+		(* To project out the anomalous dimension of the field from the general structure *)
+		projector = Evaluate[sDelS[Bar @ field, #1, s1] sDelS[field, #2, s2] Product[del[rep, s1, s2] / Dim @ rep, {rep, OptionValue[GaugeRep]}] ]&;
+
 		(*Adds field options to the list of scalar fields*)
 		AppendTo[$scalars, field -> <|
 			GaugeRep -> OptionValue[GaugeRep],
 			FlavorIndices -> OptionValue[FlavorIndices],
+			Projector -> projector,
 			SelfConjugate -> OptionValue[SelfConjugate],
 			Mass -> OptionValue @ Mass|>];
 
@@ -61,10 +65,14 @@ AddFermion[field_, OptionsPattern[] ] ? OptionsCheck :=
 			Return @ $Failed;
 		];
 
+		(* To project out the anomalous dimension of the field from the general structure *)
+		projector = Evaluate[sDelF[Bar @ field, #1, f1] sDelF[field, #2, f2] Product[del[rep, f1, f2] / Dim @ rep, {rep, OptionValue[GaugeRep]}] ]&;
+
 		(*Adds field options to the list of fermion fields*)
 		AppendTo[$fermions, field -> <|
 			GaugeRep -> OptionValue[GaugeRep],
 			FlavorIndices -> OptionValue[FlavorIndices],
+			Projector -> projector,
 			Mass -> OptionValue @ Mass|>];
 
 		If[OptionValue @ Mass =!= None,

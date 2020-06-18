@@ -768,31 +768,31 @@ ResetBetas[] := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A
 (*-----------Anomalous dimension tensors-----------*)
 (*#################################################*)
 (* Fermion field anomalous dimension *)
-    AnomalousTensor[1, 1, 1] = C2Ft[$i, $j];
-    AnomalousTensor[1, 1, 2] = Y2F[$i, $j];
+    AnomalousTensor[1, 1, 1] := C2Ft[$i, $j];
+    AnomalousTensor[1, 1, 2] := Y2F[$i, $j];
 
-    AnomalousTensor[1, 2, 1] = Tdot[C2Ft[$i, k1], C2Ft[k1, $j] ];
-    AnomalousTensor[1, 2, 2] = C2FC2Gt[$i, $j];
-    AnomalousTensor[1, 2, 3] = C2FS2St[$i, $j];
-    AnomalousTensor[1, 2, 4] = C2FS2Ft[$i, $j];
-    AnomalousTensor[1, 2, 5] = Y2FC2St[$i, $j];
-    AnomalousTensor[1, 2, 6] = Y2FC2Ft[$i, $j];
-    AnomalousTensor[1, 2, 7] = Tdot[C2Ft[$i, k1], Y2F[k1, $j]];
-    AnomalousTensor[1, 2, 8] = Y2FY2Ft[$i, $j];
-    AnomalousTensor[1, 2, 8] = Y2FY2St[$i, $j];
+    AnomalousTensor[1, 2, 1] := Tdot[C2Ft[$i, k1], C2Ft[k1, $j] ];
+    AnomalousTensor[1, 2, 2] := C2FC2Gt[$i, $j];
+    AnomalousTensor[1, 2, 3] := C2FS2St[$i, $j];
+    AnomalousTensor[1, 2, 4] := C2FS2Ft[$i, $j];
+    AnomalousTensor[1, 2, 5] := Y2FC2S[$i, $j];
+    AnomalousTensor[1, 2, 6] := Y2FC2F[$i, $j];
+    AnomalousTensor[1, 2, 7] := Tdot[C2Ft[$i, k1], Y2F[k1, $j]];
+    AnomalousTensor[1, 2, 8] := Y2FY2F[$i, $j];
+    AnomalousTensor[1, 2, 9] := Y2FY2S[$i, $j];
 
 (* Fermion field anomalous dimension *)
-    AnomalousTensor[2, 1, 1] = C2S[$a, $b];
-    AnomalousTensor[2, 1, 2] = Y2S[$a, $b];
+    AnomalousTensor[2, 1, 1] := C2S[$a, $b];
+    AnomalousTensor[2, 1, 2] := Y2S[$a, $b];
 
-    AnomalousTensor[2, 2, 1] = Ttimes[C2s[$a, b1], C2s[b1, $b]];
-    AnomalousTensor[2, 2, 2] = C2SC2G[$a, $b];
-    AnomalousTensor[2, 2, 3] = C2SS2S[$a, $b];
-    AnomalousTensor[2, 2, 4] = C2SS2F[$a, $b];
-    AnomalousTensor[2, 2, 5] = Lam2[$a, $b];
-    AnomalousTensor[2, 2, 6] = Y2SC2F[$a, $b];
-    AnomalousTensor[2, 2, 7] = Y4cS[$a, $b];
-    AnomalousTensor[2, 2, 8] = Y2SY2F[$a, $b];
+    AnomalousTensor[2, 2, 1] := Ttimes[C2S[$a, b1], C2S[b1, $b]];
+    AnomalousTensor[2, 2, 2] := C2SC2G[$a, $b];
+    AnomalousTensor[2, 2, 3] := C2SS2S[$a, $b];
+    AnomalousTensor[2, 2, 4] := C2SS2F[$a, $b];
+    AnomalousTensor[2, 2, 5] := Lam2[$a, $b];
+    AnomalousTensor[2, 2, 6] := Y2SC2F[$a, $b];
+    AnomalousTensor[2, 2, 7] := Y4cS[$a, $b];
+    AnomalousTensor[2, 2, 8] := Y2SY2F[$a, $b];
 
 
 

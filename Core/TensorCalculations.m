@@ -125,6 +125,7 @@ FourGLam[a_, b_, c_, d_] := Module[{A1, A2, b1, b2},
 	Ttimes[TsG2[A1, a, b1], TsG2[A2, b1, b], Tscal[A1, c, b2], Tscal[A2, b2, d]]
 ];
 
+(* Extra identities required to handle the more complicated combinations of struture constants appearing in the 4-loop gauge beta functions. *)
 NewIdentities[expr_] := Block[{fStruct, tGen, n},
 	fStruct /: fStruct[gr_, x : OrderlessPatternSequence[A_, B_, C_]] tGen[gr_[rep_], B_, a_, b_] tGen[gr_[rep_], C_, b_, c_] :=
     	I/2 Signature[List@x] Signature[{A, B, C}] Casimir2[gr@adj] tGen[gr@rep, A, a, c];
@@ -140,9 +141,11 @@ NewIdentities[expr_] := Block[{fStruct, tGen, n},
 	expr
 ];
 
-(*#################################*)
-(*----------Gauge tensors----------*)
-(*#################################*)
+(*##################################*)
+(*------------RG tensors------------*)
+(*##################################*)
+(* These functions project out specific coupling beta functions from the general tensors.*)
+
 GaugeTensors[coupling_Symbol, loop_Integer] :=
 	Module[{diagrams = {1, 3, 7, 33, 202}[[loop + 1]], n, C1, C2, proj, betaTerm},
 		proj = Ttimes[G2Matrix[$A, C1], $gaugeGroups[$couplings @ coupling, Projector][C1, C2], G2Matrix[C2, $B]];
@@ -152,6 +155,7 @@ GaugeTensors[coupling_Symbol, loop_Integer] :=
 			{n, diagrams}];
 		,StringForm["Evaluating term `` / ``", n, diagrams]];
 
+		(* At 4-loops additional identities are required.*)
 		If[loop > 3,
 			NewIdentities @ betaTerm
 		,
@@ -162,10 +166,12 @@ GaugeTensors[coupling_Symbol, loop_Integer] :=
 YukawaTensors[coupling_Symbol, loop_Integer] :=
 	Module[{diagrams = {1, 5, 33, 308}[[loop + 1]], n, proj},
 		proj = $yukawas[coupling, Projector][$a, $i, $j];
+		(* The BetaTensors hav been explicitly symmetrized up to 2-loop order to save time. At 3-loop symmetrization is done here. *)
 		If[loop > 2,
 			proj = Sym[$i, $j] @ proj;
 		];
 		Monitor[
+			(* The projection point depends on the "chirlality ascribed to the given Yukawa coupling/" *)
 			Switch[$yukawas[coupling, Chirality]
 			,Left,
 				Sum[
@@ -182,6 +188,7 @@ YukawaTensors[coupling_Symbol, loop_Integer] :=
 FermionMassTensors[coupling_Symbol, loop_Integer] :=
 	Module[{diagrams = {1, 5, 33}[[loop + 1]], n},
 		Monitor[
+			(* The projection point depends on the "chirlality ascribed to the given Yukawa coupling/" *)
 			Switch[$fermionMasses[coupling, Chirality]
 			,Left,
 				Sum[
@@ -224,6 +231,25 @@ ScalarMassiveTensors[coupling_Symbol, loop_Integer] :=
 			]
 		,StringForm["Evaluating term `` / ``", n, diagrams]]
 	];
+
+FermionAnomalousTensors[field_, loop_Integer] :=
+	Module[{diagrams = {2, 9}[[loop]], n},
+		Monitor[
+			Sum[
+				Acoef[1, loop, n] Ttimes[$fermions[field, Projector][$i, $j], (AnomalousTensor[1, loop, n] = AnomalousTensor[1, loop, n])[[1,1]] ],
+			{n, diagrams}]
+		,StringForm["Evaluating term `` / ``", n, diagrams]]
+	];
+
+ScalarAnomalousTensors[field_, loop_Integer] :=
+	Module[{diagrams = {2, 8}[[loop]], n},
+		Monitor[
+			Sum[
+				Acoef[2, loop, n] Ttimes[$scalars[field, Projector][$a, $b], AnomalousTensor[2, loop, n] = AnomalousTensor[2, loop, n] ],
+			{n, diagrams}]
+		,StringForm["Evaluating term `` / ``", n, diagrams]]
+	];
+
 
 
 (*#####################################*)
@@ -395,11 +421,10 @@ $scalarAnomalousCoefficients = {
 	Acoef[2, 2, 5] -> 1/12,
 	Acoef[2, 2, 6] -> 5/2,
 	Acoef[2, 2, 7] -> -1/2,
-	Acoef[2, 2, 8] -> -3/4,
+	Acoef[2, 2, 8] -> -3/4
 };
 
 
-Protect[$gaugeCoefficients, $quarticCoefficients, $yukawaCoefficients,
-	fermionAnomalousCoefficients, $scalarAnomalousCoefficients];
+Protect[$gaugeCoefficients, $quarticCoefficients, $yukawaCoefficients, $fermionAnomalousCoefficients, $scalarAnomalousCoefficients];
 
 End[]
