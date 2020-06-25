@@ -169,6 +169,36 @@ RefineGroupStructures[expr_] := Block[{replace},
 	Format[Matrix[x__][h1_[i1_] ], StandardForm] := Subscript[Dot[x], i1];
 	Format[Matrix[x__][h1_[i1_], h2_[i2_]], StandardForm] := Subscript[Dot[x], i1, i2];
 
+(* Tensor structure head used for all coupling contraction*)
+	Clear @ TStructure;
+	TStructure /: TStructure[ind1__][ar1_] TStructure[ind2__][ar2_] = TStructure[ind1, ind2][TensorProduct[ar1, ar2]];
+	TStructure /: TStructure[ind__][ar1_] + TStructure[ind__][ar2_] = TStructure[ind][TensorProduct[ar1 + ar2]];
+	TStructure[][expr_] = expr;
+	(* Duplicate indices are contracted as per dummy index convention *)
+	TStructure[ind__][ar_] /; ! DuplicateFreeQ@ List@ ind :=
+		Block[{cont, indices, temp},
+			indices = List@ ind;
+			temp = ar;
+			While[!DuplicateFreeQ@ indices,
+				(* For scalars the contraction is done via the $scalarContraction *)
+				cont = First@ Cases[PositionIndex@ indices, _?(Length@ # === 2 &)];
+				Switch[Head@ indices[[cont[[1]] ]]
+				, $scalar,
+					temp = TensorContract[TensorProduct[temp, $scalarContraction],
+					Transpose@ {cont, Length@ indices + {1, 2}}];
+				, $fermion | $gauge,
+					temp = TensorContract[temp, {cont}];
+				];
+				indices = Delete[indices, List /@ cont];
+			];
+			(* The entries of the resulting array are expanded to allow the dummyindices to contract. *)
+			If[Head@temp === SparseArray,
+				temp = SparseArray[ArrayRules@ temp // Expand, Dimensions@ temp];
+			,
+				temp = Expand@ temp;
+			];
+			TStructure[Sequence @@ indices][temp]
+		];
 
 (*###########################################*)
 (*----------Gauge group definitions----------*)

@@ -5,13 +5,35 @@
 Begin["FieldsAndCouplings`"]
 
 (*Structure deltas*)
-sDelS /: sDelS[field1_, ind_, f_] sDelS[field2_, ind_, g_] := 0;
+(* sDelS /: sDelS[field1_, ind_, f_] sDelS[field2_, ind_, g_] := 0;
 sDelF /: sDelF[field1_, ind_, f_] sDelF[field2_, ind_, g_] := 0;
-sDelV /: sDelV[field1_, ind_, f_] sDelV[field2_, ind_, g_] := 0;
+sDelV /: sDelV[field1_, ind_, f_] sDelV[field2_, ind_, g_] := 0; *)
 (*For masses*)
-sDelS /: sDelS[$vev, ind_, f_] sDelS[$vevSelect, ind_, g_] := 1;
-Bar@ $vev = $vev;
+(* sDelS /: sDelS[$vev, ind_, f_] sDelS[$vevSelect, ind_, g_] := 1;
+Bar@ $vev = $vev; *)
 
+(* Function that updates the mapping of fields to indices in the $fieldIndexMap *)
+UpdateFieldIndexMap[] :=
+	Block[{count, temp, field},
+		$fieldIndexMap = <||>;
+		count = 1;
+		temp = <||>;
+		Do[
+			AppendTo[temp, field -> count++];
+			If[ ! $scalars[field, SelfConjugate], AppendTo[temp, Bar@ field -> count++]; ];
+		, {field, Keys@ $scalars}];
+		AppendTo[$fieldIndexMap, "Scalars" -> Association@ temp];
+
+		$scalarContraction = SparseArray[ Table[temp /@ {phi, Bar@ phi} -> If[phi === Bar@ phi, 1, 2],
+			{phi, Keys@ temp}], Length@ temp {1, 1}];
+
+		count = 1;
+		AppendTo[$fieldIndexMap,
+			"Fermions" -> Association@ Table[field -> count++, {field, Keys@ $fermions} ]];
+
+		count = 1;
+		AppendTo[$fieldIndexMap, "GaugeBosons" -> Association@ Table[group -> count++, {group, Keys@ $gaugeGroups} ]];
+	];
 
 (*Initiates a scalar field*)
 Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
@@ -40,7 +62,7 @@ AddScalar[field_, OptionsPattern[] ] ? OptionsCheck :=
 		];
 
 		(*Initializes the structure deltas for the field*)
-		If[OptionValue[SelfConjugate],
+		(* If[OptionValue[SelfConjugate],
 			sDelS/: sDelS[field, ind_, s1_] sDelS[field, ind_, s2_] = 1 * massTerm
 				* Product[del[rep, s1, s2], {rep, OptionValue[GaugeRep]}]
 				* Product[del[rep, s1, s2], {rep, OptionValue[FlavorIndices]}];
@@ -49,8 +71,9 @@ AddScalar[field_, OptionsPattern[] ] ? OptionsCheck :=
 			sDelS/: sDelS[field, ind_, s1_] sDelS[Bar[field], ind_, s2_] = 2 * massTerm
 				* Product[del[rep, s1, s2], {rep, OptionValue[GaugeRep]}]
 				* Product[del[rep, s1, s2], {rep, OptionValue[FlavorIndices]}];
-		];
+		]; *)
 
+		UpdateFieldIndexMap[];
 		ResetBetas[];
 	];
 
@@ -80,15 +103,16 @@ AddFermion[field_, OptionsPattern[] ] ? OptionsCheck :=
 		];
 
 		(*Initializes the structure deltas for the field*)
-		sDelF/: sDelF[field, ind_, f1_] sDelF[Bar[field], ind_, f2_] = massTerm
+		(* sDelF/: sDelF[field, ind_, f1_] sDelF[Bar[field], ind_, f2_] = massTerm
 			* Product[del[rep, f1, f2], {rep, OptionValue[GaugeRep]}]
-			* Product[del[rep, f1, f2], {rep, OptionValue[FlavorIndices]}];
+			* Product[del[rep, f1, f2], {rep, OptionValue[FlavorIndices]}]; *)
 
+		UpdateFieldIndexMap[];
 		ResetBetas[];
 	];
 
 (*Initiates a vector field*)
-AddVector[name_, group_] := (sDelV/: sDelV[name, ind_, v1_] sDelV[name, ind_, v2_] = del[group[adj], v1, v2]);
+(* AddVector[name_, group_] := (sDelV/: sDelV[name, ind_, v1_] sDelV[name, ind_, v2_] = del[group[adj], v1, v2]); *)
 
 
 (*###################################*)

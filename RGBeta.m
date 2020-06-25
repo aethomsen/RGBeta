@@ -1,7 +1,7 @@
 (*
 ################################################################
-This is RGBeta, Version 0.4.3.
-Last modefied 18-06-2020
+This is RGBeta, Version 0.5.0.
+Last modefied 25-06-2020
 
 Released under the MIT license (see 'LICENSE').
 
@@ -43,6 +43,9 @@ $quartics::usage =
 
 $scalarAnomalousCoefficients::usage =
 	"$scalarAnomalousCoefficients is an internal replacement lsit containing the coefficients of all the tensors structures in the fermion anomalous dimension."
+
+$scalarContraction::usage =
+	"Contraction array for the scalar fields."
 
 $scalarMasses::usage =
 	"$scalarMasses is an association with all the scalar masses that have been declared in the model."
@@ -247,6 +250,9 @@ Sym::usage =
 Sym4::usage =
 	"Sym4[a1, a2, a3, a4][expr] averages the expression over the 4 ways of switching a1 with one of the indices."
 
+Tdot::usage =
+	"Tdot[a, b,...] is an internal function the sequantially expands the matrix product of all the arguments."
+
 Tensor::usage =
 	"Tensor[x][i,...] represents the tensor x with open indices i,..."
 
@@ -265,8 +271,8 @@ Trans::usage =
 Tscal::usage =
 	"Tscal[A, i, j] is a function that generates the general gauge generator matrix for the scalars."
 
-Tdot::usage =
-	"Tdot[a, b,...] is an internal function the sequantially expands the matrix product of all the arguments."
+TStructure::usage =
+	"TStructure[ind1, ind2,...][sparseArray] is used as a wrapper for a sparse array containing a particular tensor structure, while providing the indices of said struture."
 
 Ttimes::usage =
 	"Ttimes[a, b,...] is an internal function the sequantially expands the product of all the arguments."
@@ -284,7 +290,7 @@ YukTil::usage =
 (*---------------Loads components---------------*)
 (*##############################################*)
 Begin["`Private`"] (* Begin Private Context *)
-	$RGBetaVersion = "RGBeta v0.4.3";
+	$RGBetaVersion = "RGBeta v0.5.0";
 	Print[$RGBetaVersion, " by Anders Eller Thomsen"];
 
 	(*Loads package files*)
