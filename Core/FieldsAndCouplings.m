@@ -4,17 +4,9 @@
 *)
 Begin["FieldsAndCouplings`"]
 
-(*Structure deltas*)
-(* sDelS /: sDelS[field1_, ind_, f_] sDelS[field2_, ind_, g_] := 0;
-sDelF /: sDelF[field1_, ind_, f_] sDelF[field2_, ind_, g_] := 0;
-sDelV /: sDelV[field1_, ind_, f_] sDelV[field2_, ind_, g_] := 0; *)
-(*For masses*)
-(* sDelS /: sDelS[$vev, ind_, f_] sDelS[$vevSelect, ind_, g_] := 1;
-Bar@ $vev = $vev; *)
-
 (* Function that updates the mapping of fields to indices in the $fieldIndexMap *)
 UpdateFieldIndexMap[] :=
-	Block[{count, temp, field},
+	Module[{count, temp, field},
 		$fieldIndexMap = <||>;
 		count = 1;
 		temp = <||>;
@@ -35,11 +27,57 @@ UpdateFieldIndexMap[] :=
 		AppendTo[$fieldIndexMap, "GaugeBosons" -> Association@ Table[group -> count++, {group, Keys@ $gaugeGroups} ]];
 	];
 
+(* Constructs projection operators for the various types of couplings*)
+UpdateProjectors::projection0 = "The projcetion operator does not pick out the `1` coupling. Please check the GroupInvariant of the coupling for errors."
+UpdateProjectors[type_] :=
+	Module[{coupling, couplingInfo, dim, group, projector, symmetryFactor},
+		Switch[type
+		,"Gauge",
+			Do[
+				AppendTo[$gaugeGroups@ group, Projector -> (Evaluate[ TStructure[$gauge@ #1, $gauge@ #2]@
+					SparseArray[$fieldIndexMap["GaugeBosons"] /@ (group {1, 1}) ->
+						If[$gaugeGroups[group, LieGroup] =!= U1,
+						del[group@adj, #1, #2]/Dim@group@adj,
+						del[group@adj, #1, v1] del[group@adj, #1, v2] ],
+					{3, 3}] ] &)
+				];
+			, {group, Keys@$gaugeGroups}];
+		,"Yukawa",
+			dim = {Length@ $fieldIndexMap["Scalars"], Length@ $fieldIndexMap["Fermions"], Length@ $fieldIndexMap["Fermions"]};
+			Do[
+				couplingInfo = $yukawas@ coupling;
+				(* Constructs the proto-projector *)
+				projector = Evaluate[ DiagonalMatrix[ TStructure[$scalar@ #1, $fermion@ #2, $fermion@ #3] /@ Switch[couplingInfo@ Chirality
+						,Left,
+							{SparseArray[Join[$fieldIndexMap["Scalars"], $fieldIndexMap["Fermions"] ] /@
+								MapAt[Bar, couplingInfo@ Fields, 1] -> GroupInvBar@ couplingInfo[Invariant][#1, #2, #3]
+							, dim], 0}
+						,Right,
+							{0, SparseArray[Join[$fieldIndexMap["Scalars"], $fieldIndexMap["Fermions"] ] /@
+								couplingInfo@ Fields -> couplingInfo[Invariant][#1, #2, #3]
+							, dim]}
+					] ] ] &;
+				(* Determines the correct symmetry factor *)
+				symmetryFactor = ReplaceAll[Rule[#, 0] & /@ Keys @ $yukawas] @ RefineGroupStructures @
+					Tr[projector[$a, $i, $j] . Yuk[$a, $i, $j]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 ]// Simplify;
+				If[symmetryFactor === 0,
+					Message[AddYukawa::projection0, coupling];
+					KeyDropFrom[$yukawas, coupling];
+					Return@ $Failed
+				];
+				projector = Evaluate[projector[#1, #2, #3] / symmetryFactor] &;
+				AppendTo[$yukawas@ coupling, Projector -> projector];
+			,{coupling, Keys@ $yukawas}];
+		,"Quartic",
+			0
+		];
+	];
+
 (*Initiates a scalar field*)
 Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
 AddScalar::failure = "Failed to add scalar field.";
 AddScalar[field_, OptionsPattern[] ] ? OptionsCheck :=
-	Block[{rep, massTerm = 1, projector},
+	Block[{rep, projector},
 		(*Checks gauge representations*)
 		If[! And @@ Table[RepresentationCheck @ rep, {rep, OptionValue[GaugeRep]}],
 			Message[AddScalar::failure];
@@ -53,35 +91,22 @@ AddScalar[field_, OptionsPattern[] ] ? OptionsCheck :=
 		AppendTo[$scalars, field -> <|
 			GaugeRep -> OptionValue[GaugeRep],
 			FlavorIndices -> OptionValue[FlavorIndices],
-			Projector -> projector,
-			SelfConjugate -> OptionValue[SelfConjugate],
-			Mass -> OptionValue @ Mass|>];
+			(* Projector -> projector, *)
+			SelfConjugate -> OptionValue[SelfConjugate]|>];
 
-		If[OptionValue @ Mass =!= None,
-			massTerm = UnitStep[Global`t - OptionValue @ Mass];
+		If[OptionValue@ SelfConjugate,
+			SetReal @ field;
 		];
-
-		(*Initializes the structure deltas for the field*)
-		(* If[OptionValue[SelfConjugate],
-			sDelS/: sDelS[field, ind_, s1_] sDelS[field, ind_, s2_] = 1 * massTerm
-				* Product[del[rep, s1, s2], {rep, OptionValue[GaugeRep]}]
-				* Product[del[rep, s1, s2], {rep, OptionValue[FlavorIndices]}];
-			Bar[field] = field;
-		,
-			sDelS/: sDelS[field, ind_, s1_] sDelS[Bar[field], ind_, s2_] = 2 * massTerm
-				* Product[del[rep, s1, s2], {rep, OptionValue[GaugeRep]}]
-				* Product[del[rep, s1, s2], {rep, OptionValue[FlavorIndices]}];
-		]; *)
 
 		UpdateFieldIndexMap[];
 		ResetBetas[];
 	];
 
 (*Initiates a fermion field*)
-Options[AddFermion] = {GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
+Options[AddFermion] = {GaugeRep -> {}, FlavorIndices -> {}};
 AddFermion::failure = "Failed to add fermion field.";
 AddFermion[field_, OptionsPattern[] ] ? OptionsCheck :=
-	Block[{massTerm = 1, rep},
+	Block[{rep, projector},
 		(*Checks gauge representations*)
 		If[! And @@ Table[RepresentationCheck @ rep, {rep, OptionValue[GaugeRep]}],
 			Message[AddFermion::failure];
@@ -94,26 +119,12 @@ AddFermion[field_, OptionsPattern[] ] ? OptionsCheck :=
 		(*Adds field options to the list of fermion fields*)
 		AppendTo[$fermions, field -> <|
 			GaugeRep -> OptionValue[GaugeRep],
-			FlavorIndices -> OptionValue[FlavorIndices],
-			Projector -> projector,
-			Mass -> OptionValue @ Mass|>];
-
-		If[OptionValue @ Mass =!= None,
-			massTerm = UnitStep[Global`t - OptionValue @ Mass];
-		];
-
-		(*Initializes the structure deltas for the field*)
-		(* sDelF/: sDelF[field, ind_, f1_] sDelF[Bar[field], ind_, f2_] = massTerm
-			* Product[del[rep, f1, f2], {rep, OptionValue[GaugeRep]}]
-			* Product[del[rep, f1, f2], {rep, OptionValue[FlavorIndices]}]; *)
+			FlavorIndices -> OptionValue[FlavorIndices] (*,Projector -> projector*)
+			|>];
 
 		UpdateFieldIndexMap[];
 		ResetBetas[];
 	];
-
-(*Initiates a vector field*)
-(* AddVector[name_, group_] := (sDelV/: sDelV[name, ind_, v1_] sDelV[name, ind_, v2_] = del[group[adj], v1, v2]); *)
-
 
 (*###################################*)
 (*----------Other functions----------*)
@@ -164,6 +175,12 @@ CanonizeTensor[symbForm_List][expr_] :=
 	];
 CanonizeTensor[symbForm_List][Plus[x_, y__]] := CanonizeTensor[symbForm]@ x + CanonizeTensor[symbForm] @ Plus@ y;
 
+(* Collects a list with overlapping entires to make it suitbale for SparseArray *)
+GatherToList[expr_] := Plus @@@ GroupBy[Flatten@ expr, (#[[1]] &) -> (#[[2]] &)] // Normal;
+
+(* Function for complex conjugating an expression made up of the group invariants defined in GroupsAndIndices *)
+GroupInvBar[expr_] := ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b] ]@ expr;
+
 (*###################################*)
 (*----------Gauge couplings----------*)
 (*###################################*)
@@ -200,16 +217,15 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_Symbol[n_Integer|n_Sym
 		];
 
 		(*Sets up the gauge fields and 2-point projection*)
-		AddVector[fieldName, groupName];
+		(* AddVector[fieldName, groupName];
 		projector = Evaluate[If[lieGroup =!= U1, del[groupName[adj], v1, v2] / Dim @ groupName[adj], 1] *
-			sDelV[fieldName, #1, v1] sDelV[fieldName, #2, v2] ] &;
+			sDelV[fieldName, #1, v1] sDelV[fieldName, #2, v2] ] &; *)
 
 		(*Adds the group information and the coupling to the repsective lists*)
 		AppendTo[$gaugeGroups, groupName ->
 			<|Coupling -> coupling,
 			Field -> fieldName,
-			LieGroup -> lieGroup[n],
-			Projector -> projector|>];
+			LieGroup -> lieGroup[n]|>];
 		AppendTo[$couplings, coupling -> groupName];
 
 		(*Setting up the coupling matrix for Abelian groups with Kinetic mixing*)
@@ -232,6 +248,9 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_Symbol[n_Integer|n_Sym
 			Trans[coupling] = coupling;
 		];
 
+		(* The construction of the projector of the coupling has been relegated to UpdateFieldIndexMap[] *)
+		UpdateFieldIndexMap[];
+		UpdateProjectors["Gauge"];
 		ResetBetas[];
 	];
 
@@ -284,7 +303,20 @@ RepresentationCheck[rep_] :=
 	];
 
 (*The general gauge coupling matrix G^2_{AB} used in the computation of the beta function tensors*)
-G2Matrix[A_, B_] :=
+G2Matrix[$dA_, $dB_] :=
+	Module[{temp, group, groupInfo, dim = Length@ $gaugeGroups {1, 1} },
+		temp = Table[groupInfo = $gaugeGroups@ group;
+				$fieldIndexMap["GaugeBosons"] /@ (group {1, 1}) ->
+				If[MatchQ[groupInfo@ LieGroup, U1[n_] /; n > 1],
+					Matrix[groupInfo@ Coupling][group[adj]@ $dA, group[adj]@ $dB]
+				,
+					groupInfo[Coupling]^2 del[group@ adj, $dA, $dB]
+				]
+			, {group, Keys@$gaugeGroups}];
+		TStructure[$gauge@ $dA, $gauge@ $dB]@ SparseArray[GatherToList @ temp, dim]
+	];
+
+(* G2Matrix[A_, B_] :=
 	Module[{gauge, v1, v2},
 		Sum[
 			sDelV[$gaugeGroups[gauge, Field], A, v1] sDelV[$gaugeGroups[gauge, Field], B, v2]
@@ -294,7 +326,7 @@ G2Matrix[A_, B_] :=
 					$gaugeGroups[gauge, Coupling]^2 del[gauge[adj], v1, v2]
 				]
 		,{gauge, Keys @ $gaugeGroups}]
-	];
+	]; *)
 
 (*Defining the gauge generators for the left-handed spinors, \bar{\psi} T^A \psi.*)
 TfLeft[A_, i_, j_] :=
@@ -391,7 +423,7 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 			Invariant -> OptionValue @ GroupInvariant|>];
 
 		(*Constructs the projection operator*)
-		projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, f1, f2] *
+		(* projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, f1, f2] *
 			Switch[OptionValue @ Chirality
 			,Left,
 				sDelS[Bar@ phi, #1, s1] sDelF[Bar@ psi1, #2, f1] sDelF[Bar@ psi2, #3, f2]
@@ -407,7 +439,7 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 			Return @ $Failed;
 		];
 		projection = Evaluate[projection[#1, #2, #3] / symmetryFactor] &;
-		AppendTo[$yukawas @ coupling, Projector -> projection];
+		AppendTo[$yukawas @ coupling, Projector -> projection]; *)
 
 		(*Tests whether the coupling satisfy gauge invariance*)
 		If[OptionValue @ CheckInvariance,
@@ -427,6 +459,7 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 		];
 
 		AppendTo[$couplings, coupling -> Yukawa];
+		UpdateProjectors["Yukawa"];
 		ResetBetas[];
 	];
 
@@ -501,7 +534,7 @@ AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 
 
 (*Chiral Yukawa couplings*)
-YukawaLeft[$da_, $di_, $dj_, massive_:False] :=
+(* YukawaLeft[$da_, $di_, $dj_, massive_:False] :=
 	Module[{f1, f2, yu, s1},
 		Sym[$di, $dj][
 			Sum[sDelS[yu[Fields][[1]], $da, s1] sDelF[yu[Fields][[2]], $di, f1] sDelF[yu[Fields][[3]], $dj, f2]
@@ -527,12 +560,11 @@ YukawaRight[$da_, $di_, $dj_, massive_:False] :=
 				,{yu, $fermionMasses}]
 			,0]
 		]
-	];
+	]; *)
 
 (*Genral Yukawa couplings used in the computation of the beta function tensors.*)
-Yuk[a_, i_, j_, massive_:False] := {{YukawaLeft[a, i, j, massive], 0}, {0, YukawaRight[a, i, j, massive]}};
-YukTil[a_, i_, j_, massive_:False] := {{YukawaRight[a, i, j, massive], 0}, {0, YukawaLeft[a, i, j, massive]}};
-
+(* Yuk[a_, i_, j_, massive_:False] := {{YukawaLeft[a, i, j, massive], 0}, {0, YukawaRight[a, i, j, massive]}};
+YukTil[a_, i_, j_, massive_:False] := {{YukawaRight[a, i, j, massive], 0}, {0, YukawaLeft[a, i, j, massive]}}; *)
 
 (*#####################################*)
 (*----------Quartic couplings----------*)
@@ -737,6 +769,53 @@ AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] ? OptionsCheck:=
 
 		ResetBetas[];
 	];
+
+
+(*#####################################*)
+(*----------Couplings tensors----------*)
+(*#####################################*)
+
+(* Function for averaging a pos -> coupling over permutations of the indices *)
+AvgPermutations[couplingPos_ -> coupling_, indices_, permutations_] :=
+	Module[{subs, len = Length@ permutations, i},
+		subs = MapThread[Rule, {indices, indices[[#]] }] & /@ permutations;
+		Table[couplingPos[[Ordering@ permutations[[i]] ]] -> coupling/len /. subs[[i]], {i, len}]
+	];
+
+(* Generic structure for the coupling tensor creation *)
+CouplingTensorMap[info_, fields_, coupInds_,  allInds_, permutations_, conj_:False] :=
+		AvgPermutations[
+			(* If the conjugate coupling is used *)
+			If[conj,
+				Join[$fieldIndexMap["Scalars"], $fieldIndexMap["Fermions"] ] /@ fields ->
+				GroupInvBar[info[Invariant] @@ coupInds] info[CouplingBar] @@ (info[Indices] @@ coupInds)
+			,
+				Join[$fieldIndexMap["Scalars"], $fieldIndexMap["Fermions"] ] /@ fields ->
+				info[Invariant] @@ coupInds info[Coupling] @@ (info[Indices] @@ coupInds)
+			]
+		, allInds, permutations];
+
+(*Genral Yukawa couplings used in the computation of the beta function tensors.*)
+Yuk[$da_, $di_, $dj_, massive_:False] :=
+	Module[{couplingInfo, yL, yR,
+		dim = {Length@ $fieldIndexMap["Scalars"], Length@ $fieldIndexMap["Fermions"], Length@ $fieldIndexMap["Fermions"]} },
+		yL = Table[
+				CouplingTensorMap[couplingInfo, couplingInfo@ Fields, {$da, $di, $dj},
+					{$da, $di, $dj},  {{1, 2, 3}, {1, 3, 2}}]
+			, {couplingInfo, $yukawas}];
+		yR =  Table[
+				CouplingTensorMap[couplingInfo, MapAt[Bar, couplingInfo@ Fields, 1], {$da, $di, $dj},
+					{$da, $di, $dj},  {{1, 2, 3}, {1, 3, 2}}, True]
+			, {couplingInfo, $yukawas}];
+		(* If[massive,
+
+		] *)
+		(* The chiral couplings are organized in full Yukawa matrix *)
+		TStructure[$scalar@ $da, $fermion@ $di, $fermion@ $dj] /@
+			{SparseArray[GatherToList@ yL, dim], SparseArray[GatherToList@ yR, dim]} //DiagonalMatrix
+	];
+
+YukTil[$da_, $di_, $dj_, massive_:False] := {{0, 1}, {1, 0}}.Yuk[$da, $di, $dj, massive].{{0, 1}, {1, 0}};
 
 (*Genral quartic coupling used in the computation of the beta function tensors.*)
 Lam[$da_, $db_, $dc_, $dd_, massive_:False] :=

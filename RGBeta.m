@@ -17,6 +17,9 @@ BeginPackage["RGBeta`"]
 $a::usage = $b::usage = $c::usage = $d::usage = $i::usage = $j::usage = $A::usage = $B::usage = $vev::usage =  $vevSelect::usage =
 	"Used as a global dummy index."
 
+$fermion::usage = $gauge::usage = $scalar::usage =
+	"Denotes index types for TStructure."
+
 $couplings::usage =
 	"$coupling is an association containing the types of all the couplings that have been defined in the model."
 

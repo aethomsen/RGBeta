@@ -174,6 +174,7 @@ RefineGroupStructures[expr_] := Block[{replace},
 	TStructure /: TStructure[ind1__][ar1_] TStructure[ind2__][ar2_] = TStructure[ind1, ind2][TensorProduct[ar1, ar2]];
 	TStructure /: TStructure[ind__][ar1_] + TStructure[ind__][ar2_] = TStructure[ind][TensorProduct[ar1 + ar2]];
 	TStructure[][expr_] = expr;
+	TStructure[___][0] = 0;
 	(* Duplicate indices are contracted as per dummy index convention *)
 	TStructure[ind__][ar_] /; ! DuplicateFreeQ@ List@ ind :=
 		Block[{cont, indices, temp},
