@@ -253,18 +253,12 @@ CheckProjection[coupling_Symbol] :=
 	Module[{tensor, A, B, a, i, j, b, c, d},
 		Switch[$couplings @ coupling
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
-			Ttimes[G2Matrix[A, B], $gaugeGroups[$couplings @ coupling, Projector][B, A] ] // Expand
+			G2Matrix[$A, $B] $gaugeGroups[$couplings @ coupling, Projector][$B, $A]
 		,Yukawa,
-			Switch[$yukawas[coupling, Chirality]
-			,Left,
-				tensor = Yuk[a, i, j][[1, 1]];
-			,Right,
-				tensor = Yuk[a, i, j][[2, 2]];
-			];
-			tensor $yukawas[coupling, Projector][a, i, j] // Expand // Expand
+			Tr[Yuk[$a, $i, $j]. $yukawas[coupling, Projector][$a, $i, $j] ]
 		,Quartic,
-			Lam[a, b, c, d] $quartics[coupling, Projector][a, b, c, d] // Expand // Expand
-		,FermionMass,
+			Lam[a, b, c, d] $quartics[coupling, Projector][a, b, c, d]
+		(* ,FermionMass,
 			Switch[$fermionMasses[coupling, Chirality]
 			,Left,
 				tensor = Yuk[a, i, j, True][[1, 1]];
@@ -275,7 +269,7 @@ CheckProjection[coupling_Symbol] :=
 		,Trilinear,
 			Lam[a, b, c, d, True] $trilinears[coupling, Projector][a, b, c, d] // Expand // Expand
 		,ScalarMass,
-			Lam[a, b, c, d, True] $scalarMasses[coupling, Projector][a, b, c, d] // Expand // Expand
+			Lam[a, b, c, d, True] $scalarMasses[coupling, Projector][a, b, c, d] // Expand // Expand *)
 		,_Missing,
 			Message[CheckProjection::unkown, coupling];
 			$Failed
