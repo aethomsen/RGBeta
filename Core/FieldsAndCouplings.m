@@ -25,6 +25,9 @@ UpdateFieldIndexMap[] :=
 
 		count = 1;
 		AppendTo[$fieldIndexMap, "GaugeBosons" -> Association@ Table[group -> count++, {group, Keys@ $gaugeGroups} ]];
+
+		(* The association with all fields *)
+		AppendTo[$fieldIndexMap, "All" -> Join @@ $fieldIndexMap /@ {"Scalars", "Fermions", "GaugeBosons"}];
 	];
 
 (* Constructs projection operators for the various types of couplings*)
@@ -331,69 +334,6 @@ RepresentationCheck[rep_] :=
 		Return @ False;
 	];
 
-(*The general gauge coupling matrix G^2_{AB} used in the computation of the beta function tensors*)
-G2Matrix[$dA_, $dB_] :=
-	Module[{temp, group, groupInfo, dim = Length@ $gaugeGroups {1, 1} },
-		temp = Table[groupInfo = $gaugeGroups@ group;
-				$fieldIndexMap["GaugeBosons"] /@ (group {1, 1}) ->
-				If[MatchQ[groupInfo@ LieGroup, U1[n_] /; n > 1],
-					Matrix[groupInfo@ Coupling][group[adj]@ $dA, group[adj]@ $dB]
-				,
-					groupInfo[Coupling]^2 del[group@ adj, $dA, $dB]
-				]
-			, {group, Keys@$gaugeGroups}];
-		TStructure[$gauge@ $dA, $gauge@ $dB]@ SparseArray[GatherToList @ temp, dim]
-	];
-
-(* G2Matrix[A_, B_] :=
-	Module[{gauge, v1, v2},
-		Sum[
-			sDelV[$gaugeGroups[gauge, Field], A, v1] sDelV[$gaugeGroups[gauge, Field], B, v2]
-				* If[MatchQ[$gaugeGroups[gauge, LieGroup], U1[n_] /; n > 1],
-					Matrix[$gaugeGroups[gauge, Coupling]][gauge[adj] @v1, gauge[adj] @v2]
-				,
-					$gaugeGroups[gauge, Coupling]^2 del[gauge[adj], v1, v2]
-				]
-		,{gauge, Keys @ $gaugeGroups}]
-	]; *)
-
-(*Defining the gauge generators for the left-handed spinors, \bar{\psi} T^A \psi.*)
-TfLeft[A_, i_, j_] :=
-	Module[{ferm, group, rep, gRep1, gRep2, f1, f2, v1},
-		Sum[
-			sDelF[Bar @ ferm, i, f1] sDelF[ferm, j, f2] * Product[del[rep, f1, f2], {rep, $fermions[ferm, FlavorIndices]}]
-			* Sum[group = Head@ If[Head@ gRep1 === Bar, gRep1[[1]], gRep1];
-					sDelV[$gaugeGroups[group, Field], A, v1] tGen[gRep1, v1, f1, f2]
-					* Product[del[gRep2, f1, f2], {gRep2, DeleteCases[$fermions[ferm, GaugeRep], gRep1]}],
-				{gRep1, $fermions[ferm, GaugeRep]}]
-		,{ferm, Keys @ $fermions}]
-	];
-
-(*The general fermion gauge generators used in the computation of the beta function tensors*)
-Tferm[A_, i_, j_] := {{TfLeft[A, i, j], 0}, {0, -TfLeft[A, j, i]}};
-TfermTil[A_, i_, j_] := {{-TfLeft[A, j, i], 0}, {0, TfLeft[A, i, j]}};
-
-(*The general scalar gauge generators used in the computation of the beta function tensors*)
-Tscal[A_, a_, b_] :=
-	Module[{scal, group, rep, gRep1, gRep2, s1, s2, v1},
-		Sum[
-			AntiSym[a, b][sDelS[Bar @ scal, a, s1] sDelS[scal, b, s2]]
-			* Product[del[rep, s1, s2], {rep, $scalars[scal, FlavorIndices]}]
-			* Sum[group = Head@ If[Head@ gRep1 === Bar, gRep1[[1]], gRep1];
-					sDelV[$gaugeGroups[group, Field], A, v1] tGen[gRep1, v1, s1, s2]
-					* Product[del[gRep2, s1, s2], {gRep2, DeleteCases[$scalars[scal, GaugeRep], gRep1]}],
-				{gRep1, $scalars[scal, GaugeRep]}]
-		,{scal, Keys @ $scalars}]
-	];
-
-(*The general gauge structure constants G^{-2}_{AD} f^{DBC} used in the computation of the beta function tensors*)
-FGauge[A_, B_, C_] :=
-	Module[{gauge, v1, v2, v3},
-		Sum[
-			sDelV[$gaugeGroups[gauge, Field], A, v1] sDelV[$gaugeGroups[gauge, Field], B, v2] sDelV[$gaugeGroups[gauge, Field], C, v3]
-				* Power[$gaugeGroups[gauge, Coupling], -2] fStruct[gauge, v1, v2, v3]
-		,{gauge, Keys @ $gaugeGroups}]
-	];
 
 (*####################################*)
 (*----------Yukawa couplings----------*)
@@ -815,13 +755,74 @@ CouplingTensorMap[info_, fields_, coupInds_,  allInds_, permutations_, conj_:Fal
 		AvgPermutations[
 			(* If the conjugate coupling is used *)
 			If[conj,
-				Join[$fieldIndexMap["Scalars"], $fieldIndexMap["Fermions"] ] /@ fields ->
+				$fieldIndexMap["All"] /@ fields ->
 				GroupInvBar[info[Invariant] @@ coupInds] info[CouplingBar] @@ (info[Indices] @@ coupInds)
 			,
-				Join[$fieldIndexMap["Scalars"], $fieldIndexMap["Fermions"] ] /@ fields ->
+				$fieldIndexMap["All"] /@ fields ->
 				info[Invariant] @@ coupInds info[Coupling] @@ (info[Indices] @@ coupInds)
 			]
 		, allInds, permutations];
+
+(*The general gauge coupling matrix G^2_{AB} used in the computation of the beta function tensors*)
+G2Matrix[$dA_, $dB_] :=
+	Module[{temp, group, groupInfo, dim = Length@ $gaugeGroups {1, 1} },
+		temp = Table[groupInfo = $gaugeGroups@ group;
+				$fieldIndexMap["GaugeBosons"] /@ (group {1, 1}) ->
+				If[MatchQ[groupInfo@ LieGroup, U1[n_] /; n > 1],
+					Matrix[groupInfo@ Coupling][group[adj]@ $dA, group[adj]@ $dB]
+				,
+					groupInfo[Coupling]^2 del[group@ adj, $dA, $dB]
+				]
+			, {group, Keys@$gaugeGroups}];
+		TStructure[$gauge@ $dA, $gauge@ $dB]@ SparseArray[GatherToList @ temp, dim]
+	];
+
+(*The general fermion gauge generators used in the computation of the beta function tensors*)
+Tferm[$dA_, $di_, $dj_] :=
+	Module[{tLeft, ferm, gRep, group, otherInds,
+		dim = {Length@ $fieldIndexMap["GaugeBosons"], Length@ $fieldIndexMap["Fermions"], Length@ $fieldIndexMap["Fermions"]}},
+
+		tLeft = Evaluate@ Flatten@ Table[
+			group = Head@ If[Head@ gRep === Bar, gRep[[1]], gRep];
+			otherInds = DeleteCases[$fermions[ferm, GaugeRep], gRep] ~ Join ~ $fermions[ferm, FlavorIndices];
+			$fieldIndexMap["All"] /@ {group, ferm, ferm} -> tGen[gRep, $dA, #1, #2] * Product[del[rep, #1, #2], {rep, otherInds}]
+		,{ferm, Keys@ $fermions}, {gRep, $fermions[ferm, GaugeRep]}] &;
+
+		TStructure[$gauge@ $dA, $fermion@ $di, $fermion@ $dj] /@ {SparseArray[GatherToList@ tLeft[$di, $dj], dim],
+			- SparseArray[GatherToList@ tLeft[$dj, $di], dim]} //DiagonalMatrix
+	];
+
+TfermTil[A_, i_, j_] := {{0, 1}, {1, 0}}.Tferm[A, i, j].{{0, 1}, {1, 0}};
+
+(*The general scalar gauge generators used in the computation of the beta function tensors*)
+Tscal[$dA_, $da_, $db_] :=
+	Module[{temp, scal, gRep, group, entries,
+		dim = {Length@ $fieldIndexMap["GaugeBosons"], Length@ $fieldIndexMap["Scalars"], Length@ $fieldIndexMap["Scalars"]}},
+
+		(* A factor 1/2 included for the anti symmetrization of the external scalar indices *)
+		entries = Flatten @ Table[
+			group = Head@ If[Head@ gRep === Bar, gRep[[1]], gRep];
+			temp = Product[del[rep, $da, $db], {rep,  DeleteCases[$scalars[scal, GaugeRep], gRep] ~ Join ~ $scalars[scal, FlavorIndices]}];
+			{$fieldIndexMap["All"] /@ {group, Bar@ scal, scal} -> temp tGen[gRep, $dA, $da, $db] /2,
+				$fieldIndexMap["All"] /@ {group, scal, Bar@ scal} -> -temp tGen[gRep, $dA, $db, $da] /2 }
+		,{scal, Keys@ $scalars}, {gRep, $scalars[scal, GaugeRep]}];
+
+		TStructure[$gauge@ $dA, $scalar@ $da, $scalar@ $db] @ SparseArray[GatherToList@ entries, dim]
+	];
+
+(*The general gauge structure constants G^{-2}_{AD} f^{DBC} used in the computation of the beta function tensors*)
+FGauge[$dA_, $dB_, $dC_] :=
+	Module[{entries, group, groupInfo, dim = Length@ $fieldIndexMap["GaugeBosons"] {1, 1, 1}},
+		entries = Table[groupInfo = $gaugeGroups@ group;
+				$fieldIndexMap["GaugeBosons"] /@ (group {1, 1, 1}) ->
+				If[MatchQ[groupInfo@ LieGroup, U1[n_]],
+					Nothing
+				,
+					Power[groupInfo[Coupling], -2] fStruct[group, $dA, $dB, $dC]
+				]
+			, {group, Keys@$gaugeGroups}];
+		TStructure[$gauge@ $dA, $gauge@ $dB, $gauge@ $dC]@ SparseArray[GatherToList@ entries, dim]
+	];
 
 (*Genral Yukawa couplings used in the computation of the beta function tensors.*)
 Yuk[$da_, $di_, $dj_, massive_:False] :=
