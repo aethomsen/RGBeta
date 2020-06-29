@@ -32,78 +32,79 @@ UpdateFieldIndexMap[] :=
 
 (* Constructs projection operators for the various types of couplings*)
 UpdateProjectors::projection0 = "The projcetion operator does not pick out the `1` coupling. Please check the GroupInvariant of the coupling for errors."
-UpdateProjectors[type_] :=
-	Module[{coupling, couplingInfo, dim, group, projector, symmetryFactor},
-		Switch[type
-		,"Gauge",
-			Do[
-				AppendTo[$gaugeGroups@ group, Projector -> (Evaluate[ TStructure[$gauge@ #1, $gauge@ #2]@
-					SparseArray[$fieldIndexMap["GaugeBosons"] /@ (group {1, 1}) ->
-						If[$gaugeGroups[group, LieGroup] =!= U1,
-						del[group@adj, #1, #2]/Dim@group@adj,
-						del[group@adj, #1, v1] del[group@adj, #1, v2] ],
-					{3, 3}] ] &)
-				];
-			, {group, Keys@$gaugeGroups}];
-		,"Yukawa",
+UpdateProjectors[couplings_List] := Scan[UpdateProjectors, couplings];
+UpdateProjectors[coupling_] :=
+	Module[{couplingInfo, dim, group, projector, symmetryFactor},
+		Switch[$couplings@ coupling
+		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
+			group = $couplings@ coupling;
+			AppendTo[$gaugeGroups@ group, Projector -> (Evaluate[ TStructure[$gauge@ #1, $gauge@ #2]@
+				SparseArray[$fieldIndexMap["GaugeBosons"] /@ (group {1, 1}) ->
+					If[$gaugeGroups[group, LieGroup] =!= U1,
+					del[group@ adj, #1, #2]/Dim@ group@ adj,
+					del[group@ adj, #1, v1] del[group@ adj, #1, v2] ],
+				{3, 3}] ] &)
+			];
+		,Yukawa,
 			dim = {Length@ $fieldIndexMap["Scalars"], Length@ $fieldIndexMap["Fermions"], Length@ $fieldIndexMap["Fermions"]};
-			Do[
-				couplingInfo = $yukawas@ coupling;
-				(* Constructs the proto-projector *)
-				projector = Evaluate[ DiagonalMatrix[ TStructure[$scalar@ #1, $fermion@ #2, $fermion@ #3] /@ Switch[couplingInfo@ Chirality
-						,Left,
-							{SparseArray[Join[$fieldIndexMap["Scalars"], $fieldIndexMap["Fermions"] ] /@
-								MapAt[Bar, couplingInfo@ Fields, 1] -> GroupInvBar@ couplingInfo[Invariant][#1, #2, #3]
-							, dim], 0}
-						,Right,
-							{0, SparseArray[Join[$fieldIndexMap["Scalars"], $fieldIndexMap["Fermions"] ] /@
-								couplingInfo@ Fields -> couplingInfo[Invariant][#1, #2, #3]
-							, dim]}
-					] ] ] &;
-				(* Determines the correct symmetry factor *)
-				symmetryFactor = ReplaceAll[Rule[#, 0] & /@ Keys @ $yukawas] @ RefineGroupStructures @
-					Tr[projector[$a, $i, $j] . Yuk[$a, $i, $j]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 ]// Simplify;
-				If[symmetryFactor === 0,
-					Message[UpdateProjectors::projection0, coupling];
-					KeyDropFrom[$yukawas, coupling];
-					Return@ $Failed
-				];
-				projector = Evaluate[projector[#1, #2, #3] / symmetryFactor] &;
-				AppendTo[$yukawas@ coupling, Projector -> projector];
-			,{coupling, Keys@ $yukawas}];
-		,"Quartic",
+			couplingInfo = $yukawas@ coupling;
+			(* Constructs the proto-projector *)
+			(* projector = Function[{$da, $di, $dj}, Evaluate[ DiagonalMatrix[
+				TStructure[$scalar@ $da, $fermion@ $di, $fermion@ $dj] /@ Switch[couplingInfo@ Chirality
+					,Left,
+						{SparseArray[AvgPermutations[$fieldIndexMap["All"] /@
+							MapAt[Bar, couplingInfo@ Fields, 1] -> GroupInvBar@ couplingInfo[Invariant][$da, $di, $dj],
+							{$da, $di, $dj}, {{1,2,3}, {1,3,2}} ], dim], 0}
+					,Right,
+						{0, SparseArray[AvgPermutations[$fieldIndexMap["All"] /@
+							couplingInfo@ Fields -> couplingInfo[Invariant][$da, $di, $dj],
+							{$da, $di, $dj}, {{1,2,3}, {1,3,2}} ], dim]}
+				] ] ] ]; *)
+			projector = Evaluate[ DiagonalMatrix[ TStructure[$scalar@ #1, $fermion@ #2, $fermion@ #3] /@ Switch[couplingInfo@ Chirality
+					,Left,
+						{SparseArray[$fieldIndexMap["All"] /@
+							MapAt[Bar, couplingInfo@ Fields, 1] -> GroupInvBar@ couplingInfo[Invariant][#1, #2, #3]
+						, dim], 0}
+					,Right,
+						{0, SparseArray[$fieldIndexMap["All"] /@
+							couplingInfo@ Fields -> couplingInfo[Invariant][#1, #2, #3]
+						, dim]}
+				] ] ] &;
+			(* Determines the correct symmetry factor *)
+			symmetryFactor = ReplaceAll[Rule[#, 0] & /@ Keys @ $yukawas] @ RefineGroupStructures @
+				Tr[projector[$a, $i, $j] . Yuk[$a, $i, $j]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 ]// Simplify;
+			If[symmetryFactor === 0,
+				Message[UpdateProjectors::projection0, coupling];
+				KeyDropFrom[$yukawas, coupling];
+				Return@ $Failed
+			];
+			projector = Evaluate[projector[#1, #2, #3] / symmetryFactor] &;
+			AppendTo[$yukawas@ coupling, Projector -> projector];
+		,Quartic,
 			dim = Length@ $fieldIndexMap["Scalars"] {1, 1, 1, 1};
-			Do[
-				couplingInfo = $quartics@ coupling;
-				(* Constructs the proto-projector *)
-				projector = Evaluate[ TStructure[$scalar@ #1, $scalar@ #2, $scalar@ #3, $scalar@ #4] @
-					SparseArray[$fieldIndexMap["Scalars"]/@ Bar/@ couplingInfo@ Fields ->
-						GroupInvBar@ couplingInfo[Invariant][#1, #2, #3, #4], dim] ] &;
-				(* Determines the correct symmetry factor *)
-				symmetryFactor = ReplaceAll[Rule[#, 0] & /@ Keys @ $quartics] @ RefineGroupStructures @
-					(projector[$a, $b, $c, $d] Lam[$a, $b, $c, $d]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 )// Simplify;
-				If[symmetryFactor === 0,
-					Message[UpdateProjectors::projection0, coupling];
-					KeyDropFrom[$quartics, coupling];
-					Return@ $Failed
-				];
-				projector = Evaluate[projector[#1, #2, #3, #4] / symmetryFactor] &;
-				AppendTo[$quartics@ coupling, Projector -> projector];
-			,{coupling, Keys@ $quartics}];
+			couplingInfo = $quartics@ coupling;
+			(* Constructs the proto-projector *)
+			(* projector = Function[{$da, $db, $dc, $dd}, Evaluate[
+				TStructure[$scalar@ $da, $scalar@ $db, $scalar@ $dc, $scalar@ $dd] @ SparseArray[
+				AvgPermutations[ $fieldIndexMap["Scalars"] /@ Bar /@ couplingInfo@ Fields ->
+				GroupInvBar@ couplingInfo[Invariant][$da, $db, $dc, $dd], {$da, $db, $dc, $dd},
+				couplingInfo@ UniqueArrangements], dim] ] ]; *)
+			projector = Function[{$da, $db, $dc, $dd}, Evaluate[
+				TStructure[$scalar@ $da, $scalar@ $db, $scalar@ $dc, $scalar@ $dd] @ SparseArray[
+				$fieldIndexMap["Scalars"] /@ Bar /@ couplingInfo@ Fields ->
+				GroupInvBar@ couplingInfo[Invariant][$da, $db, $dc, $dd], dim] ] ];
+			(* Determines the correct symmetry factor *)
+			symmetryFactor = ReplaceAll[Rule[#, 0] & /@ Keys @ $quartics] @ RefineGroupStructures[
+				projector[$a, $b, $c, $d] Lam[$a, $b, $c, $d]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 ] // Simplify;
+			If[symmetryFactor === 0,
+				Message[UpdateProjectors::projection0, coupling];
+				KeyDropFrom[$quartics, coupling];
+				Return@ $Failed
+			];
+			projector = Evaluate[projector[#1, #2, #3, #4] / symmetryFactor] &;
+			AppendTo[$quartics@ coupling, Projector -> projector];
 		];
 	];
-
-	(* projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, s2, s3, s4] *
-		sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[Bar@phi3, #3, s3] sDelS[Bar@phi4, #4, s4]] &;
-	symmetryFactor = ReplaceAll[Rule[#, 0] & /@ DeleteCases[Keys @ $quartics, coupling]] @ RefineGroupStructures @
-		Expand[projection[$a, $b, $c, $d] Lam[$a, $b, $c, $d] ] /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 // Simplify;
-	If[symmetryFactor === 0,
-		Message[AddQuartic::projection0];
-		KeyDropFrom[$quartics, coupling];
-		Return @ $Failed;
-	];
-	projection = Evaluate[projection[#1, #2, #3, #4] / symmetryFactor] &;
-	AppendTo[$quartics @ coupling, Projector -> projection]; *)
 
 (*Initiates a scalar field*)
 Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
@@ -131,6 +132,8 @@ AddScalar[field_, OptionsPattern[] ] ? OptionsCheck :=
 		];
 
 		UpdateFieldIndexMap[];
+		(* The projectors must be updated to accomodate the changes in the $fieldIndexMap *)
+		UpdateProjectors[Join[Keys@ $yukawas,Keys@ $quartics] ];
 		ResetBetas[];
 	];
 
@@ -155,6 +158,8 @@ AddFermion[field_, OptionsPattern[] ] ? OptionsCheck :=
 			|>];
 
 		UpdateFieldIndexMap[];
+		(* The projectors must be updated to accomodate the changes in the $fieldIndexMap *)
+		UpdateProjectors[Join[Keys@ $yukawas] ];
 		ResetBetas[];
 	];
 
@@ -282,7 +287,7 @@ AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_Symbol[n_Integer|n_Sym
 
 		(* The construction of the projector of the coupling has been relegated to UpdateFieldIndexMap[] *)
 		UpdateFieldIndexMap[];
-		UpdateProjectors["Gauge"];
+		UpdateProjectors[$gaugeGroups[#, Coupling] & /@ Keys@ $gaugeGroups];
 		ResetBetas[];
 	];
 
@@ -390,25 +395,6 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 			Indices -> OptionValue @ CouplingIndices,
 			Invariant -> OptionValue @ GroupInvariant|>];
 
-		(*Constructs the projection operator*)
-		(* projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, f1, f2] *
-			Switch[OptionValue @ Chirality
-			,Left,
-				sDelS[Bar@ phi, #1, s1] sDelF[Bar@ psi1, #2, f1] sDelF[Bar@ psi2, #3, f2]
-			,Right,
-				sDelS[phi, #1, s1] sDelF[psi1, #2, f1] sDelF[psi2, #3, f2]
-			] ] &;
-		symmetryFactor = ReplaceAll[Rule[#, 0] & /@ DeleteCases[Keys @ $yukawas, coupling]] @ RefineGroupStructures @
-			Expand[projection[$a, $i, $j] Switch[OptionValue @ Chirality, Left, YukawaLeft[$a, $i, $j], Right, YukawaRight[$a, $i, $j]	] ] /.
-				(Matrix|Tensor)[x_][__] -> x /. coupling -> 1 // Simplify;
-		If[symmetryFactor === 0,
-			Message[AddYukawa::projection0];
-			KeyDropFrom[$yukawas, coupling];
-			Return @ $Failed;
-		];
-		projection = Evaluate[projection[#1, #2, #3] / symmetryFactor] &;
-		AppendTo[$yukawas @ coupling, Projector -> projection]; *)
-
 		(*Tests whether the coupling satisfy gauge invariance*)
 		If[OptionValue @ CheckInvariance,
 			Block[{A,i1,i2,i3,a1,a2},
@@ -427,7 +413,7 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 		];
 
 		AppendTo[$couplings, coupling -> Yukawa];
-		UpdateProjectors["Yukawa"];
+		UpdateProjectors[coupling];
 		ResetBetas[];
 	];
 
@@ -582,19 +568,6 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? Options
 			SelfConjugate -> OptionValue @ SelfConjugate,
 			UniqueArrangements -> CouplingPermutations[{phi1, phi2, phi3, phi4}, OptionValue @ GroupInvariant]|>];
 
-		(*Constructs the projection operator*)
-		(* projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, s2, s3, s4] *
-			sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[Bar@phi3, #3, s3] sDelS[Bar@phi4, #4, s4]] &;
-		symmetryFactor = ReplaceAll[Rule[#, 0] & /@ DeleteCases[Keys @ $quartics, coupling]] @ RefineGroupStructures @
-			Expand[projection[$a, $b, $c, $d] Lam[$a, $b, $c, $d] ] /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 // Simplify;
-		If[symmetryFactor === 0,
-			Message[AddQuartic::projection0];
-			KeyDropFrom[$quartics, coupling];
-			Return @ $Failed;
-		];
-		projection = Evaluate[projection[#1, #2, #3, #4] / symmetryFactor] &;
-		AppendTo[$quartics @ coupling, Projector -> projection]; *)
-
 		(*Tests whether the coupling satisfy gauge invariance*)
 		If[OptionValue @ CheckInvariance,
 			Block[{A,a1,a2,a3,a4,a5},
@@ -613,7 +586,7 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? Options
 		];
 
 		AppendTo[$couplings, coupling -> Quartic];
-		UpdateProjectors["Quartic"];
+		UpdateProjectors[coupling];
 		ResetBetas[];
 	];
 

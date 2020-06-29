@@ -177,7 +177,7 @@ YukawaTensors[coupling_Symbol, loop_Integer] :=
 		proj = $yukawas[coupling, Projector][$a, $i, $j];
 		(* The BetaTensors hav been explicitly symmetrized up to 2-loop order to save time. At 3-loop symmetrization is done here. *)
 		If[loop > 2,
-			proj = Sym[$i, $j] @ proj;
+			proj = TsSym[$i, $j] @ proj;
 		];
 		Monitor[
 			(* The projection point depends on the "chirlality ascribed to the given Yukawa coupling/" *)

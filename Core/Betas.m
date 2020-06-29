@@ -7,7 +7,32 @@ Begin["Betas`"]
 (*#####################################*)
 (*----------Utility functions----------*)
 (*#####################################*)
-(*Symmetrizing in indices*)
+(*Symmetrizing tensor structures*)
+SymmetrizeTS[TStructure[tsInds__][sa_], indices_, permutations_] :=
+	Module[{elem, indPositions, ind, n, numPerm, posPermutations, rules, subs},
+		numPerm = Length@ permutations;
+
+		indPositions = Flatten@ Table[FirstPosition[{tsInds}, ind][[1]], {ind, indices}];
+		posPermutations = Table[n, {n, Length@ {tsInds} }] /. MapThread[Rule, {indPositions, indPositions[[#]] }] & /@ permutations;
+		subs = MapThread[Rule, {indices, indices[[#]] }] & /@ permutations;
+
+		rules = Delete[ArrayRules@ sa, -1];
+		rules = Table[#1[[Ordering@ posPermutations[[n]] ]] -> (#2 /. subs[[n]]), {n, numPerm}] & @@@ rules;
+		TStructure[tsInds]@ SparseArray[FieldsAndCouplings`GatherToList@ Flatten@ rules, Dimensions@ sa] /numPerm
+	];
+
+TsSym[i1_, i2_][expr_] := expr /. TStructure[inds__][sa_] :> SymmetrizeTS[TStructure[inds]@ sa, {i1, i2}, {{1, 2}, {2, 1}}];
+
+TsSym[i1_, i2_, i3_][expr_] := expr /. TStructure[inds__][sa_] :> SymmetrizeTS[TStructure[inds]@ sa,
+ 	{i1, i2, i3}, Permutations@ {1, 2, 3}];
+
+TsSym[i1_, i2_, i3_, i4_][expr_] := expr /. TStructure[inds__][sa_] :> SymmetrizeTS[TStructure[inds]@ sa,
+ 	{i1, i2, i3, i4}, Permutations@ {1, 2, 3, 4}];
+
+TsSym4[i1_, i2_, i3_, i4_][expr_] := expr /. TStructure[inds__][sa_] :> SymmetrizeTS[TStructure[inds]@ sa,
+	{i1, i2, i3, i4}, {{1, 2, 3, 4}, {2, 1, 3, 4}, {3, 2, 1, 4}, {4, 2, 3, 1}}];
+
+(* Symmetrizing dummy index expressions: *)
 Sym[i1_, i2_][expr_] := expr /2 + ReplaceAll[expr, {i1 -> i2, i2 -> i1}] /2 ;
 AntiSym[i1_, i2_][expr_] := expr /2 - ReplaceAll[expr, {i1 -> i2, i2 -> i1}] /2 ;
 Sym[a_, b_, c_, d_][expr_] :=

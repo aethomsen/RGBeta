@@ -274,6 +274,9 @@ Trans::usage =
 Tscal::usage =
 	"Tscal[A, i, j] is a function that generates the general gauge generator matrix for the scalars."
 
+TsSym::usage = TsSym4::usage =
+	"TsSym and TsSym4 are functions used to symmetrize TStructures in their indices."
+
 TStructure::usage =
 	"TStructure[ind1, ind2,...][sparseArray] is used as a wrapper for a sparse array containing a particular tensor structure, while providing the indices of said struture."
 
