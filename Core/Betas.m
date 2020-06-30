@@ -18,7 +18,7 @@ SymmetrizeTS[TStructure[tsInds__][sa_], indices_, permutations_] :=
 
 		rules = Delete[ArrayRules@ sa, -1];
 		rules = Table[#1[[Ordering@ posPermutations[[n]] ]] -> (#2 /. subs[[n]]), {n, numPerm}] & @@@ rules;
-		TStructure[tsInds]@ SparseArray[FieldsAndCouplings`GatherToList@ Flatten@ rules, Dimensions@ sa] /numPerm
+		TStructure[tsInds]@ SparseArray[FieldsAndCouplings`GatherToList@ rules, Dimensions@ sa] /numPerm
 	];
 
 TsSym[i1_, i2_][expr_] := expr /. TStructure[inds__][sa_] :> SymmetrizeTS[TStructure[inds]@ sa, {i1, i2}, {{1, 2}, {2, 1}}];
@@ -283,18 +283,12 @@ CheckProjection[coupling_Symbol] :=
 			Tr[Yuk[$a, $i, $j]. $yukawas[coupling, Projector][$a, $i, $j] ]
 		,Quartic,
 			Lam[a, b, c, d] $quartics[coupling, Projector][a, b, c, d]
-		(* ,FermionMass,
-			Switch[$fermionMasses[coupling, Chirality]
-			,Left,
-				tensor = Yuk[a, i, j, True][[1, 1]];
-			,Right,
-				tensor = Yuk[a, i, j, True][[2, 2]];
-			];
-			tensor $fermionMasses[coupling, Projector][a, i, j] // Expand // Expand
+		,FermionMass,
+			Tr[Yuk[$a, $i, $j, True]. $fermionMasses[coupling, Projector][$a, $i, $j] ]
 		,Trilinear,
-			Lam[a, b, c, d, True] $trilinears[coupling, Projector][a, b, c, d] // Expand // Expand
+			Lam[a, b, c, d, True] $trilinears[coupling, Projector][a, b, c, d]
 		,ScalarMass,
-			Lam[a, b, c, d, True] $scalarMasses[coupling, Projector][a, b, c, d] // Expand // Expand *)
+			Lam[a, b, c, d, True] $scalarMasses[coupling, Projector][a, b, c, d]
 		,_Missing,
 			Message[CheckProjection::unkown, coupling];
 			$Failed

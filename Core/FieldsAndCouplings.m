@@ -14,10 +14,14 @@ UpdateFieldIndexMap[] :=
 			AppendTo[temp, field -> count++];
 			If[ ! $scalars[field, SelfConjugate], AppendTo[temp, Bar@ field -> count++]; ];
 		, {field, Keys@ $scalars}];
+		AppendTo[temp, $vev -> count++];	AppendTo[temp, $vevSelect -> count++];
 		AppendTo[$fieldIndexMap, "Scalars" -> Association@ temp];
 
-		$scalarContraction = SparseArray[ Table[temp /@ {phi, Bar@ phi} -> If[phi === Bar@ phi, 1, 2],
-			{phi, Keys@ temp}], Length@ temp {1, 1}];
+		$scalarContraction = SparseArray[ Table[ Switch[field,
+				$vev, temp /@ {$vev, $vevSelect} -> 1,
+				$vevSelect, temp /@ {$vevSelect, $vev} -> 1,
+				_, temp /@ {field, Bar@ field} -> If[field === Bar@ field, 1, 2] ],
+			{field, Keys@ temp}], Length@ temp {1, 1}];
 
 		count = 1;
 		AppendTo[$fieldIndexMap,
@@ -37,13 +41,14 @@ UpdateProjectors[coupling_] :=
 	Module[{couplingInfo, dim, group, projector, symmetryFactor},
 		Switch[$couplings@ coupling
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
+			dim = Length@ $fieldIndexMap["GaugeBosons"] {1, 1};
 			group = $couplings@ coupling;
 			AppendTo[$gaugeGroups@ group, Projector -> (Evaluate[ TStructure[$gauge@ #1, $gauge@ #2]@
 				SparseArray[$fieldIndexMap["GaugeBosons"] /@ (group {1, 1}) ->
 					If[$gaugeGroups[group, LieGroup] =!= U1,
 					del[group@ adj, #1, #2]/Dim@ group@ adj,
 					del[group@ adj, #1, v1] del[group@ adj, #1, v2] ],
-				{3, 3}] ] &)
+				dim] ] &)
 			];
 		,Yukawa,
 			dim = {Length@ $fieldIndexMap["Scalars"], Length@ $fieldIndexMap["Fermions"], Length@ $fieldIndexMap["Fermions"]};
@@ -103,8 +108,67 @@ UpdateProjectors[coupling_] :=
 			];
 			projector = Evaluate[projector[#1, #2, #3, #4] / symmetryFactor] &;
 			AppendTo[$quartics@ coupling, Projector -> projector];
+		,FermionMass,
+			dim = {Length@ $fieldIndexMap["Scalars"], Length@ $fieldIndexMap["Fermions"], Length@ $fieldIndexMap["Fermions"]};
+			couplingInfo = $fermionMasses@ coupling;
+			projector = Function[{$da, $di, $dj}, Evaluate[ DiagonalMatrix[
+				TStructure[$scalar@ $da, $fermion@ $di, $fermion@ $dj] /@ Switch[couplingInfo@ Chirality
+					,Left,
+						{SparseArray[$fieldIndexMap["All"] /@ Join[{$vevSelect}, couplingInfo@ Fields] ->
+							GroupInvBar@ couplingInfo[Invariant][$di, $dj], dim], 0}
+					,Right,
+						{0, SparseArray[$fieldIndexMap["All"] /@ Join[{$vevSelect}, couplingInfo@ Fields] ->
+							couplingInfo[Invariant][$di, $dj], dim]}
+				] ] ] ];
+			(* Determines the correct symmetry factor *)
+			symmetryFactor = ReplaceAll[Rule[#, 0] & /@ Keys @ $fermionMasses] @ RefineGroupStructures @
+				Tr[projector[$a, $i, $j] . Yuk[$a, $i, $j, True]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 ]// Simplify;
+			If[symmetryFactor === 0,
+				Message[UpdateProjectors::projection0, coupling];
+				KeyDropFrom[$fermionMasses, coupling];
+				Return@ $Failed
+			];
+			projector = Evaluate[projector[#1, #2, #3] / symmetryFactor] &;
+			AppendTo[$fermionMasses@ coupling, Projector -> projector];
+		,Trilinear,
+			dim = Length@ $fieldIndexMap["Scalars"] {1, 1, 1, 1};
+			couplingInfo = $trilinears@ coupling;
+			(* Constructs the proto-projector *)
+			projector = Function[{$da, $db, $dc, $dd}, Evaluate[
+				TStructure[$scalar@ $da, $scalar@ $db, $scalar@ $dc, $scalar@ $dd] @ SparseArray[
+				$fieldIndexMap["Scalars"] /@ Join[Bar /@ couplingInfo@ Fields, {$vevSelect}] ->
+				GroupInvBar@ couplingInfo[Invariant][$da, $db, $dc], dim] ] ];
+			(* Determines the correct symmetry factor *)
+			symmetryFactor = ReplaceAll[Rule[#, 0] & /@ Keys @ $trilinears] @ RefineGroupStructures[
+				projector[$a, $b, $c, $d] Lam[$a, $b, $c, $d, True]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 ] // Simplify;
+			If[symmetryFactor === 0,
+				Message[UpdateProjectors::projection0, coupling];
+				KeyDropFrom[$trilinears, coupling];
+				Return@ $Failed
+			];
+			projector = Evaluate[projector[#1, #2, #3, #4] / symmetryFactor] &;
+			AppendTo[$trilinears@ coupling, Projector -> projector];
+		,ScalarMass,
+			dim = Length@ $fieldIndexMap["Scalars"] {1, 1, 1, 1};
+			couplingInfo = $scalarMasses@ coupling;
+			(* Constructs the proto-projector *)
+			projector = Function[{$da, $db, $dc, $dd}, Evaluate[
+				TStructure[$scalar@ $da, $scalar@ $db, $scalar@ $dc, $scalar@ $dd] @ SparseArray[
+				$fieldIndexMap["Scalars"] /@ Join[Bar /@ couplingInfo@ Fields, {$vevSelect, $vevSelect}] ->
+				GroupInvBar@ couplingInfo[Invariant][$da, $db], dim] ] ];
+			(* Determines the correct symmetry factor *)
+			symmetryFactor = ReplaceAll[Rule[#, 0] & /@ Keys @ $scalarMasses] @ RefineGroupStructures[
+				projector[$a, $b, $c, $d] Lam[$a, $b, $c, $d, True]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 ] // Simplify;
+			If[symmetryFactor === 0,
+				Message[UpdateProjectors::projection0, coupling];
+				KeyDropFrom[$scalarMasses, coupling];
+				Return@ $Failed
+			];
+			projector = Evaluate[projector[#1, #2, #3, #4] / symmetryFactor] &;
+			AppendTo[$scalarMasses@ coupling, Projector -> projector];
 		];
 	];
+
 
 (*Initiates a scalar field*)
 Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
@@ -368,10 +432,8 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 
 		(*If the chirality is right handed, the coupling is written with the barred fields*)
 		Switch[OptionValue @ Chirality
-		,Left,
-			g = coupling;
-		,Right,
-			g = Bar @ coupling;
+			,Left, g = coupling;
+			,Right,	g = Bar @ coupling;
 		];
 
 		(*Constructs the coupling structure*)
@@ -419,12 +481,11 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 
 
 (*Function for defining the fermion masses of the theory*)
-Options[AddFermionMass] = {MassIndices -> (Null &),
+Options[AddFermionMass] = {MassIndices -> ({} &),
 	GroupInvariant -> (1 &),
 	Chirality -> Left};
 AddFermionMass::unkown = "`1` does not match any of the `2`s.";
-AddFermionMass::projection0 = "The projcetion operator does not pick out the coupling. Please check the GroupInvariant for errors."
-AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
+AddFermionMass[coupling_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 	Block[{g, group, projection, symmetryFactor, temp, test, yuk, yukbar, y},
 		(*Tests if the fields have been defined*)
 		If[!MemberQ[Keys@ $fermions, psi1],
@@ -438,10 +499,8 @@ AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 
 		(*If the chirality is right handed, the coupling is written with the barred fields*)
 		Switch[OptionValue @ Chirality
-		,Left,
-			g = mass;
-		,Right,
-			g = Bar @ mass;
+			,Left, g = coupling;
+			,Right, g = Bar @ coupling;
 		];
 
 		(*Constructs the coupling structure*)
@@ -455,7 +514,7 @@ AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 		];
 
 		(*Adds the Yukawa coupling to the association*)
-		AppendTo[$fermionMasses, mass ->
+		AppendTo[$fermionMasses, coupling ->
 			<|Chirality -> OptionValue @ Chirality,
 			Coupling -> yuk,
 			CouplingBar -> yukbar,
@@ -463,62 +522,11 @@ AddFermionMass[mass_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 			Indices -> OptionValue @ MassIndices,
 			Invariant -> OptionValue @ GroupInvariant|>];
 
-		(*Constructs the projection operator*)
-		projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][f1, f2] *
-			Switch[OptionValue @ Chirality
-			,Left,
-				sDelS[$vevSelect, #1, s1] sDelF[Bar@ psi1, #2, f1] sDelF[Bar@ psi2, #3, f2]
-			,Right,
-				sDelS[$vevSelect, #1, s1] sDelF[psi1, #2, f1] sDelF[psi2, #3, f2]
-			] ] &;
-		symmetryFactor = ReplaceAll[Rule[#, 0] & /@ DeleteCases[Keys @ $fermionMasses, mass]] @ RefineGroupStructures @
-			Expand[projection[$a, $i, $j] Switch[OptionValue @ Chirality, Left, YukawaLeft[$a, $i, $j, True],
-				Right, YukawaRight[$a, $i, $j, True] ] ] /. (Matrix|Tensor)[x_][__] -> x /. mass -> 1 // Simplify;
-		If[symmetryFactor === 0,
-			Message[AddFermionMass::projection0];
-			KeyDropFrom[$fermionMasses, mass];
-			Return @ $Failed;
-		];
-		projection = Evaluate[projection[#1, #2, #3] / symmetryFactor] &;
-		AppendTo[$fermionMasses @ mass, Projector -> projection];
-		AppendTo[$couplings, mass -> FermionMass];
-
+		AppendTo[$couplings, coupling -> FermionMass];
+		UpdateProjectors[coupling];
 		ResetBetas[];
 	];
 
-
-(*Chiral Yukawa couplings*)
-(* YukawaLeft[$da_, $di_, $dj_, massive_:False] :=
-	Module[{f1, f2, yu, s1},
-		Sym[$di, $dj][
-			Sum[sDelS[yu[Fields][[1]], $da, s1] sDelF[yu[Fields][[2]], $di, f1] sDelF[yu[Fields][[3]], $dj, f2]
-					* yu[Invariant][s1, f1, f2] yu[Coupling][Sequence @@ yu[Indices][s1, f1, f2]]
-				,{yu, $yukawas}] +
-			If[massive,
-				Sum[sDelS[$vev, $da, s1] sDelF[yu[Fields][[1]], $di, f1] sDelF[yu[Fields][[2]], $dj, f2]
-					* yu[Invariant][f1, f2] yu[Coupling][Sequence @@ yu[Indices][f1, f2]]
-				,{yu, $fermionMasses}]
-			,0]
-		]
-	];
-
-YukawaRight[$da_, $di_, $dj_, massive_:False] :=
-	Module[{f1, f2, yu, s1},
-		Sym[$di, $dj][
-			Sum[sDelS[Bar @ yu[Fields][[1]], $da, s1] sDelF[Bar @ yu[Fields][[2]], $di, f1] sDelF[Bar @ yu[Fields][[3]], $dj, f2]
-					* yu[Invariant][s1, f1, f2] yu[CouplingBar][Sequence @@ yu[Indices][s1, f1, f2]]
-				,{yu, $yukawas}] +
-			If[massive,
-				Sum[sDelS[$vev, $da, s1] sDelF[Bar @ yu[Fields][[1]], $di, f1] sDelF[Bar @ yu[Fields][[2]], $dj, f2]
-					* yu[Invariant][f1, f2] yu[CouplingBar][Sequence @@ yu[Indices][f1, f2]]
-				,{yu, $fermionMasses}]
-			,0]
-		]
-	]; *)
-
-(*Genral Yukawa couplings used in the computation of the beta function tensors.*)
-(* Yuk[a_, i_, j_, massive_:False] := {{YukawaLeft[a, i, j, massive], 0}, {0, YukawaRight[a, i, j, massive]}};
-YukTil[a_, i_, j_, massive_:False] := {{YukawaRight[a, i, j, massive], 0}, {0, YukawaLeft[a, i, j, massive]}}; *)
 
 (*#####################################*)
 (*----------Quartic couplings----------*)
@@ -594,7 +602,7 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? Options
 (*Function for defining the trilinear scalar couplings of the theory*)
 AddTrilinear::unkown = "`1` does not match any of the scalars.";
 AddTrilinear::projection0 = "The projcetion operator does not pick out the coupling. Please check the GroupInvariant for errors.";
-Options[AddTrilinear] = {CouplingIndices -> (Null &),
+Options[AddTrilinear] = {CouplingIndices -> ({} &),
 	GroupInvariant -> (1 &),
 	SelfConjugate -> True};
 AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] ? OptionsCheck :=
@@ -634,27 +642,15 @@ AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] ? OptionsCheck
 			SelfConjugate -> OptionValue @ SelfConjugate,
 			UniqueArrangements -> CouplingPermutations[{phi1, phi2, phi3, $vev}, OptionValue @ GroupInvariant]|>];
 
-		(*Constructs the projection operator*)
-		projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, s2, s3] *
-			sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[Bar@phi3, #3, s3] sDelS[$vevSelect, #4, s4]] &;
-		symmetryFactor = ReplaceAll[Rule[#, 0] & /@ DeleteCases[Keys @ $trilinears, coupling]] @ RefineGroupStructures @
-			Expand[projection[$a, $b, $c, $d] Lam[$a, $b, $c, $d, True] ] /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 // Simplify;
-		If[symmetryFactor === 0,
-			Message[AddTrilinear::projection0];
-			KeyDropFrom[$trilinears, coupling];
-			Return @ $Failed;
-		];
-		projection = Evaluate[projection[#1, #2, #3, #4] / symmetryFactor] &;
-		AppendTo[$trilinears @ coupling, Projector -> projection];
 		AppendTo[$couplings, coupling -> Trilinear];
-
+		UpdateProjectors[coupling];
 		ResetBetas[];
 	];
 
 (*Function for defining the Scalar mass terms of the theory*)
 AddScalarMass::unkown = "`1` does not match any of the scalars.";
 AddScalarMass::projection0 = "The projcetion operator does not pick out the coupling. Please check the GroupInvariant for errors.";
-Options[AddScalarMass] = {MassIndices -> (Null &),
+Options[AddScalarMass] = {MassIndices -> ({} &),
 	GroupInvariant -> (1 &),
 	SelfConjugate -> True};
 AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] ? OptionsCheck:=
@@ -694,20 +690,8 @@ AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] ? OptionsCheck:=
 			SelfConjugate -> OptionValue @ SelfConjugate,
 			UniqueArrangements -> CouplingPermutations[{phi1, phi2, $vev, $vev}, OptionValue @ GroupInvariant]|>];
 
-		(*Constructs the projection operator*)
-		projection = Evaluate[ ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b]] @ OptionValue[GroupInvariant][s1, s2] *
-			sDelS[Bar@phi1, #1, s1] sDelS[Bar@phi2, #2, s2] sDelS[$vevSelect, #3, s3] sDelS[$vevSelect, #4, s4]]& ;
-		symmetryFactor = ReplaceAll[Rule[#, 0] & /@ DeleteCases[Keys @ $scalarMasses, coupling]] @ RefineGroupStructures @
-			Expand[projection[$a, $b, $c, $d] Lam[$a, $b, $c, $d, True] ] /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 // Simplify;
-		If[symmetryFactor === 0,
-			Message[AddScalarMass::projection0];
-			KeyDropFrom[$scalarMasses, coupling];
-			Return @ $Failed;
-		];
-		projection = Evaluate[projection[#1, #2, #3, #4] / symmetryFactor] &;
-		AppendTo[$scalarMasses @ coupling, Projector -> projection];
 		AppendTo[$couplings, coupling -> ScalarMass];
-
+		UpdateProjectors[coupling];
 		ResetBetas[];
 	];
 
@@ -724,9 +708,9 @@ AvgPermutations[couplingPos_ -> coupling_, indices_, permutations_] :=
 	];
 
 (* Generic structure for the coupling tensor creation *)
-CouplingTensorMap[info_, fields_, coupInds_,  allInds_, permutations_, conj_:False] :=
-		AvgPermutations[
-			(* If the conjugate coupling is used *)
+CouplingTensorMap[info_, fields_, coupInds_, allInds_, permutations_, conj_:False] :=
+	AvgPermutations[
+		(* If the conjugate coupling is used *)
 			If[conj,
 				$fieldIndexMap["All"] /@ fields ->
 				GroupInvBar[info[Invariant] @@ coupInds] info[CouplingBar] @@ (info[Indices] @@ coupInds)
@@ -809,9 +793,16 @@ Yuk[$da_, $di_, $dj_, massive_:False] :=
 				CouplingTensorMap[couplingInfo, MapAt[Bar, couplingInfo@ Fields, 1], {$da, $di, $dj},
 					{$da, $di, $dj},  {{1, 2, 3}, {1, 3, 2}}, True]
 			, {couplingInfo, $yukawas}];
-		(* If[massive,
-
-		] *)
+		If[massive,
+			yL = Join[yL, Table[
+					CouplingTensorMap[couplingInfo, Join[{$vev}, couplingInfo@ Fields], {$di, $dj},
+						{$da, $di, $dj},  {{1, 2, 3}, {1, 3, 2}}]
+				, {couplingInfo, $fermionMasses}] ];
+			yR = Join[yR, Table[
+					CouplingTensorMap[couplingInfo, Join[{$vev}, couplingInfo@ Fields], {$di, $dj},
+						{$da, $di, $dj},  {{1, 2, 3}, {1, 3, 2}}, True]
+				, {couplingInfo, $fermionMasses}] ];
+		];
 		(* The chiral couplings are organized in full Yukawa matrix *)
 		TStructure[$scalar@ $da, $fermion@ $di, $fermion@ $dj] /@
 			{SparseArray[GatherToList@ yL, dim], SparseArray[GatherToList@ yR, dim]} //DiagonalMatrix
@@ -820,7 +811,7 @@ Yuk[$da_, $di_, $dj_, massive_:False] :=
 YukTil[$da_, $di_, $dj_, massive_:False] := {{0, 1}, {1, 0}}.Yuk[$da, $di, $dj, massive].{{0, 1}, {1, 0}};
 
 (*Genral quartic coupling used in the computation of the beta function tensors.*)
-Lam[$da_, $db_, $dc_, $dd_] :=
+Lam[$da_, $db_, $dc_, $dd_, massive_:False] :=
 	Module[{couplingInfo, temp, dim = Length@ $fieldIndexMap["Scalars"] {1, 1, 1, 1}},
 		temp = Table[
 				Join[CouplingTensorMap[couplingInfo, couplingInfo@ Fields, {$da, $db, $dc, $dd},
@@ -830,6 +821,24 @@ Lam[$da_, $db_, $dc_, $dd_] :=
 							{$da, $db, $dc, $dd}, couplingInfo@ UniqueArrangements, True]
 					] ]
 			, {couplingInfo, $quartics}];
+		If[massive,
+			temp = Join[temp,
+				Table[
+					Join[CouplingTensorMap[couplingInfo, Join[couplingInfo@ Fields, {$vev}], {$da, $db, $dc},
+							{$da, $db, $dc, $dd}, couplingInfo@ UniqueArrangements],
+						If[couplingInfo@ SelfConjugate, {}, (*Adds conjugate coupling if relevant *)
+							CouplingTensorMap[couplingInfo, Join[Bar/@ couplingInfo@ Fields, {$vev}], {$da, $db, $dc},
+								{$da, $db, $dc, $dd}, couplingInfo@ UniqueArrangements, True]
+						] ], {couplingInfo, $trilinears}],
+				Table[
+					Join[CouplingTensorMap[couplingInfo, Join[couplingInfo@ Fields, {$vev, $vev}], {$da, $db},
+							{$da, $db, $dc, $dd}, couplingInfo@ UniqueArrangements],
+						If[couplingInfo@ SelfConjugate, {}, (*Adds conjugate coupling if relevant *)
+							CouplingTensorMap[couplingInfo, Join[Bar/@ couplingInfo@ Fields, {$vev, $vev}], {$da, $db},
+								{$da, $db, $dc, $dd}, couplingInfo@ UniqueArrangements, True]
+						] ], {couplingInfo, $scalarMasses}]
+			];
+		];
 		TStructure[$scalar@$da, $scalar@$db, $scalar@$dc, $scalar@$dd] @ SparseArray[GatherToList@ temp, dim]
 	];
 

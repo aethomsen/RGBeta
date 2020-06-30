@@ -173,12 +173,10 @@ GaugeTensors[coupling_Symbol, loop_Integer] :=
 	];
 
 YukawaTensors[coupling_Symbol, loop_Integer] :=
-	Module[{diagrams = {1, 5, 33, 308}[[loop + 1]], n, proj},
-		proj = $yukawas[coupling, Projector][$a, $i, $j];
+	Module[{diagrams = {1, 5, 33, 308}[[loop + 1]], n},
 		Monitor[
-			(* The projection point depends on the "chirlality ascribed to the given Yukawa coupling/" *)
 			Sum[
-				Bcoef[2, loop, n] Tr@ Tdot[proj, BetaTensor[2, loop, n] ],
+				Bcoef[2, loop, n] Tr@ Tdot[$yukawas[coupling, Projector][$a, $i, $j], BetaTensor[2, loop, n] ],
 			{n, diagrams}]
 		,StringForm["Evaluating term `` / ``", n, diagrams] ]
 	];
@@ -186,19 +184,9 @@ YukawaTensors[coupling_Symbol, loop_Integer] :=
 FermionMassTensors[coupling_Symbol, loop_Integer] :=
 	Module[{diagrams = {1, 5, 33}[[loop + 1]], n},
 		Monitor[
-			(* The projection point depends on the "chirlality ascribed to the given Yukawa coupling/" *)
-			Switch[$fermionMasses[coupling, Chirality]
-			,Left,
-				Sum[
-					Bcoef[2, loop, n] Ttimes[$fermionMasses[coupling, Projector][$a, $i, $j],
-					BetaTensor[4, loop, n][[1, 1]] ],
-				{n, diagrams}]
-			,Right,
-				Sum[
-					Bcoef[2, loop, n] Ttimes[$fermionMasses[coupling, Projector][$a, $i, $j],
-					BetaTensor[4, loop, n][[2, 2]] ],
-				{n, diagrams}]
-			]
+			Sum[
+				Bcoef[2, loop, n] Tr@ Tdot[$fermionMasses[coupling, Projector][$a, $i, $j], BetaTensor[4, loop, n] ],
+			{n, diagrams}]
 		,StringForm["Evaluating term `` / ``", n, diagrams] ]
 	];
 
