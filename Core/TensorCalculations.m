@@ -175,22 +175,11 @@ GaugeTensors[coupling_Symbol, loop_Integer] :=
 YukawaTensors[coupling_Symbol, loop_Integer] :=
 	Module[{diagrams = {1, 5, 33, 308}[[loop + 1]], n, proj},
 		proj = $yukawas[coupling, Projector][$a, $i, $j];
-		(* The BetaTensors hav been explicitly symmetrized up to 2-loop order to save time. At 3-loop symmetrization is done here. *)
-		If[loop > 2,
-			proj = TsSym[$i, $j] @ proj;
-		];
 		Monitor[
 			(* The projection point depends on the "chirlality ascribed to the given Yukawa coupling/" *)
-			Switch[$yukawas[coupling, Chirality]
-			,Left,
-				Sum[
-					Bcoef[2, loop, n] Ttimes[proj, BetaTensor[2, loop, n][[1, 1]] ],
-				{n, diagrams}]
-			,Right,
-				Sum[
-					Bcoef[2, loop, n] Ttimes[proj, BetaTensor[2, loop, n][[2, 2]] ],
-				{n, diagrams}]
-			]
+			Sum[
+				Bcoef[2, loop, n] Tr@ Tdot[proj, BetaTensor[2, loop, n] ],
+			{n, diagrams}]
 		,StringForm["Evaluating term `` / ``", n, diagrams] ]
 	];
 
