@@ -282,13 +282,13 @@ CheckProjection[coupling_Symbol] :=
 		,Yukawa,
 			Tr[Yuk[$a, $i, $j]. $yukawas[coupling, Projector][$a, $i, $j] ]
 		,Quartic,
-			Lam[a, b, c, d] $quartics[coupling, Projector][a, b, c, d]
+			Lam[$a, $b, $c, $d] $quartics[coupling, Projector][$a, $b, $c, $d]
 		,FermionMass,
 			Tr[Yuk[$a, $i, $j, True]. $fermionMasses[coupling, Projector][$a, $i, $j] ]
 		,Trilinear,
-			Lam[a, b, c, d, True] $trilinears[coupling, Projector][a, b, c, d]
+			Lam[$a, $b, $c, $d, True] $trilinears[coupling, Projector][$a, $b, $c, $d]
 		,ScalarMass,
-			Lam[a, b, c, d, True] $scalarMasses[coupling, Projector][a, b, c, d]
+			Lam[$a, $b, $c, $d, True] $scalarMasses[coupling, Projector][$a, $b, $c, $d]
 		,_Missing,
 			Message[CheckProjection::unkown, coupling];
 			$Failed

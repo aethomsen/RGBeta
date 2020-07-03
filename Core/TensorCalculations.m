@@ -222,7 +222,7 @@ FermionAnomalousTensors[field_, loop_Integer] :=
 	Module[{diagrams = {2, 9}[[loop]], n},
 		Monitor[
 			Sum[
-				Acoef[1, loop, n] Ttimes[$fermions[field, Projector][$i, $j], (AnomalousTensor[1, loop, n] = AnomalousTensor[1, loop, n])[[1,1]] ],
+				Acoef[1, loop, n] Tr@ Tdot[$fermions[field, Projector][$i, $j], AnomalousTensor[1, loop, n] = AnomalousTensor[1, loop, n] ],
 			{n, diagrams}]
 		,StringForm["Evaluating term `` / ``", n, diagrams]]
 	];

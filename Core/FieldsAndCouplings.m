@@ -174,11 +174,15 @@ UpdateProjectors[coupling_] :=
 Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
 AddScalar::failure = "Failed to add scalar field.";
 AddScalar[field_, OptionsPattern[] ] ? OptionsCheck :=
-	Block[{rep, projector},
+	Block[{rep, projector, scal, dim},
 		(*Checks gauge representations*)
 		If[! And @@ Table[RepresentationCheck @ rep, {rep, OptionValue[GaugeRep]}],
 			Message[AddScalar::failure];
 			Return @ $Failed;
+		];
+
+		If[OptionValue@ SelfConjugate,
+			SetReal @ field;
 		];
 
 		(* To project out the anomalous dimension of the field from the general structure *)
@@ -188,16 +192,21 @@ AddScalar[field_, OptionsPattern[] ] ? OptionsCheck :=
 		AppendTo[$scalars, field -> <|
 			GaugeRep -> OptionValue[GaugeRep],
 			FlavorIndices -> OptionValue[FlavorIndices],
-			(* Projector -> projector, *)
 			SelfConjugate -> OptionValue[SelfConjugate]|>];
-
-		If[OptionValue@ SelfConjugate,
-			SetReal @ field;
-		];
-
 		UpdateFieldIndexMap[];
+
+		(* Update projectors for all scalar field anomalous dimenions *)
+		dim = Length@ $fieldIndexMap["Scalars"];
+		Do[
+			projector = Function[{$da, $db}, Evaluate[
+				TStructure[$scalar@ $da, $scalar@ $db] @ SparseArray[
+					$fieldIndexMap["Scalars"] /@ {Bar@ scal, scal} -> Product[del[rep, $da, $db], {rep, $scalars[scal, GaugeRep]} ],
+					dim] ] ];
+			AppendTo[$scalars@ scal, Projector -> projector];
+		,{scal, Keys@ $scalars}];
+
 		(* The projectors must be updated to accomodate the changes in the $fieldIndexMap *)
-		UpdateProjectors[Join[Keys@ $yukawas,Keys@ $quartics] ];
+		UpdateProjectors[Join[Keys@ $yukawas, Keys@ $quartics, Keys@ $fermionMasses, Keys@ $trilinears, Keys@ $scalarMasses] ];
 		ResetBetas[];
 	];
 
@@ -205,7 +214,7 @@ AddScalar[field_, OptionsPattern[] ] ? OptionsCheck :=
 Options[AddFermion] = {GaugeRep -> {}, FlavorIndices -> {}};
 AddFermion::failure = "Failed to add fermion field.";
 AddFermion[field_, OptionsPattern[] ] ? OptionsCheck :=
-	Block[{rep, projector},
+	Block[{rep, projector, ferm, dim},
 		(*Checks gauge representations*)
 		If[! And @@ Table[RepresentationCheck @ rep, {rep, OptionValue[GaugeRep]}],
 			Message[AddFermion::failure];
@@ -220,10 +229,20 @@ AddFermion[field_, OptionsPattern[] ] ? OptionsCheck :=
 			GaugeRep -> OptionValue[GaugeRep],
 			FlavorIndices -> OptionValue[FlavorIndices] (*,Projector -> projector*)
 			|>];
-
 		UpdateFieldIndexMap[];
+
+		(* Update projectors for all fermion field anomalous dimenions *)
+		dim = Length@ $fieldIndexMap["Fermions"];
+		Do[
+			projector = Function[{$di, $dj}, Evaluate[ DiagonalMatrix@ {
+				TStructure[$fermion@ $di, $fermion@ $dj] @ SparseArray[
+					$fieldIndexMap["Fermions"] /@ {ferm, ferm} -> Product[del[rep, $di, $dj], {rep, $fermions[ferm, GaugeRep]} ],
+					dim], 0} ] ];
+			AppendTo[$fermions@ ferm, Projector -> projector];
+		,{ferm, Keys@ $fermions}];
+
 		(* The projectors must be updated to accomodate the changes in the $fieldIndexMap *)
-		UpdateProjectors[Join[Keys@ $yukawas] ];
+		UpdateProjectors[Join[Keys@ $yukawas, Keys@ $fermionMasses] ];
 		ResetBetas[];
 	];
 
