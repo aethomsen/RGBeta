@@ -45,11 +45,12 @@ UpdateProjectors[coupling_] :=
 			group = $couplings@ coupling;
 			AppendTo[$gaugeGroups@ group, Projector -> (Evaluate[ TStructure[$gauge@ #1, $gauge@ #2]@
 				SparseArray[$fieldIndexMap["GaugeBosons"] /@ (group {1, 1}) ->
-					If[$gaugeGroups[group, LieGroup] =!= U1,
+					If[Head@ $gaugeGroups[group, LieGroup] =!= U1,
 					del[group@ adj, #1, #2]/Dim@ group@ adj,
-					del[group@ adj, #1, v1] del[group@ adj, #1, v2] ],
+					del[group@ adj, #1, v1] del[group@ adj, #2, v2] ],
 				dim] ] &)
 			];
+
 		,Yukawa,
 			dim = {Length@ $fieldIndexMap["Scalars"], Length@ $fieldIndexMap["Fermions"], Length@ $fieldIndexMap["Fermions"]};
 			couplingInfo = $yukawas@ coupling;
@@ -85,6 +86,7 @@ UpdateProjectors[coupling_] :=
 			];
 			projector = Evaluate[projector[#1, #2, #3] / symmetryFactor] &;
 			AppendTo[$yukawas@ coupling, Projector -> projector];
+
 		,Quartic,
 			dim = Length@ $fieldIndexMap["Scalars"] {1, 1, 1, 1};
 			couplingInfo = $quartics@ coupling;
@@ -94,6 +96,7 @@ UpdateProjectors[coupling_] :=
 				AvgPermutations[ $fieldIndexMap["Scalars"] /@ Bar /@ couplingInfo@ Fields ->
 				GroupInvBar@ couplingInfo[Invariant][$da, $db, $dc, $dd], {$da, $db, $dc, $dd},
 				couplingInfo@ UniqueArrangements], dim] ] ]; *)
+			(* Constructs the proto-projector *)
 			projector = Function[{$da, $db, $dc, $dd}, Evaluate[
 				TStructure[$scalar@ $da, $scalar@ $db, $scalar@ $dc, $scalar@ $dd] @ SparseArray[
 				$fieldIndexMap["Scalars"] /@ Bar /@ couplingInfo@ Fields ->
@@ -108,9 +111,11 @@ UpdateProjectors[coupling_] :=
 			];
 			projector = Evaluate[projector[#1, #2, #3, #4] / symmetryFactor] &;
 			AppendTo[$quartics@ coupling, Projector -> projector];
+
 		,FermionMass,
 			dim = {Length@ $fieldIndexMap["Scalars"], Length@ $fieldIndexMap["Fermions"], Length@ $fieldIndexMap["Fermions"]};
 			couplingInfo = $fermionMasses@ coupling;
+			(* Constructs the proto-projector *)
 			projector = Function[{$da, $di, $dj}, Evaluate[ DiagonalMatrix[
 				TStructure[$scalar@ $da, $fermion@ $di, $fermion@ $dj] /@ Switch[couplingInfo@ Chirality
 					,Left,
@@ -130,6 +135,7 @@ UpdateProjectors[coupling_] :=
 			];
 			projector = Evaluate[projector[#1, #2, #3] / symmetryFactor] &;
 			AppendTo[$fermionMasses@ coupling, Projector -> projector];
+
 		,Trilinear,
 			dim = Length@ $fieldIndexMap["Scalars"] {1, 1, 1, 1};
 			couplingInfo = $trilinears@ coupling;
@@ -148,6 +154,7 @@ UpdateProjectors[coupling_] :=
 			];
 			projector = Evaluate[projector[#1, #2, #3, #4] / symmetryFactor] &;
 			AppendTo[$trilinears@ coupling, Projector -> projector];
+
 		,ScalarMass,
 			dim = Length@ $fieldIndexMap["Scalars"] {1, 1, 1, 1};
 			couplingInfo = $scalarMasses@ coupling;
