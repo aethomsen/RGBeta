@@ -192,9 +192,6 @@ AddScalar[field_, OptionsPattern[] ] ? OptionsCheck :=
 			SetReal @ field;
 		];
 
-		(* To project out the anomalous dimension of the field from the general structure *)
-		projector = Evaluate[sDelS[Bar @ field, #1, s1] sDelS[field, #2, s2] Product[del[rep, s1, s2] / Dim @ rep, {rep, OptionValue[GaugeRep]}] ]&;
-
 		(*Adds field options to the list of scalar fields*)
 		AppendTo[$scalars, field -> <|
 			GaugeRep -> OptionValue[GaugeRep],
@@ -207,7 +204,7 @@ AddScalar[field_, OptionsPattern[] ] ? OptionsCheck :=
 		Do[
 			projector = Function[{$da, $db}, Evaluate[
 				TStructure[$scalar@ $da, $scalar@ $db] @ SparseArray[
-					$fieldIndexMap["Scalars"] /@ {Bar@ scal, scal} -> Product[del[rep, $da, $db], {rep, $scalars[scal, GaugeRep]} ],
+					$fieldIndexMap["Scalars"] /@ {Bar@ scal, scal} -> Product[del[rep, $da, $db]/ Dim@ rep, {rep, $scalars[scal, GaugeRep]} ],
 					dim] ] ];
 			AppendTo[$scalars@ scal, Projector -> projector];
 		,{scal, Keys@ $scalars}];
@@ -228,9 +225,6 @@ AddFermion[field_, OptionsPattern[] ] ? OptionsCheck :=
 			Return @ $Failed;
 		];
 
-		(* To project out the anomalous dimension of the field from the general structure *)
-		projector = Evaluate[sDelF[Bar @ field, #1, f1] sDelF[field, #2, f2] Product[del[rep, f1, f2] / Dim @ rep, {rep, OptionValue[GaugeRep]}] ]&;
-
 		(*Adds field options to the list of fermion fields*)
 		AppendTo[$fermions, field -> <|
 			GaugeRep -> OptionValue[GaugeRep],
@@ -243,7 +237,7 @@ AddFermion[field_, OptionsPattern[] ] ? OptionsCheck :=
 		Do[
 			projector = Function[{$di, $dj}, Evaluate[ DiagonalMatrix@ {
 				TStructure[$fermion@ $di, $fermion@ $dj] @ SparseArray[
-					$fieldIndexMap["Fermions"] /@ {ferm, ferm} -> Product[del[rep, $di, $dj], {rep, $fermions[ferm, GaugeRep]} ],
+					$fieldIndexMap["Fermions"] /@ {ferm, ferm} -> Product[del[rep, $di, $dj]/ Dim@ rep, {rep, $fermions[ferm, GaugeRep]} ],
 					dim], 0} ] ];
 			AppendTo[$fermions@ ferm, Projector -> projector];
 		,{ferm, Keys@ $fermions}];
