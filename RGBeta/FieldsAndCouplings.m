@@ -2,7 +2,121 @@
 	Author: Anders Eller Thomsen
 	Released under the MIT license (see 'LICENSE').
 *)
-Begin["FieldsAndCouplings`"]
+Package["RGBeta`"]
+
+(*##################################*)
+(*----------Package Export----------*)
+(*##################################*)
+
+PackageExport["AddFermion"]
+PackageExport["AddFermionMass"]
+PackageExport["AddGaugeGroup"]
+PackageExport["AddQuartic"]
+PackageExport["AddScalar"]
+PackageExport["AddScalarMass"]
+PackageExport["AddTrilinear"]
+PackageExport["AddVector"]
+PackageExport["AddYukawa"]
+
+PackageExport["ResetModel"]
+
+PackageExport["$couplings"]
+PackageExport["$fermionMasses"]
+PackageExport["$fermions"]
+PackageExport["$gaugeGroups"]
+PackageExport["$quartics"]
+PackageExport["$scalarMasses"]
+PackageExport["$scalars"]
+PackageExport["$trilinears"]
+PackageExport["$yukawas"]
+
+PackageScope["FGauge"]
+PackageScope["G2Matrix"]
+PackageScope["Lam"]
+PackageScope["Tferm"]
+PackageScope["TfermTil"]
+PackageScope["Tscal"]
+PackageScope["Yuk"]
+PackageScope["YukTil"]
+
+PackageScope["AveragePermutations"]
+PackageScope["CouplingPermutations"]
+PackageScope["GatherToList"]
+PackageScope["RepresentationCheck"]
+
+(*#####################################*)
+(*----------Usage Definitions----------*)
+(*#####################################*)
+
+AddFermion::usage =
+	"AddFermion[field] is a function used to define a fermion field in the model."
+AddFermionMass::ussage =
+	"AddFermionMass[mass, {ferm1, ferm2}] defines a mass term between the two fermion fields."
+AddGaugeGroup::usage =
+	"AddGaugeGroup[coupling, groupName, lieGroup[n]] is a function used to define a gauge group in the model."
+AddQuartic::usage =
+	"AddQuartic[coupling, {scal1, scal2, scal3, scal4}] defines a quartic interaction between 4 scalar fields."
+AddScalar::usage =
+	"AddScalar[field] is a function used to define a scalar field in the model."
+AddScalarMass::ussage =
+	"AddScalarMass[mass, {scal1, scal2}] defines a mass term between the two scalar fields."
+AddTrilinear::usage =
+	"AddTrilinear[coupling, {scal1, scal2, scal3}] defines a Yukawa interaction between a scalar and two fermion fields."
+AddVector::usage =
+	"AddVector[field, group] is an internal function used to define a vector field of a gauge group."
+AddYukawa::usage =
+	"AddYukawa[coupling, {scal, ferm1, ferm2}] defines a Yukawa interaction between a scalar and two fermion fields."
+
+RemoveField::usage =
+	"RemoveField[field, ...] is a function that removes one or more scalar and fermion fields from the model."
+RemoveInteraction::usage =
+	"RemoveCoupling[coupling, ...] is a function that removes one or more couplings and corresponding interactions/gauge groups from the model."
+ResetModel::usage =
+	"ResetModel[] resets all tensors and removes all fields and coupling definitions made in the current instance of RGBeta."
+
+$couplings::usage =
+	"$couplings is an association containing the types of all the couplings that have been defined in the model."
+$fermionMasses::usage =
+	"$fermionMasses is an association with all the fermion masses that have been declared in the model."
+$fermions::usage =
+	"$fermions is an association containing all the internal information on the fermions that have been declared in the model."
+$gaugeGroups::usage =
+	"$gaugeGroups is an association containing all the internal information on the gauge groups that have been declared in the model."
+$quartics::usage =
+	"$quartics is an association containing all internal information on the quartic couplings."
+$scalarMasses::usage =
+	"$scalarMasses is an association with all the scalar masses that have been declared in the model."
+$scalars::usage =
+	"$scalars is an association containing all the internal information on the scalars that have been declared in the model."
+$trilinears::usage =
+	"$trilinears is an association contraining all the internal informaiton on the trilinear scalar couplings."
+$yukawas::usage =
+	"$yukawas is an association containing all internal information on the yukawa couplings."
+
+
+FGauge::usage =
+	"FGauge[A, B, C] is a function that generates the general gauge structure constants."
+G2Matrix::usage =
+	"G2Matrix[a, b] is a function that generates the general gauge coupling matrix."
+Lam::usage =
+	"Lam[a, b, c, d] is a function that generates the general quartic coupling."
+Tferm::usage =
+	"Tferm[A, i, j] is a function that generates the general gauge generator matrix for the fermions."
+TfermTil::usage =
+	"TfermTil[A, i, j] is a function that generates the general gauge generator matrix for the fermions with an applied tilde."
+Tscal::usage =
+	"Tscal[A, i, j] is a function that generates the general gauge generator matrix for the scalars."
+Yuk::usage =
+	"Yuk[a, i, j] is a function that generates the general yukawa coupling."
+YukTil::usage =
+	"YukTil[a, i, j] is a function that generates the general yukawa coupling with an applied tilde."
+
+AveragePermutations::usage =
+	"AveragePermutations[indices, permutations][expr] gives the average of expr with indices (List) exchanged in all way perscribed by permutations."
+CouplingPermutations::usage =
+	"CouplingPermutations[fields, invariant] provides at list of all unique permutations of a coupling of the fields (List) and with the given group invariance function."
+RepresentationCheck::usage =
+	"RepresentationCheck[rep] returns True if rep is a valid representation given the gauge groups of the present model and False otherwise."
 
 (* Function that updates the mapping of fields to indices in the $fieldIndexMap *)
 UpdateFieldIndexMap[] :=
@@ -55,17 +169,6 @@ UpdateProjectors[coupling_] :=
 			dim = {Length@ $fieldIndexMap["Scalars"], Length@ $fieldIndexMap["Fermions"], Length@ $fieldIndexMap["Fermions"]};
 			couplingInfo = $yukawas@ coupling;
 			(* Constructs the proto-projector *)
-			(* projector = Function[{$da, $di, $dj}, Evaluate[ DiagonalMatrix[
-				TStructure[$scalar@ $da, $fermion@ $di, $fermion@ $dj] /@ Switch[couplingInfo@ Chirality
-					,Left,
-						{SparseArray[AvgPermutations[$fieldIndexMap["All"] /@
-							MapAt[Bar, couplingInfo@ Fields, 1] -> GroupInvBar@ couplingInfo[Invariant][$da, $di, $dj],
-							{$da, $di, $dj}, {{1,2,3}, {1,3,2}} ], dim], 0}
-					,Right,
-						{0, SparseArray[AvgPermutations[$fieldIndexMap["All"] /@
-							couplingInfo@ Fields -> couplingInfo[Invariant][$da, $di, $dj],
-							{$da, $di, $dj}, {{1,2,3}, {1,3,2}} ], dim]}
-				] ] ] ]; *)
 			projector = Evaluate[ DiagonalMatrix[ TStructure[$scalar@ #1, $fermion@ #2, $fermion@ #3] /@ Switch[couplingInfo@ Chirality
 					,Left,
 						{SparseArray[$fieldIndexMap["All"] /@
@@ -90,12 +193,6 @@ UpdateProjectors[coupling_] :=
 		,Quartic,
 			dim = Length@ $fieldIndexMap["Scalars"] {1, 1, 1, 1};
 			couplingInfo = $quartics@ coupling;
-			(* Constructs the proto-projector *)
-			(* projector = Function[{$da, $db, $dc, $dd}, Evaluate[
-				TStructure[$scalar@ $da, $scalar@ $db, $scalar@ $dc, $scalar@ $dd] @ SparseArray[
-				AvgPermutations[ $fieldIndexMap["Scalars"] /@ Bar /@ couplingInfo@ Fields ->
-				GroupInvBar@ couplingInfo[Invariant][$da, $db, $dc, $dd], {$da, $db, $dc, $dd},
-				couplingInfo@ UniqueArrangements], dim] ] ]; *)
 			(* Constructs the proto-projector *)
 			projector = Function[{$da, $db, $dc, $dd}, Evaluate[
 				TStructure[$scalar@ $da, $scalar@ $db, $scalar@ $dc, $scalar@ $dd] @ SparseArray[
@@ -181,7 +278,7 @@ UpdateProjectors[coupling_] :=
 Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
 AddScalar::failure = "Failed to add scalar field.";
 AddScalar[field_, OptionsPattern[] ] ? OptionsCheck :=
-	Block[{rep, projector, scal, dim},
+	Module[{rep, projector, scal, dim},
 		(*Checks gauge representations*)
 		If[! And @@ Table[RepresentationCheck @ rep, {rep, OptionValue[GaugeRep]}],
 			Message[AddScalar::failure];
@@ -220,7 +317,7 @@ AddScalar[field_, OptionsPattern[] ] ? OptionsCheck :=
 Options[AddFermion] = {GaugeRep -> {}, FlavorIndices -> {}};
 AddFermion::failure = "Failed to add fermion field.";
 AddFermion[field_, OptionsPattern[] ] ? OptionsCheck :=
-	Block[{rep, projector, ferm, dim},
+	Module[{rep, projector, ferm, dim},
 		(*Checks gauge representations*)
 		If[! And @@ Table[RepresentationCheck @ rep, {rep, OptionValue[GaugeRep]}],
 			Message[AddFermion::failure];
@@ -254,7 +351,7 @@ AddFermion[field_, OptionsPattern[] ] ? OptionsCheck :=
 (*###################################*)
 (* Determines all unique permutations of fields with a given invariant *)
 CouplingPermutations[fields_List, invariant_Function] :=
-	Block[{arg, fs, inv, number, perms, uniformSymbols, uniqueArrangements},
+	Module[{arg, fs, inv, number, perms, uniformSymbols, uniqueArrangements},
 		uniformSymbols = s_Symbol /; StringMatchQ[SymbolName@s, "*$*"] :> Symbol @ StringSplit[SymbolName@s, "$"][[1]];
 		number = Length @ fields;
 		perms = Permutations @ Table[n, {n, number}];
@@ -278,14 +375,14 @@ CouplingPermutations[fields_List, invariant_Function] :=
 	];
 
 AveragePermutations[indices_List, permutations_List][expr_] :=
-	Block[{subs},
+	Module[{subs},
 		subs = MapThread[Rule, {indices, indices[[#]]}] & /@ permutations;
 		Mean[expr/.subs]
 	];
 
 (* Puts a tensor on canonical form---Brute force *)
 CanonizeTensor[symbForm_List][expr_] :=
-	Block[{symb, newSymbs, indexAssignments, temp},
+	Module[{symb, newSymbs, indexAssignments, temp},
 		symb = DeleteDuplicates @ Cases[expr, _Symbol?(StringMatchQ[SymbolName@ #, Alternatives @@ symbForm] &), Infinity];
 		newSymbs = Table[Symbol["internal$" <> ToString@ n], {n, Length @ symb}];
 		indexAssignments = (Thread@Rule[#, newSymbs] &) /@ Permutations @ symb;
@@ -317,7 +414,7 @@ Options[AddGaugeGroup] = {CouplingMatrix -> Automatic, Field -> Automatic};
 AddGaugeGroup[coupling_Symbol, groupName_Symbol, U1, opts:OptionsPattern[]] :=
 	AddGaugeGroup[coupling, groupName, U1[1], opts];
 AddGaugeGroup[coupling_Symbol, groupName_Symbol, lieGroup_Symbol[n_Integer|n_Symbol], OptionsPattern[]] ? OptionsCheck :=
-	Block[{cMatrix, invalid, projector, fieldName},
+	Module[{cMatrix, invalid, projector, fieldName},
 		(*Checks for mismatch between U1 power and coupling matrix*)
 		If[MatchQ[lieGroup[n], U1[x_] /; x > 1] && OptionValue @ CouplingMatrix =!= Automatic,
 			If[!SymmetricMatrixQ @ OptionValue @ CouplingMatrix || Length @ OptionValue @ CouplingMatrix =!= n,
@@ -383,7 +480,7 @@ RepresentationCheck::invalid = "`1` is not a reckognized format for a representa
 RepresentationCheck::representation = "`1` is not a reckognized representation of a `2` group.";
 RepresentationCheck::noGroup = "The `1` gauge group has not been defined.";
 RepresentationCheck[rep_] :=
-	Block[{group, gName},
+	Module[{group, gName},
 		If[! MatchQ[rep, _@_], (*Checks form*)
 			Message[RepresentationCheck::invalid, rep];
 			Return @ False;
@@ -437,7 +534,7 @@ Options[AddYukawa] = {CouplingIndices -> ({} &),
 AddYukawa::unkown = "`1` does not match any of the `2`s.";
 AddYukawa::gaugeInv = "Could not verify invariance under the `1` group. Plase check the GroupInvariant for errors.";
 AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
-	Block[{g, group, normalization, projection, symmetryFactor, temp, test, yuk, yukawa, yukbar, y},
+	Module[{g, group, normalization, projection, symmetryFactor, temp, test, yuk, yukawa, yukbar, y},
 		(*Tests if the fields have been defined*)
 		If[!MemberQ[Keys @ $scalars, phi /. Bar[x_] -> x],
 			Message[AddYukawa::unkown, phi /. Bar[x_] -> x, "scalar"];
@@ -508,7 +605,7 @@ Options[AddFermionMass] = {MassIndices -> ({} &),
 	Chirality -> Left};
 AddFermionMass::unkown = "`1` does not match any of the `2`s.";
 AddFermionMass[coupling_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
-	Block[{g, group, projection, symmetryFactor, temp, test, yuk, yukbar, y},
+	Module[{g, group, projection, symmetryFactor, temp, test, yuk, yukbar, y},
 		(*Tests if the fields have been defined*)
 		If[!MemberQ[Keys@ $fermions, psi1],
 			Message[AddFermionMass::unkown, psi1, "fermion"];
@@ -562,7 +659,7 @@ Options[AddQuartic] = {CouplingIndices -> ({} &),
 	SelfConjugate -> True,
 	CheckInvariance -> False};
 AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? OptionsCheck :=
-	Block[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
+	Module[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
 		(*Tests if the fields have been defined*)
 		Do[
 			If[!MemberQ[Keys@ $scalars, temp /. Bar[x_] -> x],
@@ -628,7 +725,7 @@ Options[AddTrilinear] = {CouplingIndices -> ({} &),
 	GroupInvariant -> (1 &),
 	SelfConjugate -> True};
 AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] ? OptionsCheck :=
-	Block[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
+	Module[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
 		(*Tests if the fields have been defined*)
 		Do[
 			If[!MemberQ[Keys@ $scalars, temp /. Bar[x_] -> x],
@@ -676,7 +773,7 @@ Options[AddScalarMass] = {MassIndices -> ({} &),
 	GroupInvariant -> (1 &),
 	SelfConjugate -> True};
 AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] ? OptionsCheck:=
-	Block[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
+	Module[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
 		(*Tests if the fields have been defined*)
 		Do[
 			If[!MemberQ[Keys@ $scalars, temp /. Bar[x_] -> x],
@@ -864,48 +961,13 @@ Lam[$da_, $db_, $dc_, $dd_, massive_:False] :=
 		TStructure[$scalar@$da, $scalar@$db, $scalar@$dc, $scalar@$dd] @ SparseArray[GatherToList@ temp, dim]
 	];
 
-(* Lam[$da_, $db_, $dc_, $dd_, massive_:False] :=
-	Module[{l, s1, s2, s3, s4},
-		Sum[
-			AveragePermutations[{$da, $db, $dc, $dd}, l[UniqueArrangements] ][
-				sDelS[l[Fields][[1]], $da, s1] sDelS[l[Fields][[2]], $db, s2] sDelS[l[Fields][[3]], $dc, s3] sDelS[l[Fields][[4]], $dd, s4]
-				* l[Invariant][s1, s2, s3, s4] l[Coupling][Sequence @@ l[Indices][s1, s2, s3, s4]]
-			+ If[! l@SelfConjugate,
-				sDelS[Bar@ l[Fields][[1]], $da, s1] sDelS[Bar@ l[Fields][[2]], $db, s2] sDelS[Bar@ l[Fields][[3]], $dc, s3]
-				* sDelS[Bar@ l[Fields][[4]], $dd, s4] l[Invariant][s1, s2, s3, s4] l[CouplingBar][Sequence @@ l[Indices][s1, s2, s3, s4]]
-			,0]
-			]
-		,{l, $quartics}] +
-		If[massive,
-			Sum[AveragePermutations[{$da, $db, $dc, $dd}, l[UniqueArrangements] ][
-					sDelS[l[Fields][[1]], $da, s1] sDelS[l[Fields][[2]], $db, s2] sDelS[l[Fields][[3]], $dc, s3] sDelS[$vev, $dd, s4]
-					* l[Invariant][s1, s2, s3] l[Coupling][Sequence @@ l[Indices][s1, s2, s3]]
-				+ If[! l@SelfConjugate,
-					sDelS[Bar@ l[Fields][[1]], $da, s1] sDelS[Bar@ l[Fields][[2]], $db, s2] sDelS[Bar@ l[Fields][[3]], $dc, s3]
-					* sDelS[$vev, $dd, s4] l[Invariant][s1, s2, s3] l[CouplingBar][Sequence @@ l[Indices][s1, s2, s3]]
-				,0]
-				]
-			,{l, $trilinears}] +
-			Sum[AveragePermutations[{$da, $db, $dc, $dd}, l[UniqueArrangements] ][
-					sDelS[l[Fields][[1]], $da, s1] sDelS[l[Fields][[2]], $db, s2] sDelS[$vev, $dc, s3] sDelS[$vev, $dd, s4]
-					* l[Invariant][s1, s2] l[Coupling][Sequence @@ l[Indices][s1, s2]]
-				+ If[! l@SelfConjugate,
-					sDelS[Bar@ l[Fields][[1]], $da, s1] sDelS[Bar@ l[Fields][[2]], $db, s2] sDelS[$vev, $dc, s3] sDelS[$vev, $dd, s4]
-					* l[Invariant][s1, s2] l[CouplingBar][Sequence @@ l[Indices][s1, s2]]
-				,0]
-				]
-			,{l, $scalarMasses}]
-		,0]
-	]; *)
-
-
 
 (*######################################*)
 (*---------------Clean up---------------*)
 (*######################################*)
 (*Removes all model information.*)
 ResetModel[] :=
-	Block[{},
+	Module[{},
 		(*Resets tensor dummy notation*)
 		ReInitializeSymbols[];
 
@@ -971,7 +1033,7 @@ RemoveField[field_] :=
 	];
 (*For simmultaneous removal of multiple fields*)
 RemoveField[field_, fields__] :=
-	Block[{},
+	Module[{},
 		RemoveField[field];
 		RemoveField[fields];
 	];
@@ -1020,11 +1082,7 @@ RemoveInteraction[coupling_] :=
 	];
 (*For simmultaneous removal of multiple interactions*)
 RemoveInteraction[coupling_, couplings__] :=
-	Block[{},
+	Module[{},
 		RemoveInteraction[coupling];
 		RemoveInteraction[couplings];
 	];
-
-
-
-End[]

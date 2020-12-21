@@ -2,7 +2,69 @@
 	Author: Anders Eller Thomsen
 	Released under the MIT license (see 'LICENSE').
 *)
-Begin["TensorCalculations`"]
+Package["RGBeta`"]
+
+(*##################################*)
+(*----------Package Export----------*)
+(*##################################*)
+
+PackageExport["Acoef"]
+PackageExport["Bcoef"]
+
+PackageScope["$fermionAnomalousCoefficients"]
+PackageScope["$gaugeCoefficients"]
+PackageScope["$quarticCoefficients"]
+PackageScope["$scalarAnomalousCoefficients"]
+PackageScope["$yukawaCoefficients"]
+
+PackageScope["FermionAnomalousTensors"]
+PackageScope["FermionMassTensors"]
+PackageScope["GaugeTensors"]
+PackageScope["QuarticTensors"]
+PackageScope["ScalarAnomalousTensors"]
+PackageScope["ScalarMassiveTensors"]
+PackageScope["YukawaTensors"]
+
+(*#####################################*)
+(*----------Usage Definitions----------*)
+(*#####################################*)
+
+Acoef::usage =
+	"Acoef[i, j, k] is used internally to denote the coefficients of the differnet tensor contraction appering in the anomalous dimensions."
+Bcoef::usage =
+	"Bcoef[i, j, k] is used internally to denote the coefficients of the differnet tensor contraction appering in the beta functions."
+
+
+$fermionAnomalousCoefficients::usage =
+	"$fermionAnomalousCoefficients is an internal replacement lsit containing the coefficients of all the tensors structures in the fermion anomalous dimension."
+$gaugeCoefficients::usage =
+	"$gaugeCoefficients is an internal replacement list containing the coefficient of all tensor constractions used in the quartic beta function."
+$quarticCoefficients::usage =
+	"$quarticCoefficients is an internal replacement list containing the coefficient of all tensor constractions used in the quartic beta function."
+$scalarAnomalousCoefficients::usage =
+	"$scalarAnomalousCoefficients is an internal replacement lsit containing the coefficients of all the tensors structures in the fermion anomalous dimension."
+$yukawaCoefficients::usage =
+	"$yukawaCoefficients is an internal replacement list containing the coefficient of all tensor constractions used in the yukawa beta function."
+
+FermionAnomalousTensors::uasge =
+	"FermionAnomalousTensors[field, loop] evaluates all tensor contractions of the general anomalous dimension tensor and the field projector."
+FermionMassTensors::usage =
+	"FermionMassTensors[coupling, loop] is a function that computes all the tensor contractions used the general fermion mass beta function at the given loop order."
+GaugeTensors::usage =
+	"GaugeTensors[coupling, loop] is a function that computes all the tensor contractions used the general gauge beta function at the given loop order."
+QuarticTensors::usage =
+	"QuarticTensors[coupling, loop] is a function that computes all the tensor contractions used the general quartic beta function at the given loop order."
+ScalarAnomalousTensors::uasge =
+	"ScalarAnomalousTensors[field, loop] evaluates all tensor contractions of the general anomalous dimension tensor and the field projector."
+ScalarMassiveTensors::usage =
+	"ScalarMassiveTensors[coupling, loop] is a function that computes all the tensor contractions used in the the trillinear and scalar mass beta functions at the given loop order."
+YukawaTensors::usage =
+	"YukawaTensors[coupling, loop] is a function that computes all the tensor contractions used the general yukawa beta function at the given loop order."
+
+(*########################################*)
+(*----------All kinds of tensors----------*)
+(*########################################*)
+
 << BetaTensors`; (*Loads all the tensors from ancillary file*)
 
 sig1 = {{0, 1}, {1, 0}};
@@ -412,5 +474,3 @@ $scalarAnomalousCoefficients = {
 
 
 Protect[$gaugeCoefficients, $quarticCoefficients, $yukawaCoefficients, $fermionAnomalousCoefficients, $scalarAnomalousCoefficients];
-
-End[]

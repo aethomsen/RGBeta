@@ -2,7 +2,106 @@
 	Author: Anders Eller Thomsen
 	Released under the MIT license (see 'LICENSE').
 *)
-Begin["GroupsAndIndices`"]
+Package["RGBeta`"]
+
+(*##################################*)
+(*----------Package Export----------*)
+(*##################################*)
+
+PackageExport["del"]
+PackageExport["delA2"]
+PackageExport["delIndex"]
+PackageExport["delS2"]
+PackageExport["eps"]
+PackageExport["fStruct"]
+PackageExport["lcSymb"]
+PackageExport["tGen"]
+PackageExport["Dim"]
+
+PackageExport["SO"]
+PackageExport["Sp"]
+PackageExport["SU"]
+PackageExport["U1"]
+
+PackageExport["adj"]
+PackageExport["fund"]
+PackageExport["A2"]
+PackageExport["S2"]
+
+PackageExport["Bar"]
+PackageExport["DefineLieGroup"]
+PackageExport["Matrix"]
+PackageExport["SetReal"]
+PackageExport["Tensor"]
+PackageExport["Trans"]
+
+PackageScope["Casimir2"]
+PackageScope["TraceNormalization"]
+
+PackageScope["RefineGroupStructures"]
+PackageScope["ReInitializeSymbols"]
+PackageScope["TStructure"]
+
+(*#####################################*)
+(*----------Usage Definitions----------*)
+(*#####################################*)
+
+del::usage =
+	"del[rep, a, b] represents a Kronecker delta in \"rep space\" with indices a and b."
+delA2::usage =
+	"delA2[group, a, i, j] represents the singlet contraction between the A2 index a and the two fundamental indices i and j."
+delIndex::usage =
+	"del[rep, a, b] represents a Kronecker delta function in \"rep space\" with either a or b being an Integer fixing the value of the other summation index."
+delS2::usage =
+	"delS2[group, a, i, j] represents the singlet contraction between the S2 index a and the two fundamental indices i and j."
+eps::usage =
+	"eps[rep, a, b] represents the 2-index antisymmetric tensor in \"rep space\" with indices a and b."
+fStruct::usage =
+	"fStruct[group, A, B, C] represents the structure constant of the group with indices A, B, and C."
+lcSymb::usage =
+	"Levi-Civita symbol"
+tGen::usage =
+	"tGen[rep, A, a, b] represents a group generator of the representation \"rep\" with adjoint index A. a and b are the two indices of rep. "
+
+adj::usage = fund::usage = S2::usage = A2::usage =
+	"Representation name defined defined by the Define(SO/Sp/SU)Group functions."
+SO::usage = Sp::usage = SU::usage = U1::usage =
+	"SO, Sp, SU, and U1 are used to specify different Lie groups."
+
+Bar::usage =
+	"Bar[x] rerpresents the conjugate of x. Used both for fields, couplings, and representations."
+DefineLieGroup::usage =
+	"DefineLieGroup[groupName, lieGroup[n]] sets groupName to be a lie group of type SU(n), SO(n), Sp(n), or U(1)^n and defines invariants for several common representations of said group."
+Matrix::usage =
+	"Matrix[x,...][i, j] represents the matrix product of couplings x,... with open indices i and j."
+SetReal::usage =
+	"SetReal[x1,...] makes x1,... behave as real parameters under complex conjugation (the Bar function)."
+Tensor::usage =
+	"Tensor[x][i,...] represents the tensor x with open indices i,..."
+Trans::usage =
+	"Trans[coupling] represents the transposed quantity of a coupling with two indices."
+
+Casimir2::usage =
+	"Casimir2[rep] sets the quadratic casimir of a given representation."
+Dim::usage =
+	"Dim[rep] sets the dimension of a given representation."
+TraceNormalization::usage =
+	"TraceNormalization[rep] sets the trace normalization of a given representation."
+
+
+RefineGroupStructures::usage =
+	"RefineGroupStructures[expr] decomposes generators of non-fundamental representations of the groups to the fundamental ones, whereby identities can be applied."
+ReInitializeSymbols::usage =
+	"ReInitializeSymbols[] is a function which when called flushes all previous definitions for symbol behaviour under implicit summation."
+TStructure::usage =
+	"TStructure[ind1, ind2,...][sparseArray] is used as a wrapper for a sparse array containing a particular tensor structure, while providing the indices of said struture."
+
+(*Formating*)
+	Format[Trans[x_], StandardForm] := HoldForm[x^Global`T];
+	Format[Bar[x_], StandardForm] := OverBar @ x;
+	Format[Trans[Bar[x_]], StandardForm] := x^Style[Global`\[Dagger], Bold, 12];
+	Format[Matrix[x__][h1_[i1_] ], StandardForm] := Subscript[Dot[x], i1];
+	Format[Matrix[x__][h1_[i1_], h2_[i2_]], StandardForm] := Subscript[Dot[x], i1, i2];
 
 (*#############################################*)
 (*----------Generic tensor properties----------*)
@@ -12,12 +111,12 @@ Begin["GroupsAndIndices`"]
 ReInitializeSymbols[] :=
 	Block[{},
 		(*Dim[rep] is the dimension of a given representation*)
-		Clear @ Dim;
+		Clear@ Dim;
 		Dim[Bar[rep_]] := Dim[rep];
 
 		(*Group constants for certain representations.*)
-		Clear @ TraceNormalization;
-		Clear @ Casimir2;
+		Clear@ TraceNormalization;
+		Clear@ Casimir2;
 
 		(*del[rep, a, b] is the symbol for Kronecker delta \delta_{a,b} belong to the indices specified by the representation.*)
 		Clear @ del;
@@ -162,47 +261,39 @@ RefineGroupStructures[expr_] := Block[{replace},
 		];
 
 (*Tensor head for tensor coupling contractions*)
-	Tensor /: del[ind_, a___, x_, b___] Tensor[t_][c___, ind_[x_], d___] := Tensor[t][c, ind[a, b], d];
-
-(*Formating*)
-	Format[Trans[x_], StandardForm] := HoldForm[x^Global`T];
-	Format[Bar[x_], StandardForm] := OverBar @ x;
-	Format[Trans[Bar[x_]], StandardForm] := x^Style[Global`\[Dagger], Bold, 12];
-	Format[Matrix[x__][h1_[i1_] ], StandardForm] := Subscript[Dot[x], i1];
-	Format[Matrix[x__][h1_[i1_], h2_[i2_]], StandardForm] := Subscript[Dot[x], i1, i2];
+Tensor /: del[ind_, a___, x_, b___] Tensor[t_][c___, ind_[x_], d___] := Tensor[t][c, ind[a, b], d];
 
 (* Tensor structure head used for all coupling contraction*)
-	Clear @ TStructure;
-	TStructure /: TStructure[ind1__][ar1_] TStructure[ind2__][ar2_] = TStructure[ind1, ind2][TensorProduct[ar1, ar2]];
-	TStructure /: TStructure[ind__][ar_]^2 := TStructure[ind, ind]@ TensorProduct[ar, ar]
-	TStructure /: TStructure[ind__][ar1_] + TStructure[ind__][ar2_] = TStructure[ind][TensorProduct[ar1 + ar2]];
-	TStructure[][expr_] = expr;
-	TStructure[___][0] = 0;
-	(* Duplicate indices are contracted as per dummy index convention *)
-	TStructure[ind__][ar_] /; ! DuplicateFreeQ@ List@ ind :=
-		Block[{cont, indices, temp},
-			indices = List@ ind;
-			temp = ar;
-			While[!DuplicateFreeQ@ indices,
-				(* For scalars the contraction is done via the $scalarContraction *)
-				cont = First@ Cases[PositionIndex@ indices, _?(Length@ # === 2 &)];
-				Switch[Head@ indices[[cont[[1]] ]]
-				, $scalar,
-					temp = TensorContract[TensorProduct[temp, $scalarContraction],
-					Transpose@ {cont, Length@ indices + {1, 2}}];
-				, $fermion | $gauge,
-					temp = TensorContract[temp, {cont}];
-				];
-				indices = Delete[indices, List /@ cont];
+TStructure /: TStructure[ind1__][ar1_] TStructure[ind2__][ar2_] = TStructure[ind1, ind2][TensorProduct[ar1, ar2]];
+TStructure /: TStructure[ind__][ar_]^2 := TStructure[ind, ind]@ TensorProduct[ar, ar]
+TStructure /: TStructure[ind__][ar1_] + TStructure[ind__][ar2_] = TStructure[ind][TensorProduct[ar1 + ar2]];
+TStructure[][expr_] = expr;
+TStructure[___][0] = 0;
+(* Duplicate indices are contracted as per dummy index convention *)
+TStructure[ind__][ar_] /; ! DuplicateFreeQ@ List@ ind :=
+	Block[{cont, indices, temp},
+		indices = List@ ind;
+		temp = ar;
+		While[!DuplicateFreeQ@ indices,
+			(* For scalars the contraction is done via the $scalarContraction *)
+			cont = First@ Cases[PositionIndex@ indices, _?(Length@ # === 2 &)];
+			Switch[Head@ indices[[cont[[1]] ]]
+			, $scalar,
+				temp = TensorContract[TensorProduct[temp, $scalarContraction],
+				Transpose@ {cont, Length@ indices + {1, 2}}];
+			, $fermion | $gauge,
+				temp = TensorContract[temp, {cont}];
 			];
-			(* The entries of the resulting array are expanded to allow the dummyindices to contract. *)
-			If[Head@temp === SparseArray,
-				temp = SparseArray[ArrayRules@ temp // Expand, Dimensions@ temp];
-			,
-				temp = Expand@ temp;
-			];
-			TStructure[Sequence @@ indices][temp]
+			indices = Delete[indices, List /@ cont];
 		];
+		(* The entries of the resulting array are expanded to allow the dummyindices to contract. *)
+		If[Head@temp === SparseArray,
+			temp = SparseArray[ArrayRules@ temp // Expand, Dimensions@ temp];
+		,
+			temp = Expand@ temp;
+		];
+		TStructure[Sequence @@ indices][temp]
+	];
 
 (*###########################################*)
 (*----------Gauge group definitions----------*)
@@ -335,6 +426,3 @@ DefineU1Group[group_Symbol, power_Integer:1] :=
 		];
 		fStruct[group, __] = 0;
 	];
-
-
-End[]

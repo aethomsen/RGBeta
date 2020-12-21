@@ -2,7 +2,62 @@
 	Author: Anders Eller Thomsen
 	Released under the MIT license (see 'LICENSE').
 *)
-Begin["Betas`"]
+Package["RGBeta`"]
+
+(*##################################*)
+(*----------Package Export----------*)
+(*##################################*)
+
+PackageExport["AnomalousDimension"]
+PackageExport["AnomalousDimTerm"]
+PackageExport["BetFuntion"]
+PackageExport["BetaTerm"]
+PackageExport["CheckProjection"]
+PackageExport["Finalize"]
+PackageExport["QuarticBetaFunctions"]
+
+PackageScope["AntiSym"]
+PackageScope["ResetBetas"]
+PackageScope["Sym"]
+PackageScope["Sym4"]
+PackageScope["Tdot"]
+PackageScope["Ttimes"]
+PackageScope["TsSym"]
+PackageScope["TsSym4"]
+
+(*#####################################*)
+(*----------Usage Definitions----------*)
+(*#####################################*)
+
+AnomalousDimension::usage =
+	"AnomalousDimTerm[field, loop] gives the anomalous dimension of the given field up to the l-loop order."
+AnomalousDimTerm::usage =
+	"AnomalousDimTerm[field, loop] gives the l-loop contribution to the anomalous dimension of the given field."
+BetaFunction::usage =
+	"BetaFunction[coupling, loop] computes the entire beta function of the coupling to the given loop order."
+BetaTerm::usage =
+	"BetaTerm[coupling, loop] computes the l-loop contribution to the beta function of the coupling."
+CheckProjection::usage =
+	"CheckProjection[coupling] returns the result of the automatic projection operator of the coupling on the corresponding generalized coupling."
+Finalize::usage =
+	"Finalize[expr] performs additional refinement of beta function expressions. Only works for expressions with up to 2 nontrivial flavor indices."
+QuarticBetaFunctions::usage =
+	"QuarticBetaFunctions[loop] returns all quartic beta functions to the given loop order using diagonalized projectors."
+
+AntiSym::usage =
+	"AntiSym[a, b][expr] is an internal function for antisymmetrizing expr in a and b."
+ResetBetas::usage =
+	"ResetBetas[] is a function used to dump all internally stored beta computations from the kernel."
+Sym::usage =
+	"Sym[a1, a2, a3, a4][expr] is an internal function for symmetrizing expr over up to four dummy indices."
+Sym4::usage =
+	"Sym4[a1, a2, a3, a4][expr] averages the expression over the 4 ways of switching a1 with one of the indices."
+Tdot::usage =
+	"Tdot[a, b,...] is an internal function the sequantially expands the matrix product of all the arguments."
+Ttimes::usage =
+	"Ttimes[a, b,...] is an internal function the sequantially expands the product of all the arguments."
+TsSym::usage = TsSym4::usage =
+	"TsSym and TsSym4 are functions used to symmetrize TStructures in their indices."
 
 (*#####################################*)
 (*----------Utility functions----------*)
@@ -18,7 +73,7 @@ SymmetrizeTS[TStructure[tsInds__][sa_], indices_, permutations_] :=
 
 		rules = Delete[ArrayRules@ sa, -1];
 		rules = Table[#1[[Ordering@ posPermutations[[n]] ]] -> (#2 /. subs[[n]]), {n, numPerm}] & @@@ rules;
-		TStructure[tsInds]@ SparseArray[FieldsAndCouplings`GatherToList@ rules, Dimensions@ sa] /numPerm
+		TStructure[tsInds]@ SparseArray[GatherToList@ rules, Dimensions@ sa] /numPerm
 	];
 
 TsSym[i1_, i2_][expr_] := expr /. TStructure[inds__][sa_] :> SymmetrizeTS[TStructure[inds]@ sa, {i1, i2}, {{1, 2}, {2, 1}}];
@@ -294,6 +349,3 @@ CheckProjection[coupling_Symbol] :=
 			$Failed
 		] //RefineGroupStructures //CanonizeMatrices
 	];
-
-
-End[]
