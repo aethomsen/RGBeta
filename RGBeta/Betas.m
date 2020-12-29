@@ -198,7 +198,7 @@ Options[BetaFunction] = {RescaledCouplings -> False, FourDimensions -> True};
 BetaFunction::unkown = "The coupling `1` has not been defined."
 BetaFunction::loopNumber = "The `1` beta function has only been implemented up to `2` loops."
 BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
-	Block[{coef = 4 Pi, firstTerm = 0, l},
+	Module[{coef = 4 Pi, firstTerm = 0, l},
 		Switch[$couplings @ coupling
 		,gr_ /; MemberQ[Keys @ $gaugeGroups, gr],
 			If[loop > 3 || loop < 0,
@@ -225,7 +225,7 @@ BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
 QuarticBetaFunctions::singular = "The projection matrix is singular. Some of the couplings may be redundant."
 QuarticBetaFunctions::loopNumber = "The quartic beta function has only been implemented up to 2 loops."
 QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
-	Block[{betaFunctions, couplings, qProjections, invMatrix},
+	Module[{betaFunctions, couplings, qProjections, invMatrix},
 		If[loop > 2,
 			Message[QuarticBetaFunctions::loopNumber];
 			Return @ $Failed;
@@ -255,7 +255,7 @@ QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 AnomalousDimTerm::loopNumber = "The `1` scalar anomalous dimension has only been implemented up to `2` loops."
 AnomalousDimTerm::unkown = "The field `1` has not been defined."
 AnomalousDimTerm[field_, loop_Integer] :=
-	Block[{anomDim},
+	Module[{anomDim},
 		(*Determines the correct tensor structure based on the field type*)
 		Switch[field
 		,x_ /; MemberQ[Keys @ $fermions, x],
@@ -286,7 +286,7 @@ Options[AnomalousDimension] = {RescaledCouplings -> False};
 AnomalousDimension::unkown = "The coupling `1` has not been defined."
 AnomalousDimension::loopNumber = "The anomalous dimension has only been implemented up to `1` loops."
 AnomalousDimension[field_, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
-	Block[{coef = 4 Pi, l},
+	Module[{coef = 4 Pi, l},
 		(* Checks if the input request has been implemented.*)
 		Switch[field
 		,x_ /; MemberQ[Keys @ $fermions, x] || MemberQ[Keys @ $scalars, x],

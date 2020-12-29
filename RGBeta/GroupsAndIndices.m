@@ -109,7 +109,7 @@ TStructure::usage =
 
 (*An overall function which sets up the properties of symbols wrt. implicit summation. It flushes all previous definitions.*)
 ReInitializeSymbols[] :=
-	Block[{},
+	Module[{},
 		(*Dim[rep] is the dimension of a given representation*)
 		Clear@ Dim;
 		Dim[Bar[rep_]] := Dim[rep];
@@ -201,20 +201,18 @@ ReInitializeSymbols[] :=
 	];
 
 (*Function applying the group *)
-RefineGroupStructures[expr_] := Block[{replace},
 	replace = {
-			tGen[group_[adj], A_, B_, C_] :> - Module[{a, b, c}, 2 AntiSym[A, B][tGen[group@ fund, A, a, b] tGen[group@ fund, B, b, c]] tGen[group@ fund, C , c, a]
-				] / TraceNormalization @ group @ fund,
-			tGen[group_[S2], A_, a_, b_] :> 2 Sym[a@1, a@2] @ Sym[b@1, b@2][tGen[group@ fund, A, a@1, b@1] del[group@ fund, a@2, b@2]],
-			delS2[group_, a_, i_, j_] :> Sym[a@1, a@2][ del[group@ fund, a@1, i] del[group@ fund, a@2, j]],
-			tGen[group_[A2], A_, a_, b_] :> 2 AntiSym[a@1, a@2] @ AntiSym[b@1, b@2][tGen[group@ fund, A, a@1, b@1] del[group@ fund, a@2, b@2]],
-			delA2[group_, a_, i_, j_] :> AntiSym[a@1, a@2][ del[group@ fund, a@1, i] del[group@ fund, a@2, j]],
-			del[group_[S2], a_ ,b_] :> twoIndexRepDelta[group @ S2, a ,b],
-			del[group_[A2], a_ ,b_] :> twoIndexRepDelta[group @ A2, a ,b]
-			(*del[group_[A2], a_ ,b_] :> AntiSym[a @ 1, a @ 2 ][del[group@fund, a@1, b@1] del[group@fund, a@2, b@2] ]*)
-		};
-	expr /. replace // Expand
-];
+		tGen[group_[adj], A_, B_, C_] :> - Module[{a, b, c}, 2 AntiSym[A, B][tGen[group@ fund, A, a, b] tGen[group@ fund, B, b, c]] tGen[group@ fund, C , c, a]
+			] / TraceNormalization @ group @ fund,
+		del[group_[S2], a_ ,b_] :> twoIndexRepDelta[group @ S2, a ,b],
+		del[group_[A2], a_ ,b_] :> twoIndexRepDelta[group @ A2, a ,b],
+		tGen[group_[S2], A_, a_, b_] -> 2 Sym[a@1, a@2] @ Sym[b@1, b@2][tGen[group@ fund, A, a@1, b@1] del[group@ fund, a@2, b@2]],
+		delS2[group_, a_, i_, j_] -> Sym[a@1, a@2][ del[group@ fund, a@1, i] del[group@ fund, a@2, j]],
+		tGen[group_[A2], A_, a_, b_] -> 2 AntiSym[a@1, a@2] @ AntiSym[b@1, b@2][tGen[group@ fund, A, a@1, b@1] del[group@ fund, a@2, b@2]],
+		delA2[group_, a_, i_, j_] -> AntiSym[a@1, a@2][ del[group@ fund, a@1, i] del[group@ fund, a@2, j]]
+		(*del[group_[A2], a_ ,b_] :> AntiSym[a @ 1, a @ 2 ][del[group@fund, a@1, b@1] del[group@fund, a@2, b@2] ]*)
+	};
+RefineGroupStructures[expr_] := expr /. replace // Expand;
 
 (*Adds case to the system built in function Tr and Dot, to deal with substituting couplings for 0.*)
 	Unprotect[Tr, Dot];
@@ -271,7 +269,7 @@ TStructure[][expr_] = expr;
 TStructure[___][0] = 0;
 (* Duplicate indices are contracted as per dummy index convention *)
 TStructure[ind__][ar_] /; ! DuplicateFreeQ@ List@ ind :=
-	Block[{cont, indices, temp},
+	Module[{cont, indices, temp},
 		indices = List@ ind;
 		temp = ar;
 		While[!DuplicateFreeQ@ indices,
@@ -302,7 +300,7 @@ DefineLieGroup::unkown = "`1` is not a Lie group or has not been implemented.";
 DefineLieGroup::integerU1 = "U(1) groups should have a positive integer power";
 DefineLieGroup[groupName_Symbol, U1] = DefineLieGroup[groupName, U1 @ 1 ];
 DefineLieGroup[groupName_Symbol, lieGroup_Symbol[n_Integer|n_Symbol] ] :=
-	Block[{},
+	Module[{},
 		Switch[lieGroup
 		,SO,
 			DefineSOGroup[groupName, n];
@@ -354,7 +352,7 @@ DefineSOGroup[group_Symbol, n_Integer|n_Symbol] :=
 
 (*Initialization for an Sp(n) gauge group.*)
 DefineSpGroup[group_Symbol, n_Integer|n_Symbol] :=
-	Block[{projection},
+	Module[{projection},
 		(*Fundamental*)
 		Dim[group[fund]] = n;
 		TraceNormalization[group[fund]] = 1/2;
@@ -380,7 +378,7 @@ DefineSpGroup[group_Symbol, n_Integer|n_Symbol] :=
 
 (*Initialization for an SU(n) Lie group.*)
 DefineSUGroup[group_Symbol, n_Integer|n_Symbol] :=
-	Block[{},
+	Module[{},
 		(*Fundamental*)
 		Dim[group[fund]] = n;
 		TraceNormalization[group[fund]] = 1/2;
@@ -412,7 +410,7 @@ DefineSUGroup[group_Symbol, n_Integer|n_Symbol] :=
 
 (*Initialization for a U(1) gauge group.*)
 DefineU1Group[group_Symbol, power_Integer:1] :=
-	Block[{},
+	Module[{},
 		Switch[power
 		,1,
 			del[group[_], ___] = 1;
