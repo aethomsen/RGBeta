@@ -842,6 +842,7 @@ CouplingTensorMap[info_, fields_, coupInds_, allInds_, permutations_, conj_:Fals
 (*The general gauge coupling matrix G^2_{AB} used in the computation of the beta function tensors*)
 G2Matrix[$dA_, $dB_] :=
 	Module[{temp, group, groupInfo, dim = Length@ $gaugeGroups {1, 1} },
+		If[MemberQ[dim, 0], Return@ 0;];
 		temp = Table[groupInfo = $gaugeGroups@ group;
 				$fieldIndexMap["GaugeBosons"] /@ (group {1, 1}) ->
 				If[MatchQ[groupInfo@ LieGroup, U1[n_] /; n > 1],
@@ -857,7 +858,7 @@ G2Matrix[$dA_, $dB_] :=
 Tferm[$dA_, $di_, $dj_] :=
 	Module[{tLeft, ferm, gRep, group, otherInds,
 		dim = {Length@ $fieldIndexMap["GaugeBosons"], Length@ $fieldIndexMap["Fermions"], Length@ $fieldIndexMap["Fermions"]}},
-
+		If[MemberQ[dim, 0], Return@ {{0, 0}, {0, 0}};];
 		tLeft = Evaluate@ Flatten@ Table[
 			group = Head@ If[Head@ gRep === Bar, gRep[[1]], gRep];
 			otherInds = DeleteCases[$fermions[ferm, GaugeRep], gRep] ~ Join ~ $fermions[ferm, FlavorIndices];
@@ -874,7 +875,7 @@ TfermTil[A_, i_, j_] := {{0, 1}, {1, 0}}.Tferm[A, i, j].{{0, 1}, {1, 0}};
 Tscal[$dA_, $da_, $db_] :=
 	Module[{temp, scal, gRep, group, entries,
 		dim = {Length@ $fieldIndexMap["GaugeBosons"], Length@ $fieldIndexMap["Scalars"], Length@ $fieldIndexMap["Scalars"]}},
-
+		If[MemberQ[dim, 0], Return@ 0;];
 		(* A factor 1/2 included for the anti symmetrization of the external scalar indices *)
 		entries = Flatten @ Table[
 			group = Head@ If[Head@ gRep === Bar, gRep[[1]], gRep];
@@ -889,6 +890,7 @@ Tscal[$dA_, $da_, $db_] :=
 (*The general gauge structure constants G^{-2}_{AD} f^{DBC} used in the computation of the beta function tensors*)
 FGauge[$dA_, $dB_, $dC_] :=
 	Module[{entries, group, groupInfo, dim = Length@ $fieldIndexMap["GaugeBosons"] {1, 1, 1}},
+		If[MemberQ[dim, 0], Return@ 0;];
 		entries = Table[groupInfo = $gaugeGroups@ group;
 				$fieldIndexMap["GaugeBosons"] /@ (group {1, 1, 1}) ->
 				If[MatchQ[groupInfo@ LieGroup, U1[n_]],
@@ -904,6 +906,7 @@ FGauge[$dA_, $dB_, $dC_] :=
 Yuk[$da_, $di_, $dj_, massive_:False] :=
 	Module[{couplingInfo, yL, yR,
 		dim = {Length@ $fieldIndexMap["Scalars"], Length@ $fieldIndexMap["Fermions"], Length@ $fieldIndexMap["Fermions"]} },
+		If[MemberQ[dim, 0], Return@ {{0, 0}, {0, 0}};];
 		yL = Table[
 				CouplingTensorMap[couplingInfo, couplingInfo@ Fields, {$da, $di, $dj},
 					{$da, $di, $dj},  {{1, 2, 3}, {1, 3, 2}}]
@@ -932,6 +935,7 @@ YukTil[$da_, $di_, $dj_, massive_:False] := {{0, 1}, {1, 0}}.Yuk[$da, $di, $dj, 
 (*Genral quartic coupling used in the computation of the beta function tensors.*)
 Lam[$da_, $db_, $dc_, $dd_, massive_:False] :=
 	Module[{couplingInfo, temp, dim = Length@ $fieldIndexMap["Scalars"] {1, 1, 1, 1}},
+		If[MemberQ[dim, 0], Return@ 0;];
 		temp = Table[
 				Join[CouplingTensorMap[couplingInfo, couplingInfo@ Fields, {$da, $db, $dc, $dd},
 						{$da, $db, $dc, $dd}, couplingInfo@ UniqueArrangements],

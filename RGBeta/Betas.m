@@ -10,7 +10,7 @@ Package["RGBeta`"]
 
 PackageExport["AnomalousDimension"]
 PackageExport["AnomalousDimTerm"]
-PackageExport["BetFuntion"]
+PackageExport["BetaFunction"]
 PackageExport["BetaTerm"]
 PackageExport["CheckProjection"]
 PackageExport["Finalize"]
@@ -136,7 +136,7 @@ BetaTerm[coupling_, loop_Integer] :=
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
 			If[loop > 3 || loop < 0,
 				Message[BetaTerm::loopNumber, "gauge", 3];
-				Return @ $Failed;
+				Abort[];
 			];
 			group = $couplings @ coupling;
 			beta = GaugeTensors[coupling, loop] /. $gaugeCoefficients // Expand;
@@ -149,35 +149,35 @@ BetaTerm[coupling_, loop_Integer] :=
 		,Yukawa,
 			If[loop > 2 || loop < 0,
 				Message[BetaTerm::loopNumber, "Yukawa", 2];
-				Return @ $Failed;
+				Abort[];
 			];
 			beta = YukawaTensors[coupling, loop] /. $yukawaCoefficients // Expand;
 
 		,Quartic,
 			If[loop > 2 || loop < 0,
 				Message[BetaTerm::loopNumber, "quartic", 2];
-				Return @ $Failed;
+				Abort[];
 			];
 			beta = QuarticTensors[coupling, loop] /. $quarticCoefficients // Expand;
 
 		,FermionMass,
 			If[loop > 2 || loop < 0,
 				Message[BetaTerm::loopNumber, "fermion mass", 2];
-				Return @ $Failed;
+				Abort[];
 			];
 			beta = FermionMassTensors[coupling, loop] /. $yukawaCoefficients // Expand;
 
 		,Trilinear,
 			If[loop > 2 || loop < 0,
 				Message[BetaTerm::loopNumber, "trilinear scalar", 2];
-				Return @ $Failed;
+				Abort[];
 			];
 			beta = ScalarMassiveTensors[coupling, loop] /. $quarticCoefficients // Expand;
 
 		,ScalarMass,
 			If[loop > 2 || loop < 0,
 				Message[BetaTerm::loopNumber, "scalar mass", 2];
-				Return @ $Failed;
+				Abort[];
 			];
 			If[loop === 0,
 				Return @ 0;
@@ -186,7 +186,7 @@ BetaTerm[coupling_, loop_Integer] :=
 
 		,_Missing,
 			Message[BetaTerm::unkown, coupling];
-			Return @ $Failed;
+			Abort[];
 		];
 
 		(*Canonically order coupling indices if any*)
@@ -203,16 +203,16 @@ BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
 		,gr_ /; MemberQ[Keys @ $gaugeGroups, gr],
 			If[loop > 3 || loop < 0,
 				Message[BetaFunction::loopNumber, "gauge", 3];
-				Return @ $Failed;
+				Abort[];
 			];
 		,Yukawa|Quartic|ScalarMass|Trilinear|FermionMass,
 			If[loop > 2 || loop < 0,
 				Message[BetaFunction::loopNumber, $couplings @ coupling, 2];
-				Return @ $Failed;
+				Abort[];
 			];
 		,_,
 			Message[BetaFunction::unkown, coupling];
-			Return @ $Failed;
+			Abort[];
 		];
 
 		If[OptionValue @ RescaledCouplings, coef = 1; ];
@@ -228,7 +228,7 @@ QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 	Module[{betaFunctions, couplings, qProjections, invMatrix},
 		If[loop > 2,
 			Message[QuarticBetaFunctions::loopNumber];
-			Return @ $Failed;
+			Abort[];
 		];
 
 		couplings = Keys @ $quartics;
@@ -239,7 +239,7 @@ QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 		invMatrix = Transpose @ Table[Simplify @ D[qProjections, c], {c, couplings}];
 		If[Det @ invMatrix === 0,
 			Message[QuarticBetaFunctions::singular];
-			Return @ $Failed;
+			Abort[];
 		];
 		invMatrix = Inverse @ invMatrix;
 
@@ -261,20 +261,20 @@ AnomalousDimTerm[field_, loop_Integer] :=
 		,x_ /; MemberQ[Keys @ $fermions, x],
 			If[loop > 2 || loop < 1,
 				Message[AnomalousDimTerm::loopNumber, "fermion", 2];
-				Return @ $Failed;
+				Abort[];
 			];
 			anomDim = FermionAnomalousTensors[field, loop] /. $fermionAnomalousCoefficients;
 
 		,x_ /; MemberQ[Keys @ $scalars, x],
 			If[loop > 2 || loop < 1,
 				Message[AnomalousDimTerm::loopNumber, "scalar", 2];
-				Return @ $Failed;
+				Abort[];
 			];
 			anomDim = ScalarAnomalousTensors[field, loop] /. $scalarAnomalousCoefficients;
 
 		,_,
 			Message[AnomalousDimTerm::unkown, field];
-			Return @ $Failed;
+			Abort[];
 		];
 
 		(*Canonically order coupling indices if any*)
@@ -292,11 +292,11 @@ AnomalousDimension[field_, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
 		,x_ /; MemberQ[Keys @ $fermions, x] || MemberQ[Keys @ $scalars, x],
 			If[loop > 2 || loop < 1,
 				Message[AnomalousDimension::loopNumber, 2];
-				Return @ $Failed;
+				Abort[];
 			];
 		,_,
 			Message[AnomalousDimension::unkown, field];
-			Return @ $Failed;
+			Abort[];
 		];
 
 		If[OptionValue @ RescaledCouplings, coef = 1;];
@@ -324,7 +324,7 @@ Finalize[expr_, opt:OptionsPattern[]] ? OptionsCheck :=
 			Trans[a_List] /; MatrixQ[a] := Transpose @ a;
 			Trans[a_List] /; VectorQ[a] := a;
 		Matrix[y__][__] := Dot[y];
-		out
+		out/. {del[_, $i, $j]-> 1}
 	];
 
 (*Function to check the projected value of a coupling*)
@@ -347,5 +347,5 @@ CheckProjection[coupling_Symbol] :=
 		,_Missing,
 			Message[CheckProjection::unkown, coupling];
 			$Failed
-		] //RefineGroupStructures //CanonizeMatrices
+		]// RefineGroupStructures// CanonizeMatrices// Simplify
 	];
