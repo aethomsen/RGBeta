@@ -10,6 +10,7 @@ Package["RGBeta`"]
 
 PackageExport["Acoef"]
 PackageExport["Bcoef"]
+PackageExport["Ucoef"]
 
 PackageScope["$fermionAnomalousCoefficients"]
 PackageScope["$gaugeCoefficients"]
@@ -24,6 +25,9 @@ PackageScope["QuarticTensors"]
 PackageScope["ScalarAnomalousTensors"]
 PackageScope["ScalarMassiveTensors"]
 PackageScope["YukawaTensors"]
+
+PackageScope["FermionUpsilonTensors"]
+PackageScope["ScalarUpsilonTensors"]
 
 (*#####################################*)
 (*----------Usage Definitions----------*)
@@ -298,6 +302,29 @@ ScalarAnomalousTensors[field_, loop_Integer] :=
 		,StringForm["Evaluating term `` / ``", n, diagrams]]
 	];
 
+(* For the evlauation of upsilon tensors*)
+MinusHc[i1_, i2_][expr_]:= expr - (sig1. expr. sig1/. TStructure[inds__][sa_] :>
+	SymmetrizeTS[TStructure[inds]@ sa, {i1, i2}, {{2, 1}}]);
+MinusTrans[i1_, i2_][expr_]:= expr - (expr/. TStructure[inds__][sa_] :>
+	SymmetrizeTS[TStructure[inds]@ sa, {i1, i2}, {{2, 1}}]);
+
+FermionUpsilonTensors[field_, loop_Integer] :=
+	Module[{diagrams = {0, 0, 6}[[loop]], n},
+		Monitor[
+			Sum[
+				Ucoef[1, loop, n] Tr@ Tdot[$fermions[field, Projector][$i, $j], UpsilonTensor[1, loop, n] = UpsilonTensor[1, loop, n] ],
+			{n, diagrams}]
+		,StringForm["Evaluating term `` / ``", n, diagrams]]
+	];
+
+ScalarUpsilonTensors[field_, loop_Integer] :=
+	Module[{diagrams = {0, 0, 3}[[loop]], n},
+		Monitor[
+			Sum[
+				Ucoef[2, loop, n] Ttimes[$scalars[field, Projector][$a, $b], UpsilonTensor[2, loop, n] = UpsilonTensor[2, loop, n] ],
+			{n, diagrams}]
+		,StringForm["Evaluating term `` / ``", n, diagrams]]
+	];
 
 
 (*#####################################*)
