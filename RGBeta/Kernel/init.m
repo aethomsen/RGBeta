@@ -1,11 +1,11 @@
 (* Generate warning for Mathematica versions earlier than 11.0.0 *)
 If[$VersionNumber < 11.0,
-CellPrint[{
-TextCell["RGBeta` was developed for Mathematica 11.0.0 and later.
-Your current Mathematica version [" <> ToString@$Version <> "] might not be compatible.
-In case you are experiencing problems with SuperTracer`, please update your Mathematica version.",
-"Text",Background->LightRed]
-}]
+	CellPrint[{
+		TextCell["RGBeta` was developed for Mathematica 11.0.0 and later.
+		Your current Mathematica version [" <> ToString@$Version <> "] might not be compatible.
+		In case you are experiencing problems with RGBeta`, please update your Mathematica version.",
+		"Text",Background->LightRed]
+	}]
 ]
 
 
@@ -41,7 +41,7 @@ If[MemberQ[$Packages,"RGBeta`"],
 
 	Print[
 	"by Anders Eller Thomsen \n",
-	(* "Reference: ",Hyperlink["arXiv:2021.xxxx","https://arxiv.org/abs/2021.xxxxx"],"\n", *)
+	(* "Reference: ",Hyperlink["arXiv:2101.xxxx","https://arxiv.org/abs/2101.xxxxx"],"\n", *)
 	"Website: ",Hyperlink["https://github.com/aethomsen/RGBeta","https://github.com/aethomsen/RGBeta"]
 	];
 ];

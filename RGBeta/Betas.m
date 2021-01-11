@@ -225,7 +225,7 @@ BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
 QuarticBetaFunctions::singular = "The projection matrix is singular. Some of the couplings may be redundant."
 QuarticBetaFunctions::loopNumber = "The quartic beta function has only been implemented up to 2 loops."
 QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
-	Module[{betaFunctions, couplings, qProjections, invMatrix},
+	Module[{betaFunctions, couplings, qProjections, invMatrix, c},
 		If[loop > 2,
 			Message[QuarticBetaFunctions::loopNumber];
 			Abort[];

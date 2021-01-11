@@ -17,6 +17,8 @@ PackageExport["fStruct"]
 PackageExport["lcSymb"]
 PackageExport["tGen"]
 PackageExport["Dim"]
+PackageExport["Casimir2"]
+PackageExport["TraceNormalization"]
 
 PackageExport["SO"]
 PackageExport["Sp"]
@@ -34,9 +36,6 @@ PackageExport["Matrix"]
 PackageExport["SetReal"]
 PackageExport["Tensor"]
 PackageExport["Trans"]
-
-PackageScope["Casimir2"]
-PackageScope["TraceNormalization"]
 
 PackageScope["RefineGroupStructures"]
 PackageScope["ReInitializeSymbols"]
@@ -128,9 +127,9 @@ ReInitializeSymbols[] :=
 
 		(*del for taking specific index*)
 		Clear @ delIndex;
-		delIndex /: del[rep_, a___, x_Symbol, b___] delIndex[rep_, c___, x_Symbol, d___] = delIndex[rep, c, a, b, d];
-		delIndex /: delIndex[rep_, a___, x_Symbol, b___] delIndex[rep_, c___, x_Symbol, d___] = delIndex[rep, c, a, b, d];
-		delIndex /: Power[delIndex[rep_, a_, b_], 2] = 1;
+		delIndex /: del[rep_, a___, x:Except[_Integer], b___] delIndex[rep_, c___, x:Except[_Integer], d___] = delIndex[rep, c, a, b, d];
+		delIndex /: delIndex[rep_, a___, x:Except[_Integer], b___] delIndex[rep_, c___, x:Except[_Integer], d___] = delIndex[rep, c, a, b, d];
+		delIndex /: Power[delIndex[rep_, OrderlessPatternSequence[Except[_Integer], _]], 2] = 1;
 		delIndex[rep_, a_Integer, b_Integer] := KroneckerDelta[a, b];
 
 		(*Default properties for 2-index anti-symmetric inavariants.*)
