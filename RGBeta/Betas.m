@@ -312,19 +312,12 @@ AnomalousDimension[field_, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
 further Mathematica manipulations. Can also be used to specify particular cases for coupling matrices.*)
 Options[Finalize] = {Parameterizations -> {}, BarToConjugate -> False};
 Finalize[expr_, opt:OptionsPattern[]] ? OptionsCheck :=
-	Internal`InheritedBlock[{out, Bar, Trans, Matrix},
+	Module[{out},
 		out = CanonizeMatrices @ expr /. OptionValue @ Parameterizations;
-			Bar[a_List] := Bar /@ a;
-			Bar[Times[a_, b__]] := Bar /@ Times[a, b];
-			Bar[Plus[a_, b__]] := Bar /@ Plus[a, b];
-			If[OptionValue @ BarToConjugate,
-				Bar[a_Symbol] := Conjugate @ a;
-			];
-			Bar[a_] /; NumberQ[a] := Conjugate @ a;
-			Trans[a_List] /; MatrixQ[a] := Transpose @ a;
-			Trans[a_List] /; VectorQ[a] := a;
-		Matrix[y__][__] := Dot[y];
-		out/. {del[_, $i, $j]-> 1}
+		If[OptionValue @ BarToConjugate,
+			out = out/. Bar[a_Symbol] :> Conjugate@ a;
+		];
+		out/. Matrix[y__][__] :> Dot[y] /. {del[_, $i, $j]-> 1}
 	];
 
 (*Function to check the projected value of a coupling*)

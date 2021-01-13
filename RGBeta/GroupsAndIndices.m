@@ -216,16 +216,23 @@ RefineGroupStructures[expr_] := expr /. replace // Expand;
 (*Adds case to the system built in function Tr and Dot, to deal with substituting couplings for 0.*)
 	Unprotect[Tr, Dot];
 		Dot[___, 0, ___] = 0;
+		Dot[a___, x_? NumericQ b_, c___] := x Dot[a, b, c];
 		Tr[0] = 0;
+		Tr[x_? NumericQ a_ ] = x Tr@ a;
 	Protect[Tr, Dot];
 
 (*Complex conjugation and transposition of matrices*)
 	Bar[Bar[x_]] = x;
 	Bar[0] = 0;
+	Bar[a:(_List| _Times| _Plus)] := Bar /@ a;
+	Bar[a_] /; NumericQ[a] := Conjugate @ a;
 	SetReal[x_] := (Bar @ x = x;);
 	SetReal[x_, y__] := (SetReal @ x; SetReal @ y );
+
 	Trans[Trans[x_]] := x;
 	Trans[0] = 0;
+	Trans[x_? NumericQ a_]:= x Trans@ a;
+	Trans[a_Plus]:= Trans /@ a;
 	Trans[a_List] /; VectorQ[a] := a;
 	Trans[a_List] /; MatrixQ[a] := Transpose @ a;
 (*Matrix head for symbolic matrix manipulations*)
