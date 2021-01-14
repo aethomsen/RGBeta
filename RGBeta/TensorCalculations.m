@@ -222,7 +222,7 @@ GaugeTensors[coupling_Symbol, loop_Integer] :=
 		proj = Ttimes[G2Matrix[$A, C1], $gaugeGroups[$couplings @ coupling, Projector][C1, C2], G2Matrix[C2, $B]];
 		Monitor[
 			bTerm = Sum[
-				Bcoef[1, loop, n] Ttimes[proj, BetaTensor[1, loop, n] ],
+				Bcoef[1, loop, n] RefineGroupStructures @ Ttimes[proj, BetaTensor[1, loop, n] ],
 			{n, diagrams}];
 		,StringForm["Evaluating term `` / ``", n, diagrams]];
 
@@ -238,7 +238,7 @@ YukawaTensors[coupling_Symbol, loop_Integer] :=
 	Module[{diagrams = {1, 5, 33, 308}[[loop + 1]], n},
 		Monitor[
 			Sum[
-				Bcoef[2, loop, n] Tr@ Tdot[$yukawas[coupling, Projector][$a, $i, $j], BetaTensor[2, loop, n] ],
+				Bcoef[2, loop, n] RefineGroupStructures @ Tr@ Tdot[$yukawas[coupling, Projector][$a, $i, $j], BetaTensor[2, loop, n] ],
 			{n, diagrams}]
 		,StringForm["Evaluating term `` / ``", n, diagrams] ]
 	];
@@ -247,7 +247,7 @@ FermionMassTensors[coupling_Symbol, loop_Integer] :=
 	Module[{diagrams = {1, 5, 33}[[loop + 1]], n},
 		Monitor[
 			Sum[
-				Bcoef[2, loop, n] Tr@ Tdot[$fermionMasses[coupling, Projector][$a, $i, $j], BetaTensor[4, loop, n] ],
+				Bcoef[2, loop, n] RefineGroupStructures @ Tr@ Tdot[$fermionMasses[coupling, Projector][$a, $i, $j], BetaTensor[4, loop, n] ],
 			{n, diagrams}]
 		,StringForm["Evaluating term `` / ``", n, diagrams] ]
 	];
@@ -256,7 +256,7 @@ QuarticTensors[coupling_Symbol, loop_Integer] :=
 	Module[{diagrams = {1, 5, 33}[[loop + 1]], n},
 		Monitor[
 			Sum[
-				Bcoef[3, loop, n] Ttimes[$quartics[coupling, Projector][$a, $b, $c, $d],
+				Bcoef[3, loop, n] RefineGroupStructures @ Ttimes[$quartics[coupling, Projector][$a, $b, $c, $d],
 				BetaTensor[3, loop, n] ],
 			{n, diagrams}]
 		,StringForm["Evaluating term `` / ``", n, diagrams]]
@@ -268,12 +268,12 @@ ScalarMassiveTensors[coupling_Symbol, loop_Integer] :=
 			Switch[$couplings @ coupling
 			,Trilinear,
 				Sum[
-					Bcoef[3, loop, n] Ttimes[$trilinears[coupling, Projector][$a, $b, $c, $d],
+					Bcoef[3, loop, n] RefineGroupStructures @ Ttimes[$trilinears[coupling, Projector][$a, $b, $c, $d],
 					BetaTensor[5, loop, n] ],
 				{n, diagrams}]
 			,ScalarMass,
 				Sum[
-					Bcoef[3, loop, n] Ttimes[$scalarMasses[coupling, Projector][$a, $b, $c, $d],
+					Bcoef[3, loop, n] RefineGroupStructures @ Ttimes[$scalarMasses[coupling, Projector][$a, $b, $c, $d],
 					BetaTensor[5, loop, n] ],
 				{n, diagrams}]
 			]
@@ -284,7 +284,7 @@ FermionAnomalousTensors[field_, loop_Integer] :=
 	Module[{diagrams = {2, 9}[[loop]], n},
 		Monitor[
 			Sum[
-				Acoef[1, loop, n] Tr@ Tdot[$fermions[field, Projector][$i, $j], AnomalousTensor[1, loop, n] = AnomalousTensor[1, loop, n] ],
+				Acoef[1, loop, n] RefineGroupStructures @ Tr@ Tdot[$fermions[field, Projector][$i, $j], AnomalousTensor[1, loop, n] = AnomalousTensor[1, loop, n] ],
 			{n, diagrams}]
 		,StringForm["Evaluating term `` / ``", n, diagrams]]
 	];
@@ -293,7 +293,7 @@ ScalarAnomalousTensors[field_, loop_Integer] :=
 	Module[{diagrams = {2, 8}[[loop]], n},
 		Monitor[
 			Sum[
-				Acoef[2, loop, n] Ttimes[$scalars[field, Projector][$a, $b], AnomalousTensor[2, loop, n] = AnomalousTensor[2, loop, n] ],
+				Acoef[2, loop, n] RefineGroupStructures @ Ttimes[$scalars[field, Projector][$a, $b], AnomalousTensor[2, loop, n] = AnomalousTensor[2, loop, n] ],
 			{n, diagrams}]
 		,StringForm["Evaluating term `` / ``", n, diagrams]]
 	];

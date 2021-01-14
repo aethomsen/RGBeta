@@ -101,6 +101,7 @@ TStructure::usage =
 	Format[Trans[Bar[x_]], StandardForm] := x^Style[Global`\[Dagger], Bold, 12];
 	Format[Matrix[x__][h1_[i1_] ], StandardForm] := Subscript[Dot[x], i1];
 	Format[Matrix[x__][h1_[i1_], h2_[i2_]], StandardForm] := Subscript[Dot[x], i1, i2];
+	Format[Tensor[x_][inds__], StandardForm] := Subscript[x, Sequence@@ {inds}[[;;, 1]]];
 
 (*#############################################*)
 (*----------Generic tensor properties----------*)
@@ -332,7 +333,7 @@ DefineLieGroup[groupName_Symbol, lieGroup_Symbol[n_Integer|n_Symbol] ] :=
 
 (*Initialization for an SO(n) gauge group.*)
 DefineSOGroup[group_Symbol, n_Integer|n_Symbol] :=
-	Block[{projection},
+	Module[{},
 		(*Fundamental*)
 		Dim[group[fund]] = n;
 		TraceNormalization[group[fund]] = 1/2;
@@ -358,7 +359,7 @@ DefineSOGroup[group_Symbol, n_Integer|n_Symbol] :=
 
 (*Initialization for an Sp(n) gauge group.*)
 DefineSpGroup[group_Symbol, n_Integer|n_Symbol] :=
-	Module[{projection},
+	Module[{},
 		(*Fundamental*)
 		Dim[group[fund]] = n;
 		TraceNormalization[group[fund]] = 1/2;
