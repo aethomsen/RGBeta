@@ -159,8 +159,6 @@ BetaTerm[coupling_, loop_Integer] :=
 				Abort[];
 			];
 			beta = QuarticTensors[coupling, loop] /. $quarticCoefficients // Expand;
-			(* {time, beta} = QuarticTensors[coupling, loop] /. $quarticCoefficients // Expand// Timing;
-			Print@ time; *)
 
 		,FermionMass,
 			If[loop > 2 || loop < 0,
