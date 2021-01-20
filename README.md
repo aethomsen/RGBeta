@@ -3,7 +3,7 @@ RGBeta is a Mathematica package that allows the user to extract RG beta-function
 
 Currently the project is in beta version. The accompanying paper and manual is forthcomming.  
 
-## Installation
+## Installation and use
 The simplest way to download and install RGBeta is to run the command
 > Import["https://raw.githubusercontent.com/aethomsen/RGBeta/master/Install.m"]
 
@@ -14,6 +14,7 @@ As an alternative to the more permanent installation, simply download the github
 > SetDirectory@NotebookDirectory[];
 > << RGBeta`
 
+The core use of RGBeta is described in the manual. The *Documentation* folder contains a tutorial notebook and a notebook with sample models, which can be used by the user. When using RGBeta to extract the 3-loop gauge beta functions, please also consider citing [arXiv:hep-ph/0104247](https://arxiv.org/abs/hep-ph/0104247) and [arXiv:1906.04625](https://arxiv.org/abs/1906.04625) for multi-coupling theories.
 
 ## Author
  - Anders Eller Thomsen (@aethomsen)
