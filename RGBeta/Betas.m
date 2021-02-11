@@ -15,6 +15,7 @@ PackageExport["BetaTerm"]
 PackageExport["CheckProjection"]
 PackageExport["Finalize"]
 PackageExport["QuarticBetaFunctions"]
+PackageExport["CheckQuarticMixing"]
 
 PackageScope["AntiSym"]
 PackageScope["ResetBetas"]
@@ -158,6 +159,7 @@ BetaTerm[coupling_, loop_Integer] :=
 				Message[BetaTerm::loopNumber, "quartic", 2];
 				Abort[];
 			];
+			CheckQuarticMixing[coupling, BetaTerm];
 			beta = QuarticTensors[coupling, loop] /. $quarticCoefficients // Expand;
 
 		,FermionMass,
@@ -211,6 +213,9 @@ BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
 				Message[BetaFunction::loopNumber, $couplings @ coupling, 2];
 				Abort[];
 			];
+			If[$couplings @ coupling=== Quartic,
+				CheckQuarticMixing[coupling, BetaFunction];
+			];
 		,_,
 			Message[BetaFunction::unkown, coupling];
 			Abort[];
@@ -219,8 +224,24 @@ BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
 		If[OptionValue @ RescaledCouplings, coef = 1; ];
 		If[OptionValue @ FourDimensions, firstTerm = 1; ];
 
-		Sum[ Power[coef, -2 l] BetaTerm[coupling, l], {l, firstTerm, loop}]
+		Sum[ Power[coef, -2 l] Quiet@ BetaTerm[coupling, l], {l, firstTerm, loop}]
 	];
+
+(* Function for checking possible qurtic mixings *)
+CheckQuarticMixing::quartmixes= "The quartic couplings `1` involve the same fields. `2` returns a linear combination of all the associated \[Beta]-functions. Please use QuarticBetaFunctions instead."
+CheckQuarticMixing[lambda_, func_]:= Module[{fields, couplings, c},
+	fields= Sort@ $quartics[lambda, Fields];
+	couplings= {};
+	Do[
+		If[Sort@ $quartics[c, Fields] === fields,
+			AppendTo[couplings, c];
+		];
+	,{c, Keys@ $quartics}];
+
+	If[Length@ couplings> 1,
+		Message[CheckQuarticMixing::quartmixes, couplings, func];
+	];
+];
 
 (*Fuction for diagonalizing the quartic beta functions. It inherits the options from BetaFunction*)
 QuarticBetaFunctions::singular = "The projection matrix is singular. Some of the couplings may be redundant."
@@ -246,7 +267,7 @@ QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 
 		(*Extracts beta functions*)
 		betaFunctions = Monitor[
-							Table[BetaFunction[c, loop, opt], {c, couplings}]
+							Table[Quiet@ BetaFunction[c, loop, opt], {c, couplings}]
 						,StringForm["Evaluating the `` \[Beta]-function", c] ];
 
 		invMatrix . betaFunctions // Expand

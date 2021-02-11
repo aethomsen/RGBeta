@@ -980,19 +980,19 @@ ResetModel[] :=
 		$couplings = <||>;
 		(*Association with all information on the gauge groups: fields, couplings etc.*)
 		$gaugeGroups = <||>;
-		(*Associationwith all information on the fermion fields: representations etc.*)
+		(*Association with all information on the fermion fields: representations etc.*)
 		$fermions = <||>;
-		(*Associationwith all information on the scalar fields: representations, etc.*)
+		(*Association with all information on the scalar fields: representations, etc.*)
 		$scalars = <||>;
-		(*Associationwith all information on the quartic couplings.*)
+		(*Association with all information on the quartic couplings.*)
 		$quartics = <||>;
-		(*Associationwith all information on the Yukawa couplings.*)
+		(*Association with all information on the Yukawa couplings.*)
 		$yukawas = <||>;
-		(*Associationwith all information on the fermion masses.*)
+		(*Association with all information on the fermion masses.*)
 		$fermionMasses = <||>;
-		(*Associationwith all information on the trilinear scalar couplings.*)
+		(*Association with all information on the trilinear scalar couplings.*)
 		$trilinears = <||>;
-		(*Associationwith all information on the scalar masses.*)
+		(*Association with all information on the scalar masses.*)
 		$scalarMasses = <||>;
 
 		(*Removes stored computations of the beta tensors.*)
