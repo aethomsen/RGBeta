@@ -1,7 +1,7 @@
 # RGBeta: Evaluator of Renormalization Group Beta-Functions
 RGBeta is a Mathematica package that allows the user to extract RG beta-functions up to loop order 3-2-2 for gauge, Yukawa, and quartic couplings, respectively, for a large class of 4D renormalizable models.
 
-Currently the project is in beta version. The accompanying paper and manual is forthcomming.  
+If you use RGBeta, please cite [arXiv:2101.08265](https://arxiv.org/abs/2101.08265). When using RGBeta to extract the 3-loop gauge beta functions, please also consider citing [arXiv:hep-ph/0104247](https://arxiv.org/abs/hep-ph/0104247) and [arXiv:1906.04625](https://arxiv.org/abs/1906.04625) for multi-coupling theories.
 
 ## Installation and use
 The simplest way to download and install RGBeta is to run the command
@@ -14,7 +14,7 @@ As an alternative to the more permanent installation, simply download the github
 > SetDirectory@NotebookDirectory[];
 > << RGBeta`
 
-The core use of RGBeta is described in the manual. The *Documentation* folder contains a tutorial notebook and a notebook with sample models, which can be used by the user. When using RGBeta to extract the 3-loop gauge beta functions, please also consider citing [arXiv:hep-ph/0104247](https://arxiv.org/abs/hep-ph/0104247) and [arXiv:1906.04625](https://arxiv.org/abs/1906.04625) for multi-coupling theories.
+The core use of RGBeta is described in the manual. The *Documentation* folder contains a tutorial notebook and a notebook with sample models, which can be used by the user. 
 
 ## Author
  - Anders Eller Thomsen (@aethomsen)
