@@ -120,6 +120,7 @@ ReInitializeSymbols[] :=
 
 		(*del[rep, a, b] is the symbol for Kronecker delta \delta_{a,b} belong to the indices specified by the representation.*)
 		Clear @ del;
+		del[rep_, a_, b_] /; !OrderedQ@ {a, b}:= del[rep, b, a];  
 		(* del /: del[rep_, a___, x_, b___] del[rep_, c___, x_, d___] := del[rep, c, a, b, d]; *)
 		del /: del[rep_, OrderlessPatternSequence[x_, a_]] del[rep_, OrderlessPatternSequence[x_, b_]] := del[rep, a, b];
 		del /: Power[del[rep_, a_, b_], 2] := Dim[rep];
