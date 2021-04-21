@@ -399,7 +399,7 @@ CanonizeTensor[symbForm_List][Plus[x_, y__]] := CanonizeTensor[symbForm]@ x + Ca
 GatherToList[expr_] := Plus @@@ GroupBy[Flatten@ expr, (#[[1]] &) -> (#[[2]] &)] // Normal;
 
 (* Function for complex conjugating an expression made up of the group invariants defined in GroupsAndIndices *)
-GroupInvBar[expr_] := ReplaceAll[tGen[rep_, A_, a_, b_] -> tGen[Bar@rep, A, a, b] ]@ expr;
+GroupInvBar[expr_] := ReplaceAll[{tGen[rep_, A_, a_, b_] -> tGen[rep, A, b, a], x_Complex-> Conjugate@ x}]@ expr;
 
 (*###################################*)
 (*----------Gauge couplings----------*)
