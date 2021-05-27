@@ -26,6 +26,7 @@ PackageScope["ScalarAnomalousTensors"]
 PackageScope["ScalarMassiveTensors"]
 PackageScope["YukawaTensors"]
 
+PackageScope["UpsilonYukawaTensors"]
 PackageScope["FermionUpsilonTensors"]
 PackageScope["ScalarUpsilonTensors"]
 
@@ -308,11 +309,30 @@ MinusHc[i1_, i2_][expr_]:= expr - (sig1. expr. sig1/. TStructure[inds__][sa_] :>
 MinusTrans[i1_, i2_][expr_]:= expr - (expr/. TStructure[inds__][sa_] :>
 	SymmetrizeTS[TStructure[inds]@ sa, {i1, i2}, {{2, 1}}]);
 
+CompleteReplace[expr_, repRules_]:= expr/. repRules/. x_SparseArray:>
+	SparseArray[ArrayRules@ x/. repRules, Dimensions@ x];
+
+(* Returns (\upsilon g)_aij for use in B = \beta - (\upsilon g)*)
+UpsilonYukawaTensors[coupling_Symbol, loop_Integer] :=
+	Module[{diagrams = {{0, 0}, {0, 0}, {6, 3}}[[loop]], n, d= 0, kind},
+		Monitor[
+			Sum[
+				d++;
+				Ucoef[1, loop, n]( Tdot[$yukawas[coupling, Projector][$a, $i, $j], CompleteReplace[UpsilonTensor[1, loop, n], $j-> kind], Yuk[$a, kind, $j]]-
+					Tdot[$yukawas[coupling, Projector][$a, $i, $j], Yuk[$a, $i, kind], sig1. CompleteReplace[UpsilonTensor[1, loop, n], $i-> kind]. sig1])// Tr// RefineGroupStructures
+			, {n, diagrams[[1]]}] +
+			Sum[
+				d++;
+				Ucoef[2, loop, n] RefineGroupStructures @ Tr@ Tdot[Ttimes[$yukawas[coupling, Projector][$a, $i, $j], UpsilonTensor[2, loop, n]], Yuk[$b, $i, $j]]
+			, {n, diagrams[[2]]}]
+		,StringForm["Evaluating term `` / ``", d, Plus@@ diagrams]]
+	];
+
 FermionUpsilonTensors[field_, loop_Integer] :=
 	Module[{diagrams = {0, 0, 6}[[loop]], n},
 		Monitor[
 			Sum[
-				Ucoef[1, loop, n] Tr@ Tdot[$fermions[field, Projector][$i, $j], UpsilonTensor[1, loop, n] = UpsilonTensor[1, loop, n] ],
+				Ucoef[1, loop, n] Tr@ Tdot[$fermions[field, Projector][$i, $j], UpsilonTensor[1, loop, n] ],
 			{n, diagrams}]
 		,StringForm["Evaluating term `` / ``", n, diagrams]]
 	];
@@ -321,7 +341,7 @@ ScalarUpsilonTensors[field_, loop_Integer] :=
 	Module[{diagrams = {0, 0, 3}[[loop]], n},
 		Monitor[
 			Sum[
-				Ucoef[2, loop, n] Ttimes[$scalars[field, Projector][$a, $b], UpsilonTensor[2, loop, n] = UpsilonTensor[2, loop, n] ],
+				Ucoef[2, loop, n] Ttimes[$scalars[field, Projector][$a, $b], UpsilonTensor[2, loop, n] ],
 			{n, diagrams}]
 		,StringForm["Evaluating term `` / ``", n, diagrams]]
 	];

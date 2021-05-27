@@ -798,16 +798,16 @@ ResetBetas[] := Module[{A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A
 (*-----------Upsilon tensors-----------*)
 (*#####################################*)
 (* Fermion upsilon tensors *)
-    UpsilonTensor[1, 3, 1] := MinusHc[$i, $j]@ Tdot[TfermTil[A1, $i, k1], Y2F[k1, k2], Yuk[b1, k2, k3], TfG2[A1, k3, k4], YukTil[b1, k4, $j]];
-    UpsilonTensor[1, 3, 2] := MinusHc[$i, $j]@ Tdot[Ttimes[Yuk[b1, $i, k1], C2S[b1, b2]], YukTil[b3, k1, k2], Yuk[b2, k2, k3], YukTil[b3, k3, $j]];
-    UpsilonTensor[1, 3, 3] := MinusHc[$i, $j]@ Tdot[Yuk[b1, $i, k1], C2F[k1, k2], YukTil[b2, k2, k3], Yuk[b1, k3, k4], YukTil[b2, k4, $j]];
-    UpsilonTensor[1, 3, 4] := MinusHc[$i, $j]@ Tdot[Yuk[b1, $i, k1], YukTil[b2, k1, k2], Yuk[b3, k2, k3], YukTil[b2, k3, k4], Yuk[b1, k4, k5], YukTil[b3, k5, $j]];
-    UpsilonTensor[1, 3, 5] := MinusHc[$i, $j]@ Tdot[Yuk[b1, $i, k1], Y2Ft[k1, k2], YukTil[b2, k2, k3], Yuk[b1, k3, k4], YukTil[b2, k4, $j]];
-    UpsilonTensor[1, 3, 6] := MinusHc[$i, $j]@ Tdot[Ttimes[Yuk[b1, $i, k1], Y2S[b1, b2]], YukTil[b3, k1, k2], Yuk[b2, k2, k3], YukTil[b3, k3, $j]];
+    UpsilonTensor[1, 3, 1] := UpsilonTensor[1, 3, 1] = MinusHc[$i, $j]@ Tdot[TfermTil[A1, $i, k1], Y2F[k1, k2], Yuk[b1, k2, k3], TfG2[A1, k3, k4], YukTil[b1, k4, $j]];
+    UpsilonTensor[1, 3, 2] := UpsilonTensor[1, 3, 2] = MinusHc[$i, $j]@ Tdot[Ttimes[Yuk[b1, $i, k1], C2S[b1, b2]], YukTil[b3, k1, k2], Yuk[b2, k2, k3], YukTil[b3, k3, $j]];
+    UpsilonTensor[1, 3, 3] := UpsilonTensor[1, 3, 3] = MinusHc[$i, $j]@ Tdot[Yuk[b1, $i, k1], C2F[k1, k2], YukTil[b2, k2, k3], Yuk[b1, k3, k4], YukTil[b2, k4, $j]];
+    UpsilonTensor[1, 3, 4] := UpsilonTensor[1, 3, 4] = MinusHc[$i, $j]@ Tdot[Yuk[b1, $i, k1], YukTil[b2, k1, k2], Yuk[b3, k2, k3], YukTil[b2, k3, k4], Yuk[b1, k4, k5], YukTil[b3, k5, $j]];
+    UpsilonTensor[1, 3, 5] := UpsilonTensor[1, 3, 5] = MinusHc[$i, $j]@ Tdot[Yuk[b1, $i, k1], Y2Ft[k1, k2], YukTil[b2, k2, k3], Yuk[b1, k3, k4], YukTil[b2, k4, $j]];
+    UpsilonTensor[1, 3, 6] := UpsilonTensor[1, 3, 6] = MinusHc[$i, $j]@ Tdot[Ttimes[Yuk[b1, $i, k1], Y2S[b1, b2]], YukTil[b3, k1, k2], Yuk[b2, k2, k3], YukTil[b3, k3, $j]];
 
-    UpsilonTensor[2, 3, 1] := MinusTrans[$a, $b]@ Tr@ Tdot[Yuk[$a, k1, k2], C2F[k2, k3], YukTil[b1, k3, k4], Yuk[$b, k4, k5], YukTil[b1, k5, k1]];
-    UpsilonTensor[2, 3, 2] := MinusTrans[$a, $b]@ Ttimes[Tr@ Tdot[Yuk[$a, k1, k2], YukTil[b1, k2, k3], Yuk[b2, k3, k4], YukTil[b3, k4, k1]], Lam[b1, b2, b3, $b]];
-    UpsilonTensor[2, 3, 3] := MinusTrans[$a, $b]@ Tr@ Tdot[Yuk[$a, k1, k2], Y2Ft[k2, k3], YukTil[b1, k3, k4], Yuk[$b, k4, k5], YukTil[b1, k5, k1]];
+    UpsilonTensor[2, 3, 1] := UpsilonTensor[2, 3, 1] = MinusTrans[$a, $b]@ Tr@ Tdot[Yuk[$a, k1, k2], C2F[k2, k3], YukTil[b1, k3, k4], Yuk[$b, k4, k5], YukTil[b1, k5, k1]];
+    UpsilonTensor[2, 3, 2] := UpsilonTensor[2, 3, 2] = MinusTrans[$a, $b]@ Ttimes[Tr@ Tdot[Yuk[$a, k1, k2], YukTil[b1, k2, k3], Yuk[b2, k3, k4], YukTil[b3, k4, k1]], Lam[b1, b2, b3, $b]];
+    UpsilonTensor[2, 3, 3] := UpsilonTensor[2, 3, 3] = MinusTrans[$a, $b]@ Tr@ Tdot[Yuk[$a, k1, k2], Y2Ft[k2, k3], YukTil[b1, k3, k4], Yuk[$b, k4, k5], YukTil[b1, k5, k1]];
 
 
 
