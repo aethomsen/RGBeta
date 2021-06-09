@@ -198,7 +198,7 @@ NewIdentities[expr_] := Block[{fStruct, tGen, n},
 (* These functions project out specific coupling beta functions from the general tensors.*)
 
 GaugeTensors[coupling_Symbol, loop_Integer] :=
-	Module[{diagrams = {3, 7, 33, 202}[[loop]], n, C1, C2, proj, bTerm},
+	Module[{diagrams = {3, 7, 33, 202}[[loop]], n= 0, C1, C2, proj, bTerm},
 		(* The 0-loop contribution in d = 4 - \epsilon dimensions *)
 		If[loop === 0,
 			bTerm = Expand[ - Global`\[Epsilon] $gaugeGroups[$couplings @ coupling, Projector][C1, C2] G2Matrix[C1, C2] ];
@@ -224,7 +224,7 @@ GaugeTensors[coupling_Symbol, loop_Integer] :=
 	];
 
 YukawaTensors[coupling_Symbol, loop_Integer] :=
-	Module[{diagrams = {1, 5, 33, 308}[[loop + 1]], n},
+	Module[{diagrams = {1, 5, 33, 308}[[loop + 1]], n= 0},
 		Monitor[
 			Sum[
 				Bcoef[2, loop, n] RefineGroupStructures @ Tr@ Tdot[$yukawas[coupling, Projector][$a, $i, $j], BetaTensor[2, loop, n] ],
@@ -233,7 +233,7 @@ YukawaTensors[coupling_Symbol, loop_Integer] :=
 	];
 
 FermionMassTensors[coupling_Symbol, loop_Integer] :=
-	Module[{diagrams = {1, 5, 33}[[loop + 1]], n},
+	Module[{diagrams = {1, 5, 33}[[loop + 1]], n= 0},
 		Monitor[
 			Sum[
 				Bcoef[2, loop, n] RefineGroupStructures @ Tr@ Tdot[$fermionMasses[coupling, Projector][$a, $i, $j], BetaTensor[4, loop, n] ],
@@ -242,7 +242,7 @@ FermionMassTensors[coupling_Symbol, loop_Integer] :=
 	];
 
 QuarticTensors[coupling_Symbol, loop_Integer] :=
-	Module[{diagrams = {1, 5, 33}[[loop + 1]], n},
+	Module[{diagrams = {1, 5, 33}[[loop + 1]], n= 0},
 		Monitor[
 			Sum[
 				Bcoef[3, loop, n] RefineGroupStructures @ Ttimes[$quartics[coupling, Projector][$a, $b, $c, $d],
@@ -252,7 +252,7 @@ QuarticTensors[coupling_Symbol, loop_Integer] :=
 	];
 
 ScalarMassiveTensors[coupling_Symbol, loop_Integer] :=
-	Module[{diagrams = {1, 5, 33}[[loop + 1]], n},
+	Module[{diagrams = {1, 5, 33}[[loop + 1]], n= 0},
 		Monitor[
 			Switch[$couplings @ coupling
 			,Trilinear,
@@ -270,7 +270,7 @@ ScalarMassiveTensors[coupling_Symbol, loop_Integer] :=
 	];
 
 FermionAnomalousTensors[field_, loop_Integer] :=
-	Module[{diagrams = {2, 9}[[loop]], n},
+	Module[{diagrams = {2, 9}[[loop]], n= 0},
 		Monitor[
 			Sum[
 				Acoef[1, loop, n] RefineGroupStructures @ Tr@ Tdot[$fermions[field, Projector][$i, $j], AnomalousTensor[1, loop, n] = AnomalousTensor[1, loop, n] ],
@@ -279,7 +279,7 @@ FermionAnomalousTensors[field_, loop_Integer] :=
 	];
 
 ScalarAnomalousTensors[field_, loop_Integer] :=
-	Module[{diagrams = {2, 8}[[loop]], n},
+	Module[{diagrams = {2, 8}[[loop]], n= 0},
 		Monitor[
 			Sum[
 				Acoef[2, loop, n] RefineGroupStructures @ Ttimes[$scalars[field, Projector][$a, $b], AnomalousTensor[2, loop, n] = AnomalousTensor[2, loop, n] ],
@@ -298,7 +298,7 @@ CompleteReplace[expr_, repRules_]:= expr/. repRules/. x_SparseArray:>
 
 (* Returns (\upsilon g)_aij for use in B = \beta - (\upsilon g)*)
 UpsilonYukawaTensors[coupling_Symbol, loop_Integer] :=
-	Module[{diagrams = {{0, 0}, {0, 0}, {6, 3}}[[loop]], n, d= 0, kind},
+	Module[{diagrams = {{0, 0}, {0, 0}, {6, 3}}[[loop]], n= 0, d= 0, kind},
 		Monitor[
 			Sum[
 				d++;
@@ -313,7 +313,7 @@ UpsilonYukawaTensors[coupling_Symbol, loop_Integer] :=
 	];
 
 FermionUpsilonTensors[field_, loop_Integer] :=
-	Module[{diagrams = {0, 0, 6}[[loop]], n},
+	Module[{diagrams = {0, 0, 6}[[loop]], n= 0},
 		Monitor[
 			Sum[
 				Ucoef[1, loop, n] Tr@ Tdot[$fermions[field, Projector][$i, $j], UpsilonTensor[1, loop, n] ],
@@ -322,7 +322,7 @@ FermionUpsilonTensors[field_, loop_Integer] :=
 	];
 
 ScalarUpsilonTensors[field_, loop_Integer] :=
-	Module[{diagrams = {0, 0, 3}[[loop]], n},
+	Module[{diagrams = {0, 0, 3}[[loop]], n= 0},
 		Monitor[
 			Sum[
 				Ucoef[2, loop, n] Ttimes[$scalars[field, Projector][$a, $b], UpsilonTensor[2, loop, n] ],

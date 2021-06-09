@@ -129,15 +129,18 @@ Tdot[a_] = a;
 (*##################################*)
 
 (*Function returns the l-loop contribution to the beta function of a given coupling*)
+Options[BetaTerm] = {
+		FlavorImproved-> True (*Determines if returning the flavor-improved beta function*)
+	};
 BetaTerm::loopNumber = "The `1` beta function has only been implemented up to `2` loops."
 BetaTerm::unkown = "The coupling `1` has not been defined."
-BetaTerm[coupling_, loop_Integer] :=
+BetaTerm[coupling_, loop_Integer, OptionsPattern[] ]? OptionsCheck :=
 	Module[{beta, group, tensor, C1, C2},
 		(*Determines the correct tensor structure based on coupling type*)
 		Switch[$couplings @ coupling
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
-			If[loop > 3 || loop < 0,
-				Message[BetaTerm::loopNumber, "gauge", 3];
+			If[loop > 4 || loop < 0,
+				Message[BetaTerm::loopNumber, "gauge", 4];
 				Abort[];
 			];
 			group = $couplings @ coupling;
@@ -149,11 +152,12 @@ BetaTerm[coupling_, loop_Integer] :=
 					Matrix[mat_][group[adj] @ v1, group[adj] @ v2] /; MatrixQ @ mat :> mat};
 			];
 		,Yukawa,
-			If[loop > 2 || loop < 0,
-				Message[BetaTerm::loopNumber, "Yukawa", 2];
+			If[loop > 3 || loop < 0,
+				Message[BetaTerm::loopNumber, "Yukawa", 3];
 				Abort[];
 			];
-			beta = YukawaTensors[coupling, loop] /. $yukawaCoefficients // Expand;
+			beta = YukawaTensors[coupling, loop] +
+				If[OptionValue@ FlavorImproved, UpsilonYukawaTensors[coupling, loop], 0]/. $yukawaCoefficients // Expand;
 
 		,Quartic,
 			If[loop > 2 || loop < 0,
@@ -198,18 +202,27 @@ BetaTerm[coupling_, loop_Integer] :=
 	];
 
 (*Function that produces the beta function for the requested coupling*)
-Options[BetaFunction] = {RescaledCouplings -> False, FourDimensions -> True};
+Options[BetaFunction] = {
+		RescaledCouplings-> False,
+		FourDimensions-> True,
+		FlavorImproved-> True
+	};
 BetaFunction::unkown = "The coupling `1` has not been defined."
 BetaFunction::loopNumber = "The `1` beta function has only been implemented up to `2` loops."
-BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
+BetaFunction[coupling_Symbol, loop_Integer, opt:OptionsPattern[] ] ? OptionsCheck :=
 	Module[{coef = 4 Pi, firstTerm = 0, l},
 		Switch[$couplings @ coupling
 		,gr_ /; MemberQ[Keys @ $gaugeGroups, gr],
-			If[loop > 3 || loop < 0,
-				Message[BetaFunction::loopNumber, "gauge", 3];
+			If[loop > 4 || loop < 0,
+				Message[BetaFunction::loopNumber, "gauge", 4];
 				Abort[];
 			];
-		,Yukawa|Quartic|ScalarMass|Trilinear|FermionMass,
+		,Yukawa,
+			If[loop > 3 || loop < 0,
+				Message[BetaFunction::loopNumber, $couplings @ coupling, 3];
+				Abort[];
+			];
+		,Quartic|ScalarMass|Trilinear|FermionMass,
 			If[loop > 2 || loop < 0,
 				Message[BetaFunction::loopNumber, $couplings @ coupling, 2];
 				Abort[];
@@ -225,7 +238,8 @@ BetaFunction[coupling_Symbol, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
 		If[OptionValue @ RescaledCouplings, coef = 1; ];
 		If[OptionValue @ FourDimensions, firstTerm = 1; ];
 
-		Sum[ Power[coef, -2 l] Quiet@ BetaTerm[coupling, l], {l, firstTerm, loop}]
+		Sum[ Power[coef, -2 l] Quiet@ BetaTerm[coupling, l, FilterRules[{opt}, Options@ BetaTerm]],
+			{l, firstTerm, loop}]
 	];
 
 (* Function for checking possible qurtic mixings *)

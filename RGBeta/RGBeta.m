@@ -42,6 +42,7 @@ PackageExport["Chirality"]
 PackageExport["CouplingIndices"]
 PackageExport["CouplingMatrix"]
 PackageExport["FlavorIndices"]
+PackageExport["FlavorImproved"]
 PackageExport["FourDimensions"]
 PackageExport["GaugeRep"]
 PackageExport["GroupInvariant"]
@@ -108,7 +109,7 @@ sDelS::usage =
 sDelV::usage =
 	"sDelV[field, generalIndex, specificIndex] represents the structure delta for a vector field." *)
 
-BarToConjugate::usage = Chirality::usage = CouplingIndices::usage = CouplingMatrix::usage =  FlavorIndices::usage = FourDimensions::usage =
+BarToConjugate::usage = Chirality::usage = CouplingIndices::usage = CouplingMatrix::usage =  FlavorIndices::usage = FlavorImproved::usage = FourDimensions::usage =
 GaugeRep::usage = GroupInvariant::usage = MassIndices::usage = Parameterizations::usage = RescaledCouplings::usage = SelfConjugate::usage =
 	"Function option and/or key used in global association lists of fields and/or couplings."
 
@@ -145,6 +146,7 @@ OptionTest[_, Chirality] = MatchQ[Left|Right];
 OptionTest[_, CouplingIndices] = MatchQ[_Function];
 OptionTest[_, CouplingMatrix] = MatchQ[Automatic|_List];
 OptionTest[_, FlavorIndices] = MatchQ[_List];
+OptionTest[_, FlavorImproved] = BooleanQ;
 OptionTest[_, FourDimensions] = BooleanQ;
 OptionTest[_, GaugeRep] = MatchQ[_List];
 OptionTest[_, GroupInvariant] = MatchQ[_Function];
