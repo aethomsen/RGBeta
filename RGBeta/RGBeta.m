@@ -119,6 +119,8 @@ LieGroup::usage = Mass::usage = Projector::usage = Quartic::usage = ScalarMass::
 Yukawa::usage =
 	"Function option and/or key used in global association lists of fields and/or couplings."
 
+AntisymmetricIndices::usage= SymmetricIndices::usage= "Coupling option specifying sets of completely (anti)symmetric indices. Option is given on the {{2, 3}, {1, ...}, ...}, where each set is a set of (anti)symmetrized couplings."
+
 (*Protects global symbols*)
 Protect[$a, $b, $c, $d, $i, $j, $A, $B];
 Protect[SO, Sp, SU, U1];

@@ -1,5 +1,6 @@
 ### v.1.0.3 (2021-06-16)
-- Added options SymmetricIndices and AntisymmetricIndices to specify coupling symmetries and simplify associated matrix contractions. 
+- Fixed bug with antisymmetric Yukawa couplings making the projection operator vanish.
+- Added options SymmetricIndices and AntisymmetricIndices to specify coupling symmetries and simplify associated matrix contractions.
 
 ### v.1.0.2 (2021-04-21)
 - Fixed bug with conjugation of generators in GroupInvariants.

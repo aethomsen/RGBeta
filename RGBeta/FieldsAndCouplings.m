@@ -457,10 +457,14 @@ SetSymmetries[coupling_Symbol, symInds_List, asymInds_List]:= Module[{couplingIn
 	(* If coupling is a higher rank tensor *)
 	If[couplingInds > 2,
 		Do[
-			Matrix[tensor][inds_] /; !OrderedQ@ {inds}[[set]]:= Matrix[tensor]@@ SubSort[{inds}, set];
+			With[{setHere= set},
+				Tensor[coupling][inds__] /; !OrderedQ@ {inds}[[setHere]]:= Tensor[coupling]@@ SubSort[{inds}, setHere];
+			]
 		, {set, sym}];
 		Do[
-			Matrix[tensor][inds_] /; !OrderedQ@ {inds}[[set]]:= Signature@ {inds}[[set]] Matrix[tensor]@@ SubSort[{inds}, set];
+			With[{setHere= set},
+				Tensor[coupling][inds__] /; !OrderedQ@ {inds}[[setHere]]:= Signature@ {inds}[[setHere]] Tensor[coupling]@@ SubSort[{inds}, setHere];
+			];
 		, {set, asym}];
 	];
 
@@ -474,7 +478,7 @@ PrepareSymList[inds_List]:= Module[{},
 	];
 	Sort/@ DeleteCases[inds, (Length@ # <2 &)]
 ];
-SubSort[l_list, set_List]:= Block[{out=list},
+SubSort[list_List, set_List]:= Block[{out=list},
 	out[[set]]= Sort@ out[[set]];
 	out
 ];
@@ -656,7 +660,9 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 			CouplingBar -> yukbar,
 			Fields -> {phi, psi1, psi2},
 			Indices -> OptionValue @ CouplingIndices,
-			Invariant -> OptionValue @ GroupInvariant|>];
+			Invariant -> OptionValue @ GroupInvariant,
+			UniqueArrangements -> Cases[CouplingPermutations[{phi, psi1, psi2}, OptionValue @ GroupInvariant], {1, __}]
+			|>];
 
 		(*Tests whether the coupling satisfy gauge invariance*)
 		If[OptionValue @ CheckInvariance,
@@ -726,7 +732,9 @@ AddFermionMass[coupling_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 			CouplingBar -> yukbar,
 			Fields -> {psi1, psi2},
 			Indices -> OptionValue @ MassIndices,
-			Invariant -> OptionValue @ GroupInvariant|>];
+			Invariant -> OptionValue @ GroupInvariant,
+			UniqueArrangements -> Prepend[1]/@ (1+ CouplingPermutations[{psi1, psi2}, OptionValue @ GroupInvariant])
+			|>];
 
 		AppendTo[$couplings, coupling -> FermionMass];
 		SetSymmetries[coupling, OptionValue@ SymmetricIndices, OptionValue@ AntisymmetricIndices];
@@ -1012,20 +1020,20 @@ Yuk[$da_, $di_, $dj_, massive_:False] :=
 		If[MemberQ[dim, 0], Return@ {{0, 0}, {0, 0}};];
 		yL = Table[
 				CouplingTensorMap[couplingInfo, couplingInfo@ Fields, {$da, $di, $dj},
-					{$da, $di, $dj},  {{1, 2, 3}, {1, 3, 2}}]
+					{$da, $di, $dj}, couplingInfo@ UniqueArrangements]
 			, {couplingInfo, $yukawas}];
 		yR =  Table[
 				CouplingTensorMap[couplingInfo, MapAt[Bar, couplingInfo@ Fields, 1], {$da, $di, $dj},
-					{$da, $di, $dj},  {{1, 2, 3}, {1, 3, 2}}, True]
+					{$da, $di, $dj}, couplingInfo@ UniqueArrangements, True]
 			, {couplingInfo, $yukawas}];
 		If[massive,
 			yL = Join[yL, Table[
 					CouplingTensorMap[couplingInfo, Join[{$vev}, couplingInfo@ Fields], {$di, $dj},
-						{$da, $di, $dj},  {{1, 2, 3}, {1, 3, 2}}]
+						{$da, $di, $dj}, couplingInfo@ UniqueArrangements]
 				, {couplingInfo, $fermionMasses}] ];
 			yR = Join[yR, Table[
 					CouplingTensorMap[couplingInfo, Join[{$vev}, couplingInfo@ Fields], {$di, $dj},
-						{$da, $di, $dj},  {{1, 2, 3}, {1, 3, 2}}, True]
+						{$da, $di, $dj}, couplingInfo@ UniqueArrangements, True]
 				, {couplingInfo, $fermionMasses}] ];
 		];
 		(* The chiral couplings are organized in full Yukawa matrix *)
