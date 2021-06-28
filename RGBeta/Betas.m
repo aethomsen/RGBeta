@@ -16,6 +16,8 @@ PackageExport["CheckProjection"]
 PackageExport["Finalize"]
 PackageExport["QuarticBetaFunctions"]
 PackageExport["CheckQuarticMixing"]
+PackageExport["UpsilonFunction"]
+PackageExport["UpsilonTerm"]
 
 PackageScope["AntiSym"]
 PackageScope["ResetBetas"]
@@ -32,7 +34,7 @@ PackageScope["TsSym4"]
 (*#####################################*)
 
 AnomalousDimension::usage =
-	"AnomalousDimTerm[field, loop] gives the anomalous dimension of the given field up to the l-loop order."
+	"AnomalousDimension[field, loop] gives the anomalous dimension of the given field up to the l-loop order."
 AnomalousDimTerm::usage =
 	"AnomalousDimTerm[field, loop] gives the l-loop contribution to the anomalous dimension of the given field."
 BetaFunction::usage =
@@ -45,6 +47,10 @@ Finalize::usage =
 	"Finalize[expr] performs additional refinement of beta function expressions. Only works for expressions with up to 2 nontrivial flavor indices."
 QuarticBetaFunctions::usage =
 	"QuarticBetaFunctions[loop] returns all quartic beta functions to the given loop order using diagonalized projectors."
+UpsilonFunction::usage =
+	"UpsilonFunction[field, loop] gives the anomalous dimension of the given field up to the l-loop order."
+UpsilonTerm::usage =
+	"UpsilonTerm[field, loop] gives the l-loop contribution to the anomalous dimension of the given field."
 
 AntiSym::usage =
 	"AntiSym[a, b][expr] is an internal function for antisymmetrizing expr in a and b."
@@ -288,7 +294,7 @@ QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 		invMatrix . betaFunctions // Expand
 	];
 
-(*Function returns the l-loop contribution to the beta function of a given coupling*)
+(*Function returns the l-loop contribution to the anomalous dimension of a given matter field*)
 AnomalousDimTerm::loopNumber = "The `1` scalar anomalous dimension has only been implemented up to `2` loops."
 AnomalousDimTerm::unkown = "The field `1` has not been defined."
 AnomalousDimTerm[field_, loop_Integer] :=
@@ -339,6 +345,59 @@ AnomalousDimension[field_, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
 		If[OptionValue @ RescaledCouplings, coef = 1;];
 
 		Sum[ Power[coef, -2 l] AnomalousDimTerm[field, l], {l, loop}]
+	];
+
+(*Function returns the l-loop contribution to the upsilon function of a given matter field*)
+UpsilonTerm::loopNumber= "The `1` scalar anomalous dimension has only been implemented up to `2` loops."
+UpsilonTerm::unkown= "The field `1` has not been defined."
+UpsilonTerm[field_, loop_Integer]:=
+	Module[{ups},
+		(*Determines the correct tensor structure based on the field type*)
+		Switch[field
+		,x_ /; MemberQ[Keys@ $fermions, x],
+			If[loop > 3 || loop < 1,
+				Message[UpsilonTerm::loopNumber, "fermion", 3];
+				Abort[];
+			];
+			ups= FermionUpsilonTensors[field, loop]/. $fermionAnomalousCoefficients;
+
+		,x_ /; MemberQ[Keys@ $scalars, x],
+			If[loop > 3 || loop < 1,
+				Message[UpsilonTerm::loopNumber, "scalar", 3];
+				Abort[];
+			];
+			ups= ScalarUpsilonTensors[field, loop]/. $scalarAnomalousCoefficients;
+
+		,_,
+			Message[UpsilonTerm::unkown, field];
+			Abort[];
+		];
+
+		(*Canonically order coupling indices if any*)
+		CanonizeMatrices @ RefineGroupStructures @ ups
+	];
+
+(*Function that produces the upsilon function for a given field*)
+Options@ UpsilonFunction= {RescaledCouplings-> False};
+UpsilonFunction::unkown = "The coupling `1` has not been defined."
+UpsilonFunction::loopNumber = "The anomalous dimension has only been implemented up to `1` loops."
+UpsilonFunction[field_, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
+	Module[{coef = 4 Pi, l},
+		(* Checks if the input request has been implemented.*)
+		Switch[field
+		,x_ /; MemberQ[Keys @ $fermions, x] || MemberQ[Keys @ $scalars, x],
+			If[loop > 3 || loop < 1,
+				Message[UpsilonFunction::loopNumber, 3];
+				Abort[];
+			];
+		,_,
+			Message[UpsilonFunction::unkown, field];
+			Abort[];
+		];
+
+		If[OptionValue @ RescaledCouplings, coef = 1;];
+
+		Sum[Power[coef, -2 l] UpsilonTerm[field, l], {l, loop}]
 	];
 
 (*###################################*)

@@ -1,3 +1,9 @@
+## v.1.1.0 (2021-07-xx)
+- Added 4-loop gauge beta function.
+- Added 3-loop Yukawa beta function.
+..* New option *FlavorImproved->True* fixes the use of the flavor-improved beta function.   
+- Added UpsilonTerm and UpsilonFunction to return upsilon of a field (in the manner of AnomalousDimTerm/AnomalousDimension). 
+
 ### v.1.0.3 (2021-06-16)
 - Fixed bug with antisymmetric Yukawa couplings making the projection operator vanish.
 - Added options SymmetricIndices and AntisymmetricIndices to specify coupling symmetries and simplify associated matrix contractions.

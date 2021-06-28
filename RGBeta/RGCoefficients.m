@@ -9,9 +9,11 @@ Package["RGBeta`"]
 (*##################################*)
 
 PackageScope["$fermionAnomalousCoefficients"]
+PackageScope["$fermionUpsilonCoefficients"]
 PackageScope["$gaugeCoefficients"]
 PackageScope["$quarticCoefficients"]
 PackageScope["$scalarAnomalousCoefficients"]
+PackageScope["$scalarUpsilonCoefficients"]
 PackageScope["$yukawaCoefficients"]
 
 (*#####################################*)
@@ -20,12 +22,16 @@ PackageScope["$yukawaCoefficients"]
 
 $fermionAnomalousCoefficients::usage =
 	"$fermionAnomalousCoefficients is an internal replacement lsit containing the coefficients of all the tensors structures in the fermion anomalous dimension."
+$fermionUpsilonCoefficients::usage =
+	"$fermionUpsilonCoefficients is an internal replacement lsit containing the coefficients of all the tensors structures in the fermion upsilon function."
 $gaugeCoefficients::usage =
 	"$gaugeCoefficients is an internal replacement list containing the coefficient of all tensor constractions used in the quartic beta function."
 $quarticCoefficients::usage =
 	"$quarticCoefficients is an internal replacement list containing the coefficient of all tensor constractions used in the quartic beta function."
 $scalarAnomalousCoefficients::usage =
 	"$scalarAnomalousCoefficients is an internal replacement lsit containing the coefficients of all the tensors structures in the fermion anomalous dimension."
+$scalarUpsilonCoefficients::usage =
+	"$scalarUpsilonCoefficients is an internal replacement lsit containing the coefficients of all the tensors structures in the scalar upsilon function."
 $yukawaCoefficients::usage =
 	"$yukawaCoefficients is an internal replacement list containing the coefficient of all tensor constractions used in the yukawa beta function."
 
@@ -201,4 +207,10 @@ $scalarAnomalousCoefficients = {
 	Acoef[2, 2, 8] -> -3/4
 };
 
-Protect[$gaugeCoefficients, $quarticCoefficients, $yukawaCoefficients, $fermionAnomalousCoefficients, $scalarAnomalousCoefficients];
+$fermionUpsilonCoefficients= {};
+
+$scalarUpsilonCoefficients= {};
+
+Protect[$gaugeCoefficients, $quarticCoefficients, $yukawaCoefficients,
+	$fermionAnomalousCoefficients, $scalarAnomalousCoefficients,
+	$fermionUpsilonCoefficients, $scalarUpsilonCoefficients];
