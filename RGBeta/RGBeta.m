@@ -1,7 +1,7 @@
 (*
 ################################################################
 This is RGBeta, Version 1.1.0.
-Last modefied 09-06-2021
+Last modefied 28-06-2021
 
 Released under the MIT license (see 'LICENSE').
 
@@ -37,6 +37,7 @@ PackageExport["v2"]
 
 PackageExport["$RGBetaVersion"]
 
+PackageExport["AntisymmetricIndices"]
 PackageExport["BarToConjugate"]
 PackageExport["Chirality"]
 PackageExport["CouplingIndices"]
@@ -50,6 +51,7 @@ PackageExport["MassIndices"]
 PackageExport["Parameterizations"]
 PackageExport["RescaledCouplings"]
 PackageExport["SelfConjugate"]
+PackageExport["SymmetricIndices"]
 
 PackageScope["$fermion"]
 PackageScope["$gauge"]
@@ -118,6 +120,8 @@ LieGroup::usage = Mass::usage = Projector::usage = Quartic::usage = ScalarMass::
 Yukawa::usage =
 	"Function option and/or key used in global association lists of fields and/or couplings."
 
+AntisymmetricIndices::usage= SymmetricIndices::usage= "Coupling option specifying sets of completely (anti)symmetric indices. Option is given on the {{2, 3}, {1, ...}, ...}, where each set is a set of (anti)symmetrized couplings."
+
 (*Protects global symbols*)
 Protect[$a, $b, $c, $d, $i, $j, $A, $B];
 Protect[SO, Sp, SU, U1];
@@ -132,15 +136,18 @@ $RGBetaVersion= "v1.1.0"
 General::invalidopt = "Option `1` for function `2` received invalid value `3`.";
 General::optexpectsval = "Option `1` for function `2` received invalid value `3`. A `4` is expected.";
 OptionMessage[opt_, func_, val_] := Message[General::invalidopt, opt, func, val];
+OptionMessage[AntisymmetricIndices, func_, val_] := Message[General::optexpectsval, SymmetricIndices, func, val, "list of integers or a list of lists of integers"];
 OptionMessage[Chirality, func_, val_] := Message[General::optexpectsval, Chirality, func, val, "Left or a Right"];
 OptionMessage[CouplingIndices, func_, val_] := Message[General::optexpectsval, CouplingIndices, func, val, Function];
 OptionMessage[FlavorIndices, func_, val_] := Message[General::optexpectsval, FlavorIndices, func, val, List];
 OptionMessage[GaugeRep, func_, val_] := Message[General::optexpectsval, GaugeRep, func, val, List];
 OptionMessage[GroupInvariant, func_, val_] := Message[General::optexpectsval, GroupInvariant, func, val, Function];
 OptionMessage[MassIndices, func_, val_] := Message[General::optexpectsval, MassIndices, func, val, Function];
-OptionMessage[Parameterizations, func_, val_] := Message[General::optexpectsval, Parameterizations, func, val, "List of replacement rules"];
+OptionMessage[Parameterizations, func_, val_] := Message[General::optexpectsval, Parameterizations, func, val, "list of replacement rules"];
+OptionMessage[SymmetricIndices, func_, val_] := Message[General::optexpectsval, SymmetricIndices, func, val, "list of integers or a list of lists of integers"];
 
 (*Tests for specific options. Form expected is OptionTest[function, options] *)
+OptionTest[_, AntisymmetricIndices] = MatchQ[{} | {_Integer ..} | {{_Integer ..} ..}];
 OptionTest[_, BarToConjugate] = BooleanQ;
 OptionTest[_, Chirality] = MatchQ[Left|Right];
 OptionTest[_, CouplingIndices] = MatchQ[_Function];
@@ -154,6 +161,7 @@ OptionTest[_, MassIndices] = MatchQ[_Function];
 OptionTest[_, Parameterizations] = MatchQ[_List];
 OptionTest[_, RescaledCouplings] = BooleanQ;
 OptionTest[_, SelfConjugate] = BooleanQ;
+OptionTest[_, SymmetricIndices] = MatchQ[{} | {_Integer ..} | {{_Integer ..} ..}];
 OptionTest[_, CheckInvariance] = BooleanQ;
 
 Attributes @ OptionsCheck = {HoldFirst};

@@ -39,6 +39,7 @@ PackageExport["Trans"]
 
 PackageScope["RefineGroupStructures"]
 PackageScope["ReInitializeSymbols"]
+PackageScope["ReInitializeCouplingBehavior"]
 PackageScope["TStructure"]
 
 (*#####################################*)
@@ -95,14 +96,6 @@ ReInitializeSymbols::usage =
 TStructure::usage =
 	"TStructure[ind1, ind2,...][sparseArray] is used as a wrapper for a sparse array containing a particular tensor structure, while providing the indices of said struture."
 
-(*Formating*)
-	Format[Trans[x_], StandardForm] := HoldForm[x^Global`T];
-	Format[Bar[x_], StandardForm] := OverBar @ x;
-	Format[Trans[Bar[x_]], StandardForm] := x^Style[Global`\[Dagger], Bold, 12];
-	Format[Matrix[x__][h1_[i1_] ], StandardForm] := Subscript[Dot[x], i1];
-	Format[Matrix[x__][h1_[i1_], h2_[i2_]], StandardForm] := Subscript[Dot[x], i1, i2];
-	Format[Tensor[x_][inds__], StandardForm] := Subscript[x, Sequence@@ {inds}[[;;, 1]]];
-
 (*#############################################*)
 (*----------Generic tensor properties----------*)
 (*#############################################*)
@@ -120,7 +113,7 @@ ReInitializeSymbols[] :=
 
 		(*del[rep, a, b] is the symbol for Kronecker delta \delta_{a,b} belong to the indices specified by the representation.*)
 		Clear @ del;
-		del[rep_, a_, b_] /; !OrderedQ@ {a, b}:= del[rep, b, a];  
+		del[rep_, a_, b_] /; !OrderedQ@ {a, b}:= del[rep, b, a];
 		(* del /: del[rep_, a___, x_, b___] del[rep_, c___, x_, d___] := del[rep, c, a, b, d]; *)
 		del /: del[rep_, OrderlessPatternSequence[x_, a_]] del[rep_, OrderlessPatternSequence[x_, b_]] := del[rep, a, b];
 		del /: Power[del[rep_, a_, b_], 2] := Dim[rep];
@@ -223,51 +216,66 @@ RefineGroupStructures[expr_] := expr /. replace // Expand;
 		Tr[x_? NumericQ a_ ] = x Tr@ a;
 	Protect[Tr, Dot];
 
-(*Complex conjugation and transposition of matrices*)
-	Bar[Bar[x_]] = x;
-	Bar[0] = 0;
-	Bar[a:(_List| _Times| _Plus)] := Bar /@ a;
-	Bar[a_] /; NumericQ[a] := Conjugate @ a;
-	SetReal[x_] := (Bar @ x = x;);
-	SetReal[x_, y__] := (SetReal @ x; SetReal @ y );
+(*An overall function which sets up the properties of couplings in tensor and matrix contractions etc. It flushes all previous definitions.*)
+ReInitializeCouplingBehavior[]:= Module[{},
+	Clear[Bar, Trans, Matrix, Tensor];
 
-	Trans[Trans[x_]] := x;
-	Trans[0] = 0;
-	Trans[x_? NumericQ a_]:= x Trans@ a;
-	Trans[a_Plus]:= Trans /@ a;
-	Trans[a_List] /; VectorQ[a] := a;
-	Trans[a_List] /; MatrixQ[a] := Transpose @ a;
-(*Matrix head for symbolic matrix manipulations*)
-	Matrix /: del[ind_, a___, x_, b___] Matrix[m__][c___, ind_[x_], d___] := Matrix[m][c, ind[a, b], d];
-	Matrix /: Matrix[m1__][a_] Matrix[m2__][a_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][];
-	Matrix /: Matrix[m1__][b_] Matrix[m2__][b_, c_] := Matrix[Sequence @@ Reverse[Trans /@ List@m2], m1][c];
-	Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][b_] := Matrix[m1, m2][a];
-	Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][b_, c_] := Matrix[m1, m2][a, c];
-	Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][c_, b_] := Matrix[m1, Sequence @@ Reverse[Trans /@ List@m2]][a, c];
-	Matrix /: Matrix[m1__][b_, a_] Matrix[m2__][b_, c_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][a, c];
-	Matrix /: Power[Matrix[m1__][a_, b_], 2] := Matrix[m1, Sequence @@ Reverse[Trans /@ List@m1]][a, a];
-	Matrix /: Power[Matrix[m1__][a_], 2] := Matrix[m1, Sequence @@ Reverse[Trans /@ List@m1]][a, a];
-	Matrix[a_List, b_List] = Matrix[Dot[a, b]];
-	Matrix[m_][] = m;
-	Matrix[m_][Null] = m;
-	Matrix[___, 0, ___][___] = 0;
-	(*Matrix[m__][a_, a_] := Tr @ Dot[m];*)
-	Matrix[m__][a_, a_] :=
-		Block[{matrices, permutations},
-			matrices = List @ m;
-			permutations = NestList[RotateLeft, matrices, Length@ matrices];
-			permutations = Join[permutations, Map[Trans, Reverse[permutations, 2], {2}] ];
-			matrices = permutations[[Ordering[permutations, 1][[1]] ]];
-			Tr @ Dot[Sequence @@ matrices]
-		];
-	Matrix[m__][] :=
-		Block[{forms},
-			forms = {Dot[m], Trans /@ Reverse @ Dot[m]};
-			Sort[forms][[1]]
-		];
+	(*Formating*)
+		Format[Trans[x_], StandardForm] := HoldForm[x^Global`T];
+		Format[Bar[x_], StandardForm] := OverBar @ x;
+		Format[Trans[Bar[x_]], StandardForm] := x^Style[Global`\[Dagger], Bold, 12];
+		Format[Matrix[x__][h1_[i1_] ], StandardForm] := Subscript[Dot[x], i1];
+		Format[Matrix[x__][h1_[i1_], h2_[i2_]], StandardForm] := Subscript[Dot[x], i1, i2];
+		Format[Tensor[x_][inds__], StandardForm] := Subscript[x, Sequence@@ {inds}[[;;, 1]]];
 
-(*Tensor head for tensor coupling contractions*)
-Tensor /: del[ind_, a___, x_, b___] Tensor[t_][c___, ind_[x_], d___] := Tensor[t][c, ind[a, b], d];
+	(*Complex conjugation and transposition of matrices*)
+		Bar[Bar[x_]] = x;
+		Bar[0] = 0;
+		Bar[a:(_List| _Times| _Plus)] := Bar /@ a;
+		Bar[a_] /; NumericQ[a] := Conjugate @ a;
+
+		Trans[Trans[x_]] := x;
+		Trans[0] = 0;
+		Trans[x_? NumericQ a_]:= x Trans@ a;
+		Trans[a_Plus]:= Trans /@ a;
+		Trans[a_List] /; VectorQ[a] := a;
+		Trans[a_List] /; MatrixQ[a] := Transpose @ a;
+
+	(*Matrix head for symbolic matrix manipulations*)
+		Matrix /: del[ind_, a___, x_, b___] Matrix[m__][c___, ind_[x_], d___] := Matrix[m][c, ind[a, b], d];
+		Matrix /: Matrix[m1__][a_] Matrix[m2__][a_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][];
+		Matrix /: Matrix[m1__][b_] Matrix[m2__][b_, c_] := Matrix[Sequence @@ Reverse[Trans /@ List@m2], m1][c];
+		Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][b_] := Matrix[m1, m2][a];
+		Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][b_, c_] := Matrix[m1, m2][a, c];
+		Matrix /: Matrix[m1__][a_, b_] Matrix[m2__][c_, b_] := Matrix[m1, Sequence @@ Reverse[Trans /@ List@m2]][a, c];
+		Matrix /: Matrix[m1__][b_, a_] Matrix[m2__][b_, c_] := Matrix[Sequence @@ Reverse[Trans /@ List@m1], m2][a, c];
+		Matrix /: Power[Matrix[m1__][a_, b_], 2] := Matrix[m1, Sequence @@ Reverse[Trans /@ List@m1]][a, a];
+		Matrix /: Power[Matrix[m1__][a_], 2] := Matrix[m1, Sequence @@ Reverse[Trans /@ List@m1]][a, a];
+		Matrix[a_List, b_List] = Matrix[Dot[a, b]];
+		Matrix[m_][] = m;
+		Matrix[m_][Null] = m;
+		Matrix[___, 0, ___][___] = 0;
+		Matrix[a___, x_?NumericQ b_, c___][ind__]:= x Matrix[a, b, c]@ ind;
+		Matrix[m__][a_, a_] :=
+			Block[{matrices, permutations},
+				matrices = List @ m;
+				permutations = NestList[RotateLeft, matrices, Length@ matrices];
+				permutations = Join[permutations, Map[Trans, Reverse[permutations, 2], {2}] ];
+				matrices = permutations[[Ordering[permutations, 1][[1]] ]];
+				Tr @ Dot[Sequence @@ matrices]
+			];
+		Matrix[m__][] :=
+			Block[{forms},
+				forms = {Dot[m], Trans /@ Reverse @ Dot[m]};
+				Sort[forms][[1]]
+			];
+
+	(*Tensor head for tensor coupling contractions*)
+		Tensor /: del[ind_, a___, x_, b___] Tensor[t_][c___, ind_[x_], d___] := Tensor[t][c, ind[a, b], d];
+];
+
+SetReal[x_] := (Bar @ x = x;);
+SetReal[x_, y__] := (SetReal @ x; SetReal @ y );
 
 (* Tensor structure head used for all coupling contraction*)
 TStructure /: TStructure[ind1__][ar1_] TStructure[ind2__][ar2_] = TStructure[ind1, ind2][TensorProduct[ar1, ar2]];

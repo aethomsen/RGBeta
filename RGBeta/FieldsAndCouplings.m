@@ -17,6 +17,7 @@ PackageExport["AddScalarMass"]
 PackageExport["AddTrilinear"]
 PackageExport["AddVector"]
 PackageExport["AddYukawa"]
+PackageExport["SetSymmetries"]
 
 PackageExport["ResetModel"]
 
@@ -44,6 +45,8 @@ PackageScope["CouplingPermutations"]
 PackageScope["GatherToList"]
 PackageScope["RepresentationCheck"]
 
+PackageScope["UpdateProjectors"]
+
 (*#####################################*)
 (*----------Usage Definitions----------*)
 (*#####################################*)
@@ -66,6 +69,8 @@ AddVector::usage =
 	"AddVector[field, group] is an internal function used to define a vector field of a gauge group."
 AddYukawa::usage =
 	"AddYukawa[coupling, {scal, ferm1, ferm2}] defines a Yukawa interaction between a scalar and two fermion fields."
+SetSymmetries::usage =
+	"SetSymmetries[coupling, symmetries, antisymmetries] defines (anti)symmetric indices of a coupling. Format is e.g. {{1,4}, {2, ..}}, where the numbers refer to the coupling indices."
 
 RemoveField::usage =
 	"RemoveField[field, ...] is a function that removes one or more scalar and fermion fields from the model."
@@ -149,7 +154,7 @@ UpdateFieldIndexMap[] :=
 	];
 
 (* Constructs projection operators for the various types of couplings*)
-UpdateProjectors::projection0 = "The projcetion operator does not pick out the `1` coupling. Please check the GroupInvariant of the coupling for errors."
+UpdateProjectors::projection0 = "The projcetion operator does not pick out the `1` coupling. Please check the GroupInvariant of the coupling for errors and/or set the symmetries of the couplings with the SymmetricIndices/AntisymmetricIndices options."
 UpdateProjectors[couplings_List] := Scan[UpdateProjectors, couplings];
 UpdateProjectors[coupling_] :=
 	Module[{couplingInfo, dim, group, projector, symmetryFactor},
@@ -180,8 +185,8 @@ UpdateProjectors[coupling_] :=
 						, dim]}
 				] ] ] &;
 			(* Determines the correct symmetry factor *)
-			symmetryFactor = ReplaceAll[Rule[#, 0] & /@ Keys @ $yukawas] @ RefineGroupStructures @
-				Tr[projector[$a, $i, $j] . Yuk[$a, $i, $j]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 ]// Simplify;
+			symmetryFactor = ReplaceAll[Rule[#, 0] & /@ Keys @ $yukawas]@ Simplify@ RefineGroupStructures[
+				Tr[projector[$a, $i, $j] . Yuk[$a, $i, $j] ]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1] // Simplify;
 			If[symmetryFactor === 0,
 				Message[UpdateProjectors::projection0, coupling];
 				KeyDropFrom[$yukawas, coupling];
@@ -272,7 +277,6 @@ UpdateProjectors[coupling_] :=
 			AppendTo[$scalarMasses@ coupling, Projector -> projector];
 		];
 	];
-
 
 (*Initiates a scalar field*)
 Options[AddScalar] = {SelfConjugate -> False, GaugeRep -> {}, FlavorIndices -> {}, Mass -> None};
@@ -401,6 +405,84 @@ GatherToList[expr_] := Plus @@@ GroupBy[Flatten@ expr, (#[[1]] &) -> (#[[2]] &)]
 (* Function for complex conjugating an expression made up of the group invariants defined in GroupsAndIndices *)
 GroupInvBar[expr_] := ReplaceAll[{tGen[rep_, A_, a_, b_] -> tGen[rep, A, b, a], x_Complex-> Conjugate@ x}]@ expr;
 
+(* Function for setting symmetries of couplings and behavior in Matrix or Tensor functions and Trans. *)
+SetSymmetries::invalid= "`1` is not a valid format for symmetrized couplings."
+SetSymmetries::unkown= "`1` is not a Yukawa or Quartic coupling."
+SetSymmetries::inds= "`1` has but `2` indices and no symmetry can be assigned."
+SetSymmetries::dupl= "Index appearing multiple times accros the (anti)symmetry lists."
+SetSymmetries::outbound= "(Anti)symmetry lists refers to indices of higher rank than the `1` tensor."
+SetSymmetries[coupling_Symbol, {}, {}]:= Null;
+SetSymmetries[coupling_Symbol, symInds_List, asymInds_List]:= Module[{couplingInds, allInds, set},
+	{sym, asym}= PrepareSymList/@ {symInds, asymInds};
+
+	Switch[$couplings@ coupling
+		,Yukawa,
+			couplingInds= Length@ $yukawas[coupling, Indices][$a, $i, $j];
+		,Quartic,
+			couplingInds= Length@ $quartics[coupling, Indices][$a, $b, $c, $d];
+		,_,
+			Message[SetSymmetries::unkown, coupling];
+			Abort[];
+	];
+	If[couplingInds <= 1,
+		Message[SetSymmetries::inds, coupling, couplingInds];
+		Abort[];
+	];
+
+	allInds= sym~Join~asym;
+	If[allInds=== {}, Return@ Null;];
+	If[!DuplicateFreeQ@ allInds,
+		Message[SetSymmetries::dupl];
+		Abort[];
+	];
+	If[Max@ allInds > couplingInds,
+		Message[SetSymmetries::outbound, coupling];
+		Abort[];
+	];
+
+	(* If coupling is a matrix *)
+	If[couplingInds === 2,
+		If[sym=== {{1,2}},
+			Matrix[coupling][i_, j_] /; ! OrderedQ@ {i, j} := Matrix[coupling][j, i];
+			Trans@ coupling := coupling;
+			Trans@ Bar@ coupling := Bar@ coupling;
+		];
+		If[asym=== {{1,2}},
+			Matrix[coupling][i_, j_] /; ! OrderedQ@ {i, j} := -Matrix[coupling][j, i];
+			Trans@ coupling := -coupling;
+			Trans@ Bar@ coupling := -Bar@ coupling;
+		];
+	];
+
+	(* If coupling is a higher rank tensor *)
+	If[couplingInds > 2,
+		Do[
+			With[{setHere= set},
+				Tensor[coupling][inds__] /; !OrderedQ@ {inds}[[setHere]]:= Tensor[coupling]@@ SubSort[{inds}, setHere];
+			]
+		, {set, sym}];
+		Do[
+			With[{setHere= set},
+				Tensor[coupling][inds__] /; !OrderedQ@ {inds}[[setHere]]:= Signature@ {inds}[[setHere]] Tensor[coupling]@@ SubSort[{inds}, setHere];
+			];
+		, {set, asym}];
+	];
+
+];
+PrepareSymList[inds_List]:= Module[{},
+	If[MatchQ[inds, {_Integer..}], Return@ {inds}; ];
+	If[inds=== {} || inds=== {{}}, Return@{}; ];
+	If[!MatchQ[inds, {{_Integer..}..}],
+		Message[SetSymmetries::invalid, inds];
+		Abort[];
+	];
+	Sort/@ DeleteCases[inds, (Length@ # <2 &)]
+];
+SubSort[list_List, set_List]:= Block[{out=list},
+	out[[set]]= Sort@ out[[set]];
+	out
+];
+
 (*###################################*)
 (*----------Gauge couplings----------*)
 (*###################################*)
@@ -527,10 +609,14 @@ RepresentationCheck[rep_] :=
 (*----------Yukawa couplings----------*)
 (*####################################*)
 (*Function for defining the Yukawa couplings of the theory*)
-Options[AddYukawa] = {CouplingIndices -> ({} &),
+Options[AddYukawa] = {
+	CouplingIndices -> ({} &),
 	GroupInvariant -> (1 &),
 	Chirality -> Left,
-	CheckInvariance -> False};
+	CheckInvariance -> False,
+	AntisymmetricIndices -> {},
+	SymmetricIndices -> {}
+};
 AddYukawa::unkown = "`1` does not match any of the `2`s.";
 AddYukawa::gaugeInv = "Could not verify invariance under the `1` group. Plase check the GroupInvariant for errors.";
 AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
@@ -574,7 +660,9 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 			CouplingBar -> yukbar,
 			Fields -> {phi, psi1, psi2},
 			Indices -> OptionValue @ CouplingIndices,
-			Invariant -> OptionValue @ GroupInvariant|>];
+			Invariant -> OptionValue @ GroupInvariant,
+			UniqueArrangements -> Cases[CouplingPermutations[{phi, psi1, psi2}, OptionValue @ GroupInvariant], {1, __}]
+			|>];
 
 		(*Tests whether the coupling satisfy gauge invariance*)
 		If[OptionValue @ CheckInvariance,
@@ -594,15 +682,20 @@ AddYukawa[coupling_, {phi_, psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 		];
 
 		AppendTo[$couplings, coupling -> Yukawa];
+		SetSymmetries[coupling, OptionValue@ SymmetricIndices, OptionValue@ AntisymmetricIndices];
 		UpdateProjectors[coupling];
 		ResetBetas[];
 	];
 
 
 (*Function for defining the fermion masses of the theory*)
-Options[AddFermionMass] = {MassIndices -> ({} &),
+Options[AddFermionMass] = {
+	MassIndices -> ({} &),
 	GroupInvariant -> (1 &),
-	Chirality -> Left};
+	Chirality -> Left,
+	AntisymmetricIndices -> {},
+	SymmetricIndices -> {}
+};
 AddFermionMass::unkown = "`1` does not match any of the `2`s.";
 AddFermionMass[coupling_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 	Module[{g, group, projection, symmetryFactor, temp, test, yuk, yukbar, y},
@@ -639,9 +732,12 @@ AddFermionMass[coupling_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 			CouplingBar -> yukbar,
 			Fields -> {psi1, psi2},
 			Indices -> OptionValue @ MassIndices,
-			Invariant -> OptionValue @ GroupInvariant|>];
+			Invariant -> OptionValue @ GroupInvariant,
+			UniqueArrangements -> Prepend[1]/@ (1+ CouplingPermutations[{psi1, psi2}, OptionValue @ GroupInvariant])
+			|>];
 
 		AppendTo[$couplings, coupling -> FermionMass];
+		SetSymmetries[coupling, OptionValue@ SymmetricIndices, OptionValue@ AntisymmetricIndices];
 		UpdateProjectors[coupling];
 		ResetBetas[];
 	];
@@ -654,10 +750,14 @@ AddFermionMass[coupling_, {psi1_, psi2_}, OptionsPattern[]] ? OptionsCheck:=
 (*Function for defining the quartic couplings of the theory*)
 AddQuartic::unkown = "`1` does not match any of the scalars.";
 AddQuartic::gaugeInv = "Could not verify invariance under the `1` group. Plase check the GroupInvariant for errors.";
-Options[AddQuartic] = {CouplingIndices -> ({} &),
+Options[AddQuartic] = {
+	CouplingIndices -> ({} &),
 	GroupInvariant -> (1 &),
 	SelfConjugate -> True,
-	CheckInvariance -> False};
+	CheckInvariance -> False,
+	AntisymmetricIndices -> {},
+	SymmetricIndices -> {}
+};
 AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? OptionsCheck :=
 	Module[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
 		(*Tests if the fields have been defined*)
@@ -713,6 +813,7 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? Options
 		];
 
 		AppendTo[$couplings, coupling -> Quartic];
+		SetSymmetries[coupling, OptionValue@ SymmetricIndices, OptionValue@ AntisymmetricIndices];
 		UpdateProjectors[coupling];
 		ResetBetas[];
 	];
@@ -721,9 +822,13 @@ AddQuartic [coupling_, {phi1_, phi2_, phi3_, phi4_}, OptionsPattern[]] ? Options
 (*Function for defining the trilinear scalar couplings of the theory*)
 AddTrilinear::unkown = "`1` does not match any of the scalars.";
 AddTrilinear::projection0 = "The projcetion operator does not pick out the coupling. Please check the GroupInvariant for errors.";
-Options[AddTrilinear] = {CouplingIndices -> ({} &),
+Options[AddTrilinear] = {
+	CouplingIndices -> ({} &),
 	GroupInvariant -> (1 &),
-	SelfConjugate -> True};
+	SelfConjugate -> True,
+	AntisymmetricIndices -> {},
+	SymmetricIndices -> {}
+};
 AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] ? OptionsCheck :=
 	Module[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
 		(*Tests if the fields have been defined*)
@@ -762,6 +867,7 @@ AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] ? OptionsCheck
 			UniqueArrangements -> CouplingPermutations[{phi1, phi2, phi3, $vev}, OptionValue @ GroupInvariant]|>];
 
 		AppendTo[$couplings, coupling -> Trilinear];
+		SetSymmetries[coupling, OptionValue@ SymmetricIndices, OptionValue@ AntisymmetricIndices];
 		UpdateProjectors[coupling];
 		ResetBetas[];
 	];
@@ -769,9 +875,13 @@ AddTrilinear [coupling_, {phi1_, phi2_, phi3_}, OptionsPattern[]] ? OptionsCheck
 (*Function for defining the Scalar mass terms of the theory*)
 AddScalarMass::unkown = "`1` does not match any of the scalars.";
 AddScalarMass::projection0 = "The projcetion operator does not pick out the coupling. Please check the GroupInvariant for errors.";
-Options[AddScalarMass] = {MassIndices -> ({} &),
+Options[AddScalarMass] = {
+	MassIndices -> ({} &),
 	GroupInvariant -> (1 &),
-	SelfConjugate -> True};
+	SelfConjugate -> True,
+	AntisymmetricIndices -> {},
+	SymmetricIndices -> {}
+};
 AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] ? OptionsCheck:=
 	Module[{group, lam, lambar, lambda,  normalization, phi, projection, symmetryFactor, temp},
 		(*Tests if the fields have been defined*)
@@ -810,6 +920,7 @@ AddScalarMass [coupling_, {phi1_, phi2_}, OptionsPattern[]] ? OptionsCheck:=
 			UniqueArrangements -> CouplingPermutations[{phi1, phi2, $vev, $vev}, OptionValue @ GroupInvariant]|>];
 
 		AppendTo[$couplings, coupling -> ScalarMass];
+		SetSymmetries[coupling, OptionValue@ SymmetricIndices, OptionValue@ AntisymmetricIndices];
 		UpdateProjectors[coupling];
 		ResetBetas[];
 	];
@@ -909,20 +1020,20 @@ Yuk[$da_, $di_, $dj_, massive_:False] :=
 		If[MemberQ[dim, 0], Return@ {{0, 0}, {0, 0}};];
 		yL = Table[
 				CouplingTensorMap[couplingInfo, couplingInfo@ Fields, {$da, $di, $dj},
-					{$da, $di, $dj},  {{1, 2, 3}, {1, 3, 2}}]
+					{$da, $di, $dj}, couplingInfo@ UniqueArrangements]
 			, {couplingInfo, $yukawas}];
 		yR =  Table[
 				CouplingTensorMap[couplingInfo, MapAt[Bar, couplingInfo@ Fields, 1], {$da, $di, $dj},
-					{$da, $di, $dj},  {{1, 2, 3}, {1, 3, 2}}, True]
+					{$da, $di, $dj}, couplingInfo@ UniqueArrangements, True]
 			, {couplingInfo, $yukawas}];
 		If[massive,
 			yL = Join[yL, Table[
 					CouplingTensorMap[couplingInfo, Join[{$vev}, couplingInfo@ Fields], {$di, $dj},
-						{$da, $di, $dj},  {{1, 2, 3}, {1, 3, 2}}]
+						{$da, $di, $dj}, couplingInfo@ UniqueArrangements]
 				, {couplingInfo, $fermionMasses}] ];
 			yR = Join[yR, Table[
 					CouplingTensorMap[couplingInfo, Join[{$vev}, couplingInfo@ Fields], {$di, $dj},
-						{$da, $di, $dj},  {{1, 2, 3}, {1, 3, 2}}, True]
+						{$da, $di, $dj}, couplingInfo@ UniqueArrangements, True]
 				, {couplingInfo, $fermionMasses}] ];
 		];
 		(* The chiral couplings are organized in full Yukawa matrix *)
@@ -974,6 +1085,8 @@ ResetModel[] :=
 	Module[{},
 		(*Resets tensor dummy notation*)
 		ReInitializeSymbols[];
+		(* Resets coupling symmetries and reality *)
+		ReInitializeCouplingBehavior[];
 
 		(*Resets all information of the current model.*)
 		(*Global couplings variable*)
