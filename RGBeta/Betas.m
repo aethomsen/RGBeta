@@ -162,8 +162,9 @@ BetaTerm[coupling_, loop_Integer, OptionsPattern[] ]? OptionsCheck :=
 				Message[BetaTerm::loopNumber, "Yukawa", 3];
 				Abort[];
 			];
-			beta = YukawaTensors[coupling, loop] +
-				If[OptionValue@ FlavorImproved, UpsilonYukawaTensors[coupling, loop], 0]/. $yukawaCoefficients // Expand;
+			beta = YukawaTensors[coupling, loop] + If[OptionValue@ FlavorImproved,
+					UpsilonYukawaTensors[coupling, loop]/. $fermionUpsilonCoefficients/. $scalarUpsilonCoefficients, 0
+				]/. $yukawaCoefficients // Expand;
 
 		,Quartic,
 			If[loop > 2 || loop < 0,
@@ -359,14 +360,14 @@ UpsilonTerm[field_, loop_Integer]:=
 				Message[UpsilonTerm::loopNumber, "fermion", 3];
 				Abort[];
 			];
-			ups= FermionUpsilonTensors[field, loop]/. $fermionAnomalousCoefficients;
+			ups= FermionUpsilonTensors[field, loop]/. $fermionUpsilonCoefficients;
 
 		,x_ /; MemberQ[Keys@ $scalars, x],
 			If[loop > 3 || loop < 1,
 				Message[UpsilonTerm::loopNumber, "scalar", 3];
 				Abort[];
 			];
-			ups= ScalarUpsilonTensors[field, loop]/. $scalarAnomalousCoefficients;
+			ups= ScalarUpsilonTensors[field, loop]/. $scalarUpsilonCoefficients;
 
 		,_,
 			Message[UpsilonTerm::unkown, field];
