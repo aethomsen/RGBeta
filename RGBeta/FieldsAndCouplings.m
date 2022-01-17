@@ -1005,11 +1005,10 @@ FGauge[$dA_, $dB_, $dC_] :=
 	Module[{entries, group, groupInfo, dim = Length@ $fieldIndexMap["GaugeBosons"] {1, 1, 1}},
 		If[MemberQ[dim, 0], Return@ 0;];
 		entries = Table[groupInfo = $gaugeGroups@ group;
-				$fieldIndexMap["GaugeBosons"] /@ (group {1, 1, 1}) ->
 				If[MatchQ[groupInfo@ LieGroup, U1[n_]],
 					Nothing
 				,
-					Power[groupInfo[Coupling], -2] fStruct[group, $dA, $dB, $dC]
+					$fieldIndexMap["GaugeBosons"] /@ (group {1, 1, 1}) -> Power[groupInfo[Coupling], -2] fStruct[group, $dA, $dB, $dC]
 				]
 			, {group, Keys@$gaugeGroups}];
 		TStructure[$gauge@ $dA, $gauge@ $dB, $gauge@ $dC]@ SparseArray[GatherToList@ entries, dim]

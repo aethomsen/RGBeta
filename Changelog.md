@@ -1,3 +1,6 @@
+### v.1.1.1 (2022-01-17)
+- Fixed compatibility issue with Mathematica 13.0.
+
 ## v.1.1.0 (2021-10-12)
 - Added 4-loop gauge beta function.
 - Added 3-loop Yukawa beta function.
