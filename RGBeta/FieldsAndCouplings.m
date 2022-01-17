@@ -162,8 +162,10 @@ UpdateProjectors[coupling_] :=
 		,x_ /; MemberQ[Keys @ $gaugeGroups, x],
 			dim = Length@ $fieldIndexMap["GaugeBosons"] {1, 1};
 			group = $couplings@ coupling;
-			AppendTo[$gaugeGroups@ group, Projector -> (Evaluate[ TStructure[$gauge@ #1, $gauge@ #2]@
-				SparseArray[$fieldIndexMap["GaugeBosons"] /@ (group {1, 1}) ->
+			(* As of Mathematica v13 SparseArray behaves atomically w.r.t. the Slots and has to be made Inactive *)
+			AppendTo[$gaugeGroups@ group, Projector ->
+				Activate@* (Evaluate[ TStructure[$gauge@ #1, $gauge@ #2]@
+				Inactive[SparseArray][$fieldIndexMap["GaugeBosons"] /@ (group {1, 1}) ->
 					If[Head@ $gaugeGroups[group, LieGroup] =!= U1,
 					del[group@ adj, #1, #2]/Dim@ group@ adj,
 					del[group@ adj, #1, v1] del[group@ adj, #2, v2] ],
@@ -176,23 +178,23 @@ UpdateProjectors[coupling_] :=
 			(* Constructs the proto-projector *)
 			projector = Evaluate[ DiagonalMatrix[ TStructure[$scalar@ #1, $fermion@ #2, $fermion@ #3] /@ Switch[couplingInfo@ Chirality
 					,Left,
-						{SparseArray[$fieldIndexMap["All"] /@
+						{Inactive[SparseArray][$fieldIndexMap["All"] /@
 							MapAt[Bar, couplingInfo@ Fields, 1] -> GroupInvBar@ couplingInfo[Invariant][#1, #2, #3]
 						, dim], 0}
 					,Right,
-						{0, SparseArray[$fieldIndexMap["All"] /@
+						{0, Inactive[SparseArray][$fieldIndexMap["All"] /@
 							couplingInfo@ Fields -> couplingInfo[Invariant][#1, #2, #3]
 						, dim]}
-				] ] ] &;
+					] ] ] &;
 			(* Determines the correct symmetry factor *)
 			symmetryFactor = ReplaceAll[Rule[#, 0] & /@ Keys @ $yukawas]@ Simplify@ RefineGroupStructures[
-				Tr[projector[$a, $i, $j] . Yuk[$a, $i, $j] ]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1] // Simplify;
+				Tr[Activate@ projector[$a, $i, $j] . Yuk[$a, $i, $j] ]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1] // Simplify;
 			If[symmetryFactor === 0,
 				Message[UpdateProjectors::projection0, coupling];
 				KeyDropFrom[$yukawas, coupling];
 				Return@ $Failed
 			];
-			projector = Evaluate[projector[#1, #2, #3] / symmetryFactor] &;
+			projector = Activate@* (Evaluate[projector[#1, #2, #3] / symmetryFactor] &);
 			AppendTo[$yukawas@ coupling, Projector -> projector];
 
 		,Quartic,
@@ -200,18 +202,18 @@ UpdateProjectors[coupling_] :=
 			couplingInfo = $quartics@ coupling;
 			(* Constructs the proto-projector *)
 			projector = Function[{$da, $db, $dc, $dd}, Evaluate[
-				TStructure[$scalar@ $da, $scalar@ $db, $scalar@ $dc, $scalar@ $dd] @ SparseArray[
+				TStructure[$scalar@ $da, $scalar@ $db, $scalar@ $dc, $scalar@ $dd] @ Inactive[SparseArray][
 				$fieldIndexMap["Scalars"] /@ Bar /@ couplingInfo@ Fields ->
 				GroupInvBar@ couplingInfo[Invariant][$da, $db, $dc, $dd], dim] ] ];
 			(* Determines the correct symmetry factor *)
 			symmetryFactor = ReplaceAll[Rule[#, 0] & /@ Keys @ $quartics] @ RefineGroupStructures[
-				projector[$a, $b, $c, $d] Lam[$a, $b, $c, $d]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 ] // Simplify;
+				Activate@ projector[$a, $b, $c, $d] Lam[$a, $b, $c, $d]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 ] // Simplify;
 			If[symmetryFactor === 0,
 				Message[UpdateProjectors::projection0, coupling];
 				KeyDropFrom[$quartics, coupling];
 				Return@ $Failed
 			];
-			projector = Evaluate[projector[#1, #2, #3, #4] / symmetryFactor] &;
+			projector = Activate@* (Evaluate[projector[#1, #2, #3, #4] / symmetryFactor] &);
 			AppendTo[$quartics@ coupling, Projector -> projector];
 
 		,FermionMass,
@@ -221,21 +223,21 @@ UpdateProjectors[coupling_] :=
 			projector = Function[{$da, $di, $dj}, Evaluate[ DiagonalMatrix[
 				TStructure[$scalar@ $da, $fermion@ $di, $fermion@ $dj] /@ Switch[couplingInfo@ Chirality
 					,Left,
-						{SparseArray[$fieldIndexMap["All"] /@ Join[{$vevSelect}, couplingInfo@ Fields] ->
+						{Inactive[SparseArray][$fieldIndexMap["All"] /@ Join[{$vevSelect}, couplingInfo@ Fields] ->
 							GroupInvBar@ couplingInfo[Invariant][$di, $dj], dim], 0}
 					,Right,
-						{0, SparseArray[$fieldIndexMap["All"] /@ Join[{$vevSelect}, couplingInfo@ Fields] ->
+						{0, Inactive[SparseArray][$fieldIndexMap["All"] /@ Join[{$vevSelect}, couplingInfo@ Fields] ->
 							couplingInfo[Invariant][$di, $dj], dim]}
 				] ] ] ];
 			(* Determines the correct symmetry factor *)
 			symmetryFactor = ReplaceAll[Rule[#, 0] & /@ Keys @ $fermionMasses] @ RefineGroupStructures @
-				Tr[projector[$a, $i, $j] . Yuk[$a, $i, $j, True]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 ]// Simplify;
+				Tr[Activate@ projector[$a, $i, $j] . Yuk[$a, $i, $j, True]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 ]// Simplify;
 			If[symmetryFactor === 0,
 				Message[UpdateProjectors::projection0, coupling];
 				KeyDropFrom[$fermionMasses, coupling];
 				Return@ $Failed
 			];
-			projector = Evaluate[projector[#1, #2, #3] / symmetryFactor] &;
+			projector = Activate@* (Evaluate[projector[#1, #2, #3] / symmetryFactor] &);
 			AppendTo[$fermionMasses@ coupling, Projector -> projector];
 
 		,Trilinear,
@@ -243,18 +245,18 @@ UpdateProjectors[coupling_] :=
 			couplingInfo = $trilinears@ coupling;
 			(* Constructs the proto-projector *)
 			projector = Function[{$da, $db, $dc, $dd}, Evaluate[
-				TStructure[$scalar@ $da, $scalar@ $db, $scalar@ $dc, $scalar@ $dd] @ SparseArray[
+				TStructure[$scalar@ $da, $scalar@ $db, $scalar@ $dc, $scalar@ $dd] @ Inactive[SparseArray][
 				$fieldIndexMap["Scalars"] /@ Join[Bar /@ couplingInfo@ Fields, {$vevSelect}] ->
 				GroupInvBar@ couplingInfo[Invariant][$da, $db, $dc], dim] ] ];
 			(* Determines the correct symmetry factor *)
 			symmetryFactor = ReplaceAll[Rule[#, 0] & /@ Keys @ $trilinears] @ RefineGroupStructures[
-				projector[$a, $b, $c, $d] Lam[$a, $b, $c, $d, True]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 ] // Simplify;
+				Activate@ projector[$a, $b, $c, $d] Lam[$a, $b, $c, $d, True]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 ] // Simplify;
 			If[symmetryFactor === 0,
 				Message[UpdateProjectors::projection0, coupling];
 				KeyDropFrom[$trilinears, coupling];
 				Return@ $Failed
 			];
-			projector = Evaluate[projector[#1, #2, #3, #4] / symmetryFactor] &;
+			projector = Activate@* (Evaluate[projector[#1, #2, #3, #4] / symmetryFactor] &);
 			AppendTo[$trilinears@ coupling, Projector -> projector];
 
 		,ScalarMass,
@@ -262,18 +264,18 @@ UpdateProjectors[coupling_] :=
 			couplingInfo = $scalarMasses@ coupling;
 			(* Constructs the proto-projector *)
 			projector = Function[{$da, $db, $dc, $dd}, Evaluate[
-				TStructure[$scalar@ $da, $scalar@ $db, $scalar@ $dc, $scalar@ $dd] @ SparseArray[
+				TStructure[$scalar@ $da, $scalar@ $db, $scalar@ $dc, $scalar@ $dd] @ Inactive[SparseArray][
 				$fieldIndexMap["Scalars"] /@ Join[Bar /@ couplingInfo@ Fields, {$vevSelect, $vevSelect}] ->
 				GroupInvBar@ couplingInfo[Invariant][$da, $db], dim] ] ];
 			(* Determines the correct symmetry factor *)
 			symmetryFactor = ReplaceAll[Rule[#, 0] & /@ Keys @ $scalarMasses] @ RefineGroupStructures[
-				projector[$a, $b, $c, $d] Lam[$a, $b, $c, $d, True]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 ] // Simplify;
+				Activate@ projector[$a, $b, $c, $d] Lam[$a, $b, $c, $d, True]  /. (Matrix|Tensor)[x_][__] -> x /. coupling -> 1 ] // Simplify;
 			If[symmetryFactor === 0,
 				Message[UpdateProjectors::projection0, coupling];
 				KeyDropFrom[$scalarMasses, coupling];
 				Return@ $Failed
 			];
-			projector = Evaluate[projector[#1, #2, #3, #4] / symmetryFactor] &;
+			projector = Activate@* (Evaluate[projector[#1, #2, #3, #4] / symmetryFactor] &);
 			AppendTo[$scalarMasses@ coupling, Projector -> projector];
 		];
 	];
