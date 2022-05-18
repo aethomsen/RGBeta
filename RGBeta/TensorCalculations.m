@@ -269,20 +269,41 @@ ScalarMassiveTensors[coupling_Symbol, loop_Integer] :=
 		,StringForm["Evaluating term `` / ``", n, diagrams]]
 	];
 
-FermionAnomalousTensors[field_, loop_Integer] :=
+(* For the projection of scalar and fermion fields *)
+ScalarFieldProjector[{phi1_, phi2_}, $da_, $db_] :=
+	Module[{dim},
+		dim = Length@ $fieldIndexMap["Scalars"];
+		TStructure[$scalar@ $da, $scalar@ $db] @ SparseArray[
+			$fieldIndexMap["Scalars"] /@ {Bar@ phi1, phi2} ->
+				Product[del[rep, $da, $db]/ Dim@ rep, {rep, $scalars[phi1, GaugeRep]} ] /
+					Product[If[$scalars[scal, SelfConjugate], 1, Sqrt@ 2], {scal, {phi1, phi2}}], (*Normalization for complex scalars*)
+			dim]
+	]
+
+FermionFieldProjector[{psi1_, psi2_}, $di_, $dj_] :=
+	Module[{dim},
+		dim = Length@ $fieldIndexMap["Fermions"];
+		DiagonalMatrix@ {
+			TStructure[$fermion@ $di, $fermion@ $dj] @ SparseArray[
+				$fieldIndexMap["Fermions"] /@ {psi1, psi2} -> Product[del[rep, $di, $dj]/ Dim@ rep, {rep, $fermions[psi1, GaugeRep]} ],
+				dim], 0}
+	]
+
+(* Anomalous dimensions *)
+FermionAnomalousTensors[fields_, loop_Integer] :=
 	Module[{diagrams = {2, 9}[[loop]], n= 0},
 		Monitor[
 			Sum[
-				Acoef[1, loop, n] RefineGroupStructures @ Tr@ Tdot[$fermions[field, Projector][$i, $j], AnomalousTensor[1, loop, n] = AnomalousTensor[1, loop, n] ],
+				Acoef[1, loop, n] RefineGroupStructures @ Tr@ Tdot[FermionFieldProjector[fields, $i, $j], AnomalousTensor[1, loop, n] = AnomalousTensor[1, loop, n] ],
 			{n, diagrams}]
 		,StringForm["Evaluating term `` / ``", n, diagrams]]
 	];
 
-ScalarAnomalousTensors[field_, loop_Integer] :=
+ScalarAnomalousTensors[fields_, loop_Integer] :=
 	Module[{diagrams = {2, 8}[[loop]], n= 0},
 		Monitor[
 			Sum[
-				Acoef[2, loop, n] RefineGroupStructures @ Ttimes[$scalars[field, Projector][$a, $b], AnomalousTensor[2, loop, n] = AnomalousTensor[2, loop, n] ],
+				Acoef[2, loop, n] RefineGroupStructures @ Ttimes[ScalarFieldProjector[fields, $a, $b], AnomalousTensor[2, loop, n] = AnomalousTensor[2, loop, n] ],
 			{n, diagrams}]
 		,StringForm["Evaluating term `` / ``", n, diagrams]]
 	];

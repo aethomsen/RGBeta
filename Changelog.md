@@ -1,3 +1,6 @@
+### v.1.1.2 (2022-05-18)
+- Implemented mixed terms in AnomalousDimension and AnomalousDimTerm to capture the mixing between multiple fields of similar quantum numbers. Simply replace <field> with {<field1>, <field2>} in such cases. 
+
 ### v.1.1.1 (2022-01-17)
 - Fixed compatibility issue with Mathematica 13.0.
 
@@ -16,4 +19,4 @@
 - Implemented ordering of del[rep, a ,b] for performance.
 
 ### v.1.0.1 (2021-02-11)
-- Implemented a warning in BetaFuntion and BetaTerm for quartic couplings where there projectors mix with other quartic couplings.
+- Implemented a warning in BetaFuntion and BetaTerm for quartic couplings when their projectors mix with other quartic couplings.

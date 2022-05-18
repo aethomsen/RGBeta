@@ -34,9 +34,9 @@ PackageScope["TsSym4"]
 (*#####################################*)
 
 AnomalousDimension::usage =
-	"AnomalousDimension[field, loop] gives the anomalous dimension of the given field up to the l-loop order."
+	"AnomalousDimension[field, loop] gives the anomalous dimension of the given field(s) up to the l-loop order. Use {f1, f2} for field for mixing term between multiple fields of similar quantum numbers."
 AnomalousDimTerm::usage =
-	"AnomalousDimTerm[field, loop] gives the l-loop contribution to the anomalous dimension of the given field."
+	"AnomalousDimTerm[field, loop] gives the l-loop contribution to the anomalous dimension of the given field. Use {f1, f2} for field for mixing term between multiple fields of similar quantum numbers."
 BetaFunction::usage =
 	"BetaFunction[coupling, loop] computes the entire beta function of the coupling to the given loop order."
 BetaTerm::usage =
@@ -297,24 +297,37 @@ QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 
 (*Function returns the l-loop contribution to the anomalous dimension of a given matter field*)
 AnomalousDimTerm::loopNumber = "The `1` scalar anomalous dimension has only been implemented up to `2` loops."
+AnomalousDimTerm::incompatible = "The two input fields do not share quantum numbers."
 AnomalousDimTerm::unkown = "The field `1` has not been defined."
-AnomalousDimTerm[field_, loop_Integer] :=
-	Module[{anomDim},
+AnomalousDimTerm[inp_/; MemberQ[{0, 2}, Length@ inp], loop_Integer] :=
+	Module[{anomDim, fields},
+		fields= If[Head@ inp === List, inp, {inp, inp}];
+
 		(*Determines the correct tensor structure based on the field type*)
-		Switch[field
+		Switch[First@ fields
 		,x_ /; MemberQ[Keys @ $fermions, x],
 			If[loop > 2 || loop < 1,
 				Message[AnomalousDimTerm::loopNumber, "fermion", 2];
 				Abort[];
 			];
-			anomDim = FermionAnomalousTensors[field, loop] /. $fermionAnomalousCoefficients;
+			(* Checks that the qunatum numbers agree *)
+			If[Sort@ $fermions[fields[[1]], GaugeRep] =!= Sort@ $fermions[fields[[2]], GaugeRep],
+				Message[AnomalousDimTerm::incompatible];
+				Abort[];
+			];
+			anomDim = FermionAnomalousTensors[fields, loop] /. $fermionAnomalousCoefficients;
 
 		,x_ /; MemberQ[Keys @ $scalars, x],
 			If[loop > 2 || loop < 1,
 				Message[AnomalousDimTerm::loopNumber, "scalar", 2];
 				Abort[];
 			];
-			anomDim = ScalarAnomalousTensors[field, loop] /. $scalarAnomalousCoefficients;
+			(* Checks that the qunatum numbers agree *)
+			If[Sort@ $scalars[fields[[1]], GaugeRep] =!= Sort@ $scalars[fields[[2]], GaugeRep],
+				Message[AnomalousDimTerm::incompatible];
+				Abort[];
+			];
+			anomDim = ScalarAnomalousTensors[fields, loop] /. $scalarAnomalousCoefficients;
 
 		,_,
 			Message[AnomalousDimTerm::unkown, field];

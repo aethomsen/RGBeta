@@ -40,6 +40,8 @@ PackageScope["Tscal"]
 PackageScope["Yuk"]
 PackageScope["YukTil"]
 
+PackageScope["$fieldIndexMap"]
+
 PackageScope["AveragePermutations"]
 PackageScope["CouplingPermutations"]
 PackageScope["GatherToList"]
