@@ -333,20 +333,20 @@ UpsilonYukawaTensors[coupling_Symbol, loop_Integer] :=
 		,StringForm["Evaluating term `` / ``", d, Plus@@ diagrams]]
 	];
 
-FermionUpsilonTensors[field_, loop_Integer] :=
+FermionUpsilonTensors[fields_, loop_Integer] :=
 	Module[{diagrams = {0, 0, 6}[[loop]], n= 0},
 		Monitor[
 			Sum[
-				Ucoef[1, loop, n] Tr@ Tdot[$fermions[field, Projector][$i, $j], UpsilonTensor[1, loop, n] ],
+				Ucoef[1, loop, n] Tr@ Tdot[FermionFieldProjector[fields, $i, $j], UpsilonTensor[1, loop, n] ],
 			{n, diagrams}]
 		,StringForm["Evaluating term `` / ``", n, diagrams]]
 	];
 
-ScalarUpsilonTensors[field_, loop_Integer] :=
+ScalarUpsilonTensors[fields_, loop_Integer] :=
 	Module[{diagrams = {0, 0, 3}[[loop]], n= 0},
 		Monitor[
 			Sum[
-				Ucoef[2, loop, n] Ttimes[$scalars[field, Projector][$a, $b], UpsilonTensor[2, loop, n] ],
+				Ucoef[2, loop, n] Ttimes[ScalarFieldProjector[fields, $a, $b], UpsilonTensor[2, loop, n] ],
 			{n, diagrams}]
 		,StringForm["Evaluating term `` / ``", n, diagrams]]
 	];

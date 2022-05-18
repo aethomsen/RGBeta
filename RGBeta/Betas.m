@@ -48,9 +48,9 @@ Finalize::usage =
 QuarticBetaFunctions::usage =
 	"QuarticBetaFunctions[loop] returns all quartic beta functions to the given loop order using diagonalized projectors."
 UpsilonFunction::usage =
-	"UpsilonFunction[field, loop] gives the anomalous dimension of the given field up to the l-loop order."
+	"UpsilonFunction[field, loop] gives the anomalous dimension of the given field up to the l-loop order. Use {f1, f2} for field for mixing term between multiple fields of similar quantum numbers."
 UpsilonTerm::usage =
-	"UpsilonTerm[field, loop] gives the l-loop contribution to the anomalous dimension of the given field."
+	"UpsilonTerm[field, loop] gives the l-loop contribution to the anomalous dimension of the given field. Use {f1, f2} for field for mixing term between multiple fields of similar quantum numbers."
 
 AntiSym::usage =
 	"AntiSym[a, b][expr] is an internal function for antisymmetrizing expr in a and b."
@@ -330,7 +330,7 @@ AnomalousDimTerm[inp_/; MemberQ[{0, 2}, Length@ inp], loop_Integer] :=
 			anomDim = ScalarAnomalousTensors[fields, loop] /. $scalarAnomalousCoefficients;
 
 		,_,
-			Message[AnomalousDimTerm::unkown, field];
+			Message[AnomalousDimTerm::unkown, First@ fields];
 			Abort[];
 		];
 
@@ -342,48 +342,61 @@ AnomalousDimTerm[inp_/; MemberQ[{0, 2}, Length@ inp], loop_Integer] :=
 Options[AnomalousDimension] = {RescaledCouplings -> False};
 AnomalousDimension::unkown = "The coupling `1` has not been defined."
 AnomalousDimension::loopNumber = "The anomalous dimension has only been implemented up to `1` loops."
-AnomalousDimension[field_, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
+AnomalousDimension[inp_/; MemberQ[{0, 2}, Length@ inp], loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
 	Module[{coef = 4 Pi, l},
 		(* Checks if the input request has been implemented.*)
-		Switch[field
+		Switch[If[Head@ inp === List, First@ inp, inp]
 		,x_ /; MemberQ[Keys @ $fermions, x] || MemberQ[Keys @ $scalars, x],
 			If[loop > 2 || loop < 1,
 				Message[AnomalousDimension::loopNumber, 2];
 				Abort[];
 			];
 		,_,
-			Message[AnomalousDimension::unkown, field];
+			Message[AnomalousDimension::unkown, inp];
 			Abort[];
 		];
 
 		If[OptionValue @ RescaledCouplings, coef = 1;];
 
-		Sum[ Power[coef, -2 l] AnomalousDimTerm[field, l], {l, loop}]
+		Sum[ Power[coef, -2 l] AnomalousDimTerm[inp, l], {l, loop}]
 	];
 
 (*Function returns the l-loop contribution to the upsilon function of a given matter field*)
 UpsilonTerm::loopNumber= "The `1` scalar anomalous dimension has only been implemented up to `2` loops."
+UpsilonTerm::incompatible = "The two input fields do not share quantum numbers."
 UpsilonTerm::unkown= "The field `1` has not been defined."
-UpsilonTerm[field_, loop_Integer]:=
-	Module[{ups},
+UpsilonTerm[inp_/; MemberQ[{0, 2}, Length@ inp], loop_Integer]:=
+	Module[{ups, fields},
+		fields= If[Head@ inp === List, inp, {inp, inp}];
+
 		(*Determines the correct tensor structure based on the field type*)
-		Switch[field
+		Switch[First@ fields
 		,x_ /; MemberQ[Keys@ $fermions, x],
 			If[loop > 3 || loop < 1,
 				Message[UpsilonTerm::loopNumber, "fermion", 3];
 				Abort[];
 			];
-			ups= FermionUpsilonTensors[field, loop]/. $fermionUpsilonCoefficients;
+			(* Checks that the qunatum numbers agree *)
+			If[Sort@ $fermions[fields[[1]], GaugeRep] =!= Sort@ $fermions[fields[[2]], GaugeRep],
+				Message[UpsilonTerm::incompatible];
+				Abort[];
+			];
+			ups= FermionUpsilonTensors[fields, loop]/. $fermionUpsilonCoefficients;
 
 		,x_ /; MemberQ[Keys@ $scalars, x],
 			If[loop > 3 || loop < 1,
 				Message[UpsilonTerm::loopNumber, "scalar", 3];
 				Abort[];
 			];
-			ups= ScalarUpsilonTensors[field, loop]/. $scalarUpsilonCoefficients;
+			(* Checks that the qunatum numbers agree *)
+			If[Sort@ $scalars[fields[[1]], GaugeRep] =!= Sort@ $scalars[fields[[2]], GaugeRep],
+				Message[UpsilonTerm::incompatible];
+				Abort[];
+			];
+			ups= ScalarUpsilonTensors[fields, loop]/. $scalarUpsilonCoefficients;
 
 		,_,
-			Message[UpsilonTerm::unkown, field];
+			Message[UpsilonTerm::unkown, First@ fields];
 			Abort[];
 		];
 
@@ -395,23 +408,23 @@ UpsilonTerm[field_, loop_Integer]:=
 Options@ UpsilonFunction= {RescaledCouplings-> False};
 UpsilonFunction::unkown = "The coupling `1` has not been defined."
 UpsilonFunction::loopNumber = "The anomalous dimension has only been implemented up to `1` loops."
-UpsilonFunction[field_, loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
-	Module[{coef = 4 Pi, l},
+UpsilonFunction[inp_/; MemberQ[{0, 2}, Length@ inp], loop_Integer, OptionsPattern[] ] ? OptionsCheck :=
+	Module[{coef = 4 Pi, l, type},
 		(* Checks if the input request has been implemented.*)
-		Switch[field
+		Switch[If[Head@ inp === List, First@ inp, inp]
 		,x_ /; MemberQ[Keys @ $fermions, x] || MemberQ[Keys @ $scalars, x],
 			If[loop > 3 || loop < 1,
 				Message[UpsilonFunction::loopNumber, 3];
 				Abort[];
 			];
 		,_,
-			Message[UpsilonFunction::unkown, field];
+			Message[UpsilonFunction::unkown, inp];
 			Abort[];
 		];
 
 		If[OptionValue @ RescaledCouplings, coef = 1;];
 
-		Sum[Power[coef, -2 l] UpsilonTerm[field, l], {l, loop}]
+		Sum[Power[coef, -2 l] UpsilonTerm[inp, l], {l, loop}]
 	];
 
 (*###################################*)
