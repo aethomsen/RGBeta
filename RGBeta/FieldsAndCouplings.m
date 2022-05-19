@@ -304,18 +304,6 @@ AddScalar[field_, OptionsPattern[] ] ? OptionsCheck :=
 			SelfConjugate -> OptionValue[SelfConjugate]|>];
 		UpdateFieldIndexMap[];
 
-		(* Update projectors for all scalar field anomalous dimenions *)
-		dim = Length@ $fieldIndexMap["Scalars"];
-		Do[
-			projector = Activate@* Function[{$da, $db}, Evaluate[
-				TStructure[$scalar@ $da, $scalar@ $db] @ Inactive[SparseArray][
-					$fieldIndexMap["Scalars"] /@ {Bar@ scal, scal} ->
-						Product[del[rep, $da, $db]/ Dim@ rep, {rep, $scalars[scal, GaugeRep]} ] /
-							If[$scalars[scal, SelfConjugate], 1, 2], (*Normalization for complex scalars*)
-					dim] ] ];
-			AppendTo[$scalars@ scal, Projector -> projector];
-		,{scal, Keys@ $scalars}];
-
 		(* The projectors must be updated to accomodate the changes in the $fieldIndexMap *)
 		UpdateProjectors[Join[Keys@ $yukawas, Keys@ $quartics, Keys@ $fermionMasses, Keys@ $trilinears, Keys@ $scalarMasses] ];
 		ResetBetas[];
@@ -335,19 +323,9 @@ AddFermion[field_, OptionsPattern[] ] ? OptionsCheck :=
 		(*Adds field options to the list of fermion fields*)
 		AppendTo[$fermions, field -> <|
 			GaugeRep -> OptionValue[GaugeRep],
-			FlavorIndices -> OptionValue[FlavorIndices] (*,Projector -> projector*)
+			FlavorIndices -> OptionValue[FlavorIndices]
 			|>];
 		UpdateFieldIndexMap[];
-
-		(* Update projectors for all fermion field anomalous dimenions *)
-		dim = Length@ $fieldIndexMap["Fermions"];
-		Do[
-			projector = Activate@* Function[{$di, $dj}, Evaluate[ DiagonalMatrix@ {
-				TStructure[$fermion@ $di, $fermion@ $dj] @ Inactive[SparseArray][
-					$fieldIndexMap["Fermions"] /@ {ferm, ferm} -> Product[del[rep, $di, $dj]/ Dim@ rep, {rep, $fermions[ferm, GaugeRep]} ],
-					dim], 0} ] ];
-			AppendTo[$fermions@ ferm, Projector -> projector];
-		,{ferm, Keys@ $fermions}];
 
 		(* The projectors must be updated to accomodate the changes in the $fieldIndexMap *)
 		UpdateProjectors[Join[Keys@ $yukawas, Keys@ $fermionMasses] ];
