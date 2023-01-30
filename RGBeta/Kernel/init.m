@@ -41,7 +41,7 @@ If[MemberQ[$Packages,"RGBeta`"],
 
 	Print[
 	"by Anders Eller Thomsen \n",
-	(* "Reference: ",Hyperlink["arXiv:2101.xxxx","https://arxiv.org/abs/2101.xxxxx"],"\n", *)
+	"Reference: ",Hyperlink["arXiv:2101.08265","https://arxiv.org/abs/2101.08265"],"\n",
 	"Website: ",Hyperlink["https://github.com/aethomsen/RGBeta","https://github.com/aethomsen/RGBeta"]
 	];
 ];

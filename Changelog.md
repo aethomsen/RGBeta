@@ -1,3 +1,6 @@
+### v.1.1.3 (2023-01-30)
+- Fixed compatibility issue with Mathematica 13.2.
+
 ### v.1.1.2 (2022-05-19)
 - Implemented mixed terms in AnomalousDimension and AnomalousDimTerm to capture the mixing between multiple fields of similar quantum numbers. Simply replace field with {field1, field2} in such cases.
 - Similar for UpsilonTerm and UpsilonFunction.

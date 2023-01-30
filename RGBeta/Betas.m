@@ -20,7 +20,6 @@ PackageExport["UpsilonFunction"]
 PackageExport["UpsilonTerm"]
 
 PackageScope["AntiSym"]
-PackageScope["ResetBetas"]
 PackageScope["Sym"]
 PackageScope["Sym4"]
 PackageScope["SymmetrizeTS"]
@@ -54,8 +53,6 @@ UpsilonTerm::usage =
 
 AntiSym::usage =
 	"AntiSym[a, b][expr] is an internal function for antisymmetrizing expr in a and b."
-ResetBetas::usage =
-	"ResetBetas[] is a function used to dump all internally stored beta computations from the kernel."
 Sym::usage =
 	"Sym[a1, a2, a3, a4][expr] is an internal function for symmetrizing expr over up to four dummy indices."
 Sym4::usage =
