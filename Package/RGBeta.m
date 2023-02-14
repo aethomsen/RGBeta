@@ -1,7 +1,7 @@
 (*
 ################################################################
-This is RGBeta, Version 1.1.3.
-Last modefied 30-01-2023
+This is RGBeta, Version 1.1.4.
+Last modefied 14-02-2023
 
 Released under the MIT license (see 'LICENSE').
 
@@ -127,7 +127,7 @@ Protect[$a, $b, $c, $d, $i, $j, $A, $B];
 Protect[SO, Sp, SU, U1];
 Protect[f1, f2, s1, s2, s3, s4];
 
-$RGBetaVersion= "v1.1.3"
+$RGBetaVersion= "v1.1.4"
 
 
 (*###########################################*)

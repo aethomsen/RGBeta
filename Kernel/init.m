@@ -14,12 +14,12 @@ If[MemberQ[$Packages,"RGBeta`"],
 	(* Avoid double loading the package *)
 	Print[Style["The package RGBeta` is already loaded. Please restart the kernel to reload it.",RGBColor[.8,.4706,0.2573]]],
 
-	(* Set directory of AutoEFT package *)
+	(* Set directory of the package *)
 	$DirectoryRGBeta= DirectoryName[$InputFileName, 2];
 
 	(* Loading *)
 	Check[
-		Get[FileNameJoin[{$DirectoryRGBeta, "RGBeta.m"}]],
+		Get[FileNameJoin[{$DirectoryRGBeta, "Package", "RGBeta.m"}]],
 		Print[Style["Loading failed!",RGBColor[.6,.0706,0.1373]]];
 		Abort[]
 	];

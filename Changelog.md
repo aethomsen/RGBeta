@@ -1,3 +1,7 @@
+### v.1.1.4 (2023-02-14)
+- Fixed loading bug
+- Fixed installation issue
+
 ### v.1.1.3 (2023-01-30)
 - Fixed compatibility issue with Mathematica 13.2.
 

@@ -57,8 +57,6 @@ YukawaTensors::usage =
 (*----------All kinds of tensors----------*)
 (*########################################*)
 
-<< BetaTensors`; (*Loads all the tensors from ancillary file*)
-
 sig1 = {{0, 1}, {1, 0}};
 sig3 = {{1, 0}, {0, -1}};
 sig3Til = {{-1, 0}, {0, 1}};

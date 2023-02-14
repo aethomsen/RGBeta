@@ -15,7 +15,7 @@ The simplest way to download and install RGBeta is to run the command
 to install RGBeta directly to the Applications folder in Mathematica's base directory, *$UserBaseDirectory*. After the install RGBeta can be loaded into any Mathematica notebook with
 > << RGBeta`
 
-As an alternative to the more permanent installation, simply download the github repository. RGBeta can then be run from a Mathematica notebook in the base directory with the following lines:
+As an alternative to the more permanent installation, simply download the github repository. RGBeta can then be run from a Mathematica notebook in the directory of the package (one level up from README.md) with the following lines:
 > SetDirectory@NotebookDirectory[];
 > << RGBeta`
 
