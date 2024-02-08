@@ -164,8 +164,8 @@ BetaTerm[coupling_, loop_Integer, OptionsPattern[] ]? OptionsCheck :=
 				]/. $yukawaCoefficients // Expand;
 
 		,Quartic,
-			If[loop > 2 || loop < 0,
-				Message[BetaTerm::loopNumber, "quartic", 2];
+			If[loop > 3 || loop < 0,
+				Message[BetaTerm::loopNumber, "quartic", 3];
 				Abort[];
 			];
 			CheckQuarticMixing[coupling, BetaTerm];
@@ -221,12 +221,12 @@ BetaFunction[coupling_Symbol, loop_Integer, opt:OptionsPattern[] ] ? OptionsChec
 				Message[BetaFunction::loopNumber, "gauge", 4];
 				Abort[];
 			];
-		,Yukawa,
+		,Yukawa|Quartic,
 			If[loop > 3 || loop < 0,
 				Message[BetaFunction::loopNumber, $couplings @ coupling, 3];
 				Abort[];
 			];
-		,Quartic|ScalarMass|Trilinear|FermionMass,
+		,ScalarMass|Trilinear|FermionMass,
 			If[loop > 2 || loop < 0,
 				Message[BetaFunction::loopNumber, $couplings @ coupling, 2];
 				Abort[];
@@ -264,10 +264,10 @@ CheckQuarticMixing[lambda_, func_]:= Module[{fields, couplings, c},
 
 (*Fuction for diagonalizing the quartic beta functions. It inherits the options from BetaFunction*)
 QuarticBetaFunctions::singular = "The projection matrix is singular. Some of the couplings may be redundant."
-QuarticBetaFunctions::loopNumber = "The quartic beta function has only been implemented up to 2 loops."
+QuarticBetaFunctions::loopNumber = "The quartic beta function has only been implemented up to 3 loops."
 QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
 	Module[{betaFunctions, couplings, qProjections, invMatrix, c},
-		If[loop > 2,
+		If[loop > 3,
 			Message[QuarticBetaFunctions::loopNumber];
 			Abort[];
 		];
