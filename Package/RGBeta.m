@@ -1,7 +1,7 @@
 (*
 ################################################################
-This is RGBeta, Version 1.1.4.
-Last modefied 14-02-2023
+This is RGBeta, Version 1.1.5.
+Last modefied 29-02-2024
 
 Released under the MIT license (see 'LICENSE').
 

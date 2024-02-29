@@ -1,5 +1,6 @@
 ### v.1.1.5 (2023-02-29)
-- Implemented support for mixing of trilinear couplings
+- Implemented support for projectors mixing in Yukawa and trilinear couplings.
+- Implemented BetaTerm[Gauge|Yukawa|Quartic|Trilinear|FermionMass|ScalarMass, <loop>] (similarly for BetaFunction) returning the list of all beta-functions of the coupling type (properly diagonalized).
 
 ### v.1.1.4 (2023-02-14)
 - Fixed loading bug

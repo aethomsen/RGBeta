@@ -284,7 +284,7 @@ ProjectionToUnmixedBetas[type_, loop_, func_, opt:OptionsPattern[]]:=
 
 		(*Finds inversion matrix for the projectors*)
 		If[MatchQ[type, Yukawa| Quartic| Trilinear],
-			projections= CheckProjection /@ couplings;
+			projections= CheckProjection /@ couplings/. {Matrix[c_][__]-> c, Tensor[c_][__]-> c};
 			invMatrix= (Simplify@ D[projections, #]&)/@ couplings// Transpose;
 			If[Simplify@ Det@ invMatrix === 0,
 				Message[ProjectionToUnmixedBetas::singular, type];
