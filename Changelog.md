@@ -1,3 +1,6 @@
+### v.1.1.5 (2023-02-29)
+- Implemented support for mixing of trilinear couplings
+
 ### v.1.1.4 (2023-02-14)
 - Fixed loading bug
 - Fixed installation issue
