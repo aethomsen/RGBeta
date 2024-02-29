@@ -39,14 +39,23 @@ PackageScope["TsSym4"]
 (*----------Usage Definitions----------*)
 (*#####################################*)
 
+Gauge::usage= Yukawa::usage= Quartic::usage= Trilinear::usage= ScalarMass::usage= FermionMass::usage=
+	"Is a symbol used to denote a class of couplings in BetaTerm or BetaFunction."
+
 AnomalousDimension::usage =
 	"AnomalousDimension[field, loop] gives the anomalous dimension of the given field(s) up to the l-loop order. Use {f1, f2} for field for mixing term between multiple fields of similar quantum numbers."
 AnomalousDimTerm::usage =
 	"AnomalousDimTerm[field, loop] gives the l-loop contribution to the anomalous dimension of the given field. Use {f1, f2} for field for mixing term between multiple fields of similar quantum numbers."
 BetaFunction::usage =
-	"BetaFunction[coupling, loop] computes the entire beta function of the coupling to the given loop order."
+	"BetaFunction[coupling, loop] computes the entire beta function of the coupling to the given loop order.
+	Option FlavorImproved-> True (default) uses the flavor-improved \[Beta]-function (relevant from 3-loop order).
+	Option FourDimensions-> True (default) removes the 0-order \[Epsilon]-dependent part.
+	Option RescaledCouplings-> True (not default) will absorb the loop factors of 1/16\[Pi]^2 into the couplings.
+	Rather than a single coupling, Gauge, Yukawa, Quartic, Trilinear, ScalarMass, and FermionMass can be used for a class of couplings."
 BetaTerm::usage =
-	"BetaTerm[coupling, loop] computes the l-loop contribution to the beta function of the coupling."
+	"BetaTerm[coupling, loop] computes the l-loop contribution to the beta function of the coupling.
+	Option FlavorImproved-> True (default) uses the flavor-improved \[Beta]-function (relevant from 3-loop order).
+	Rather than a single coupling, Gauge, Yukawa, Quartic, Trilinear, ScalarMass, and FermionMass can be used for a class of couplings."
 CheckProjection::usage =
 	"CheckProjection[coupling] returns the result of the automatic projection operator of the coupling on the corresponding generalized coupling."
 Finalize::usage =
@@ -138,8 +147,8 @@ Tdot[a_] = a;
 (*----------Beta functions----------*)
 (*##################################*)
 
-$betaTypes= {Gauge, Yukawa, Quartic, Trilinar, ScalarMass, FermionMass};
-$betaOrders= <|Gauge-> 4, Yukawa-> 3, Quartic-> 2 , Trilinar-> 2, ScalarMass-> 2, FermionMass-> 2|>;
+$betaTypes= {Gauge, Yukawa, Quartic, Trilinear, ScalarMass, FermionMass};
+$betaOrders= <|Gauge-> 4, Yukawa-> 3, Quartic-> 2 , Trilinear-> 2, ScalarMass-> 2, FermionMass-> 2|>;
 
 CouplingType::unkown = "The coupling `1` has not been defined."
 CouplingType[coupling_] := Switch[$couplings@ coupling,
@@ -172,10 +181,13 @@ CheckKnownBeta[type_, loop_] :=
 Options[BetaTerm] = {
 		FlavorImproved-> True (*Determines if returning the flavor-improved beta function*)
 	};
-BetaTerm[coupling_, loop_, OptionsPattern[] ]? OptionsCheck :=
+BetaTerm[coupling_, loop_, opt:OptionsPattern[] ]? OptionsCheck :=
 	Module[{beta, group, tensor, C1, C2},
 		CheckKnownBeta[coupling, loop];
 
+		If[MemberQ[$betaTypes, coupling], Return@ ProjectionToUnmixedBetas[coupling, loop, BetaTerm, opt];];
+
+		CheckPotentialCouplingMixing[coupling, BetaTerm];
 		(*Determines the correct tensor structure based on coupling type*)
 		Switch[CouplingType @ coupling
 		,Gauge,
@@ -221,6 +233,9 @@ Options[BetaFunction] = {
 BetaFunction[coupling_, loop_, opt:OptionsPattern[] ] ? OptionsCheck :=
 	Module[{coef = 4 Pi, firstTerm = 0, l},
 		CheckKnownBeta[coupling, loop];
+		If[MemberQ[$betaTypes, coupling], Return@ ProjectionToUnmixedBetas[coupling, loop, BetaFunction, opt];];
+
+		CheckPotentialCouplingMixing[coupling, BetaFunction]
 
 		If[OptionValue @ RescaledCouplings, coef = 1; ];
 		If[OptionValue @ FourDimensions, firstTerm = 1; ];
@@ -229,21 +244,65 @@ BetaFunction[coupling_, loop_, opt:OptionsPattern[] ] ? OptionsCheck :=
 			{l, firstTerm, loop}]
 	];
 
-(* Function for checking possible qurtic mixings *)
-CheckQuarticMixing::quartmixes= "The quartic couplings `1` involve the same fields. `2` returns a linear combination of all the associated \[Beta]-functions. Please use QuarticBetaFunctions instead."
-CheckQuarticMixing[lambda_, func_]:= Module[{fields, couplings, c},
-	fields= Sort@ $quartics[lambda, Fields];
-	couplings= {};
-	Do[
-		If[Sort@ $quartics[c, Fields] === fields,
-			AppendTo[couplings, c];
-		];
-	,{c, Keys@ $quartics}];
+(* Function for checking possible coupling mixings *)
+CheckPotentialCouplingMixing::mixes= "The quartic couplings `1` involve the same fields. This function returns an unpredictable linear combination of all the associated \[Beta]-functions. Please use the type call `2`[`3`, <loop>] instead."
+CheckPotentialCouplingMixing[coupling_, func_]:=
+	Module[{fields, couplings, couplingsAssoc, type},
+		type= CouplingType@ coupling;
+		If[MatchQ[type, Gauge| FermionMass| ScalarMass], Return[]; ];
 
-	If[Length@ couplings> 1,
-		Message[CheckQuarticMixing::quartmixes, couplings, func];
+		couplingsAssoc= CouplingInfo@ type;
+
+		fields= Sort@ couplingsAssoc[coupling, Fields];
+		couplings= Keys@ Select[couplingsAssoc, (Sort@ #[Fields] === fields &)];
+
+		If[Length@ couplings> 1,
+			Message[CheckPotentialCouplingMixing::mixes, couplings, func, type];
+		];
 	];
-];
+
+CouplingInfo@ couplingType_:= Switch[couplingType,
+		Gauge, $gaugeGroups,
+		Yukawa, $yukawas,
+		Quartic, $quartics,
+		Trilinear, $trilinears,
+		ScalarMass, $scalarMasses,
+		FermionMass, $fermionMasses
+	];
+
+(*Fuction returning the diagonalized list of all beta functions (terms) of a given type. It inherits the options from BetaFunction or BetaTerm*)
+ProjectionToUnmixedBetas::singular = "The projection matrix of `1` is singular. Some of the couplings are redundant."
+ProjectionToUnmixedBetas[type_, loop_, func_, opt:OptionsPattern[]]:=
+	Module[{beta, couplings, projections, c},
+		couplings= If[type === Gauge,
+			List @@ Query[All, Key@ Coupling]@ $gaugeGroups,
+			Keys@ CouplingInfo@ type
+		];
+		Print["The ", type, " couplings are ", couplings, " and the associated \[Beta]-functions(terms) are"];
+
+		If[Length@ couplings === 0, Return@ {}; ];
+
+		(*Finds inversion matrix for the projectors*)
+		If[MatchQ[type, Yukawa| Quartic| Trilinear],
+			projections= CheckProjection /@ couplings;
+			invMatrix= (Simplify@ D[projections, #]&)/@ couplings// Transpose;
+			If[Simplify@ Det@ invMatrix === 0,
+				Message[ProjectionToUnmixedBetas::singular, type];
+				Abort[];
+			];
+			invMatrix= Simplify@ Inverse @ invMatrix;
+		,
+			invMatrix= IdentityMatrix@ Length@ couplings;
+		];
+
+		beta = Monitor[
+				Table[Quiet@ func[c, loop, opt], {c, couplings}]
+			, StringForm["Evaluating the `` \[Beta]-function", c] ];
+
+		invMatrix . beta // Expand
+
+	];
+
 
 (*Fuction for diagonalizing the quartic beta functions. It inherits the options from BetaFunction*)
 QuarticBetaFunctions::singular = "The projection matrix is singular. Some of the couplings may be redundant."
