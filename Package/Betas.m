@@ -277,7 +277,7 @@ ProjectionToUnmixedBetas[type_, loop_, func_, opt:OptionsPattern[]]:=
 			List @@ Query[All, Key@ Coupling]@ $gaugeGroups,
 			Keys@ CouplingInfo@ type
 		];
-		Print["The ", type, " couplings are ", couplings, " and the associated \[Beta]-functions(terms) are"];
+		(* Print["The ", type, " couplings are ", couplings, " and the associated \[Beta]-functions(terms) are"]; *)
 
 		If[Length@ couplings === 0, Return@ {}; ];
 
@@ -298,39 +298,16 @@ ProjectionToUnmixedBetas[type_, loop_, func_, opt:OptionsPattern[]]:=
 				Table[Quiet@ func[c, loop, opt], {c, couplings}]
 			, StringForm["Evaluating the `` \[Beta]-function", c] ];
 
-		invMatrix . beta // Expand
+		Association@@ Thread@ Rule[couplings, invMatrix . beta // Simplify]
 
 	];
 
 
 (*Fuction for diagonalizing the quartic beta functions. It inherits the options from BetaFunction*)
-QuarticBetaFunctions::singular = "The projection matrix is singular. Some of the couplings may be redundant."
-QuarticBetaFunctions::loopNumber = "The quartic beta function has only been implemented up to 3 loops."
-QuarticBetaFunctions[loop_Integer, opt:OptionsPattern[]] ? OptionsCheck :=
+QuarticBetaFunctions::deprecated = "QuarticBetaFunctions is deprecated. Please use BetaTerm[Quartic, <loop number>] or BetaFunction[Quartic, <loop number>] instead."
+QuarticBetaFunctions[___] :=
 	Module[{betaFunctions, couplings, qProjections, invMatrix, c},
-		If[loop > 3,
-			Message[QuarticBetaFunctions::loopNumber];
-			Abort[];
-		];
-
-		couplings = Keys @ $quartics;
-		Print["The quartic couplings are ", couplings];
-
-		(*Finds inversion matrix for the quartic projectors*)
-		qProjections = CheckProjection /@ couplings;
-		invMatrix = Transpose @ Table[Simplify @ D[qProjections, c], {c, couplings}];
-		If[Det @ invMatrix === 0,
-			Message[QuarticBetaFunctions::singular];
-			Abort[];
-		];
-		invMatrix = Inverse @ invMatrix;
-
-		(*Extracts beta functions*)
-		betaFunctions = Monitor[
-							Table[Quiet@ BetaFunction[c, loop, opt], {c, couplings}]
-						,StringForm["Evaluating the `` \[Beta]-function", c] ];
-
-		invMatrix . betaFunctions // Expand
+		Message[QuarticBetaFunctions::deprecated];
 	];
 
 (*Function returns the l-loop contribution to the anomalous dimension of a given matter field*)
