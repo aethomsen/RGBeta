@@ -127,7 +127,7 @@ Protect[$a, $b, $c, $d, $i, $j, $A, $B];
 Protect[SO, Sp, SU, U1];
 Protect[f1, f2, s1, s2, s3, s4];
 
-$RGBetaVersion= "v1.1.5"
+$RGBetaVersion= "v1.2.0"
 
 
 (*###########################################*)

@@ -148,7 +148,7 @@ Tdot[a_] = a;
 (*##################################*)
 
 $betaTypes= {Gauge, Yukawa, Quartic, Trilinear, ScalarMass, FermionMass};
-$betaOrders= <|Gauge-> 4, Yukawa-> 3, Quartic-> 2 , Trilinear-> 2, ScalarMass-> 2, FermionMass-> 2|>;
+$betaOrders= <|Gauge-> 4, Yukawa-> 3, Quartic-> 3 , Trilinear-> 2, ScalarMass-> 2, FermionMass-> 2|>;
 
 CouplingType::unkown = "The coupling `1` has not been defined."
 CouplingType[coupling_] := Switch[$couplings@ coupling,
@@ -203,15 +203,7 @@ BetaTerm[coupling_, loop_, opt:OptionsPattern[] ]? OptionsCheck :=
 			beta = YukawaTensors[coupling, loop] + If[OptionValue@ FlavorImproved && loop > 0,
 					UpsilonYukawaTensors[coupling, loop]/. $fermionUpsilonCoefficients/. $scalarUpsilonCoefficients, 0
 				]/. $yukawaCoefficients // Expand;
-
 		,Quartic,
-<<<<<<< HEAD
-			If[loop > 3 || loop < 0,
-				Message[BetaTerm::loopNumber, "quartic", 3];
-				Abort[];
-			];
-=======
->>>>>>> master
 			CheckQuarticMixing[coupling, BetaTerm];
 			beta = QuarticTensors[coupling, loop] /. $quarticCoefficients // Expand;
 
@@ -239,36 +231,10 @@ Options[BetaFunction] = {
 	};
 BetaFunction[coupling_, loop_, opt:OptionsPattern[] ] ? OptionsCheck :=
 	Module[{coef = 4 Pi, firstTerm = 0, l},
-<<<<<<< HEAD
-		Switch[$couplings @ coupling
-		,gr_ /; MemberQ[Keys @ $gaugeGroups, gr],
-			If[loop > 4 || loop < 0,
-				Message[BetaFunction::loopNumber, "gauge", 4];
-				Abort[];
-			];
-		,Yukawa|Quartic,
-			If[loop > 3 || loop < 0,
-				Message[BetaFunction::loopNumber, $couplings @ coupling, 3];
-				Abort[];
-			];
-		,ScalarMass|Trilinear|FermionMass,
-			If[loop > 2 || loop < 0,
-				Message[BetaFunction::loopNumber, $couplings @ coupling, 2];
-				Abort[];
-			];
-			If[$couplings @ coupling=== Quartic,
-				CheckQuarticMixing[coupling, BetaFunction];
-			];
-		,_,
-			Message[BetaFunction::unkown, coupling];
-			Abort[];
-		];
-=======
 		CheckKnownBeta[coupling, loop];
 		If[MemberQ[$betaTypes, coupling], Return@ ProjectionToUnmixedBetas[coupling, loop, BetaFunction, opt];];
 
 		CheckPotentialCouplingMixing[coupling, BetaFunction];
->>>>>>> master
 
 		If[OptionValue @ RescaledCouplings, coef = 1; ];
 		If[OptionValue @ FourDimensions, firstTerm = 1; ];
