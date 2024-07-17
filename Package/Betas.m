@@ -235,7 +235,7 @@ BetaFunction[coupling_, loop_, opt:OptionsPattern[] ] ? OptionsCheck :=
 		CheckKnownBeta[coupling, loop];
 		If[MemberQ[$betaTypes, coupling], Return@ ProjectionToUnmixedBetas[coupling, loop, BetaFunction, opt];];
 
-		CheckPotentialCouplingMixing[coupling, BetaFunction]
+		CheckPotentialCouplingMixing[coupling, BetaFunction];
 
 		If[OptionValue @ RescaledCouplings, coef = 1; ];
 		If[OptionValue @ FourDimensions, firstTerm = 1; ];
