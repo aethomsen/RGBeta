@@ -28,16 +28,22 @@ If[MemberQ[$Packages,"RGBeta`"],
 	RGBeta`ResetModel[];
 
 	(*Print the packagename*)
-	CellPrint@ Cell[StandardForm@ RowBox@ {
-		AdjustmentBox[
-			StyleBox["\t    R", FontColor-> RGBColor[.6, .0706, 0.1373]],
-		BoxMargins-> {{0, -.2}, {0, 0}}],
-		AdjustmentBox[
-			StyleBox["G", FontColor-> RGBColor[0.3, 0.55, 0.2]],
-		BoxMargins -> {{0, -.2}, {0, 0}}],
-		StyleBox["Beta", FontColor-> RGBColor[0, 0.396, 0.741]]
-		}, "text", FontSize-> 20, FontWeight-> Bold,
-	Background-> White];
+	CellPrint@ ExpressionCell[ Row[{
+		TextCell["R", Bold, FontSize-> 25,
+			FontColor-> RGBColor[.6, .0706, 0.1373]
+			],
+		TextCell["G", Bold, FontSize-> 25,
+			FontColor-> RGBColor[0.3, 0.55, 0.2]
+			],
+		TextCell["Beta", Bold, FontSize-> 25,
+			FontColor-> RGBColor[0, 0.396, 0.741]
+			],
+		Spacer[15],
+		Row[{TextCell[""<> RGBeta`$RGBetaVersion, Bold,
+			FontColor-> RGBColor[0.5, 0.5, 0.5], FontSize-> 11
+			]}, BaselinePosition->Baseline]
+		}]
+		, CellMargins-> {{75, 5}, {0, 5}}, Background-> White];
 
 	Print[
 	"by Anders Eller Thomsen \n",
