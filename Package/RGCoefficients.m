@@ -9,6 +9,7 @@ Package["RGBeta`"]
 (*##################################*)
 
 PackageExport["\[Zeta]3"]
+PackageExport["\[Xi]"]
 
 PackageScope["$fermionAnomalousCoefficients"]
 PackageScope["$fermionUpsilonCoefficients"]
@@ -24,6 +25,8 @@ PackageScope["$yukawaCoefficients"]
 
 \[Zeta]3::usage =
 	"Denotes Riemann's zeta function evluated at 3: \!\(\*SubscriptBox[\(\[Zeta]\), \(3\)]\)= 1.20206..."
+\[Xi]::usage = 
+	"Denotes the gauge-parameter of the \!\(\*SubscriptBox[R, \(\[Xi]\)\) gauge."
 
 $fermionAnomalousCoefficients::usage =
 	"$fermionAnomalousCoefficients is an internal replacement lsit containing the coefficients of all the tensors structures in the fermion anomalous dimension."
@@ -695,11 +698,11 @@ $gaugeCoefficients = {
 
 $fermionAnomalousCoefficients = {
 (* 1-loop *)
-	Acoef[1, 1, 1] -> Global`\[Xi],
+	Acoef[1, 1, 1] -> \[Xi],
 	Acoef[1, 1, 2] -> 1/2,
 (* 2-loop *)
 	Acoef[1, 2, 1] -> -3/2,
-	Acoef[1, 2, 2] -> 25/4 + 2 Global`\[Xi] + Global`\[Xi]^2/4,
+	Acoef[1, 2, 2] -> 25/4 + 2 \[Xi] + \[Xi]^2/4,
 	Acoef[1, 2, 3] -> -1/4,
 	Acoef[1, 2, 4] -> -1/2,
 	Acoef[1, 2, 5] -> 9/2,
@@ -711,11 +714,11 @@ $fermionAnomalousCoefficients = {
 
 $scalarAnomalousCoefficients = {
 (* 1-loop *)
-	Acoef[2, 1, 1] -> Global`\[Xi] - 3,
+	Acoef[2, 1, 1] -> \[Xi] - 3,
 	Acoef[2, 1, 2] -> 1/2,
 (* 2-loop *)
 	Acoef[2, 2, 1] -> 3/2,
-	Acoef[2, 2, 2] -> Global`\[Xi]^2/4 + 2 Global`\[Xi] - 35/3,
+	Acoef[2, 2, 2] -> \[Xi]^2/4 + 2 \[Xi] - 35/3,
 	Acoef[2, 2, 3] -> 11/12,
 	Acoef[2, 2, 4] -> 5/6,
 	Acoef[2, 2, 5] -> 1/12,
@@ -741,4 +744,4 @@ $scalarUpsilonCoefficients= {
 
 Protect[$gaugeCoefficients, $quarticCoefficients, $yukawaCoefficients,
 	$fermionAnomalousCoefficients, $scalarAnomalousCoefficients,
-	$fermionUpsilonCoefficients, $scalarUpsilonCoefficients, \[Zeta]3];
+	$fermionUpsilonCoefficients, $scalarUpsilonCoefficients, \[Zeta]3, \[Xi]];

@@ -350,7 +350,8 @@ CouplingPermutations[fields_List, invariant_Function] :=
 					eps[rep_, a__] :> eps[rep, Sequence @@ Sort @ List @ a],
 					lcSymb[rep_, a__] :> lcSymb[rep, Sequence @@ Sort @ List @ a],
 					delA2[rep_, i_, a__] :> delA2[rep, i, Sequence @@ Sort @ List @ a],
-					delS2[rep_, i_, a__] :> delS2[rep, i, Sequence @@ Sort @ List @ a]};
+					delS2[rep_, i_, a__] :> delS2[rep, i, Sequence @@ Sort @ List @ a],
+					dSym[gr_, inds__]:> dSym[gr, Sequence @@ Sort @ List @ inds]};
 				If[MemberQ[uniqueArrangements, {fs, inv}],
 					Continue[];
 				];
@@ -1088,7 +1089,8 @@ ResetModel[] :=
 		$trilinears = <||>;
 		(*Association with all information on the scalar masses.*)
 		$scalarMasses = <||>;
-
+		(*Association with all information on the fermion fields: representations etc.*)
+		$LieGroups = <||>;
 		(*Removes stored computations of the beta tensors.*)
 		ResetBetas[];
 	];

@@ -59,6 +59,7 @@ PackageScope["$scalar"]
 PackageScope["$scalarContraction"]
 
 PackageScope["OptionsCheck"]
+PackageScope["SelectAndDelteCases"]
 
 PackageScope["Coupling"]
 PackageScope["CouplingBar"]
@@ -167,3 +168,10 @@ OptionTest[_, CheckInvariance] = BooleanQ;
 Attributes @ OptionsCheck = {HoldFirst};
 OptionsCheck @ func_[___, opts : OptionsPattern[]] :=
 	And @@ (OptionTest[func, #1][#2] || OptionMessage[#1, func, #2] &) @@@ FilterRules[List[opts], Options @ func];
+
+
+(*###############################################*)
+(*---------------Utility functions---------------*)
+(*###############################################*)
+
+SelectAndDelteCases[expr_, args__]:= {Cases[expr, args], DeleteCases[expr, args]};

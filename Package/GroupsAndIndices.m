@@ -12,6 +12,7 @@ PackageExport["del"]
 PackageExport["delA2"]
 PackageExport["delIndex"]
 PackageExport["delS2"]
+PackageExport["dSym"]
 PackageExport["eps"]
 PackageExport["fStruct"]
 PackageExport["lcSymb"]
@@ -37,6 +38,9 @@ PackageExport["SetReal"]
 PackageExport["Tensor"]
 PackageExport["Trans"]
 
+PackageExport["$LieGroups"]
+
+PackageScope["PerformColorAlg"]
 PackageScope["RefineGroupStructures"]
 PackageScope["ReInitializeSymbols"]
 PackageScope["ReInitializeCouplingBehavior"]
@@ -54,6 +58,8 @@ delIndex::usage =
 	"del[rep, a, b] represents a Kronecker delta function in \"rep space\" with either a or b being an Integer fixing the value of the other summation index."
 delS2::usage =
 	"delS2[group, a, i, j] represents the singlet contraction between the S2 index a and the two fundamental indices i and j."
+dSym::usage =
+	"dSym[group, A, B, C] represents the symmetric 3-index tensor of the adjoint representation of SU(N) with indices A, B, and C."
 eps::usage =
 	"eps[rep, a, b] represents the 2-index antisymmetric tensor in \"rep space\" with indices a and b."
 fStruct::usage =
@@ -168,8 +174,6 @@ ReInitializeSymbols[] :=
 
 		(*Default group generator properties.*)
 		Clear @ tGen;
-		(* tGen /: del[rep_, a___, x_, b___] tGen[rep_, A_, c___, x_, d___] := tGen[rep, A, c, a, b, d];
-		tGen /: del[group_[adj], A___, X_, B___] tGen[group_[rep_], X_, c__] := tGen[group[rep], A, B, c]; *)
 		tGen /: del[rep_, OrderlessPatternSequence[x_, a_]] tGen[rep_, A_, b___, x_, c___] := tGen[rep, A, b, a, c];
 		tGen /: del[group_[adj], OrderlessPatternSequence[X_, A_]] tGen[group_[rep_], X_, c__] := tGen[group[rep], A, c];
 		tGen /: tGen[rep_, A_, a_, b_] tGen[rep_, A_, b_, c_] := Casimir2[rep] del[rep, a, c];
@@ -183,11 +187,16 @@ ReInitializeSymbols[] :=
 
 		(*Default structure constant properties.*)
 		Clear @ fStruct;
-		(* fStruct /: del[group_[adj], A___, X_, B___] fStruct[group_, C___, X_, D___] := fStruct[group, C, A, B, D]; *)
 		fStruct /: del[group_[adj], OrderlessPatternSequence[X_, A_]] fStruct[group_, B___, X_, C___] := fStruct[group, B, A, C];
 		fStruct /: fStruct[group_, x:OrderlessPatternSequence[A_, B_, C_] ] fStruct[group_, y:OrderlessPatternSequence[D_, B_, C_] ] :=
 			Signature[List@ x] Signature[List@ y] Signature[{A, B, C}] Signature[{D, B, C}] Casimir2[group@ adj] del[group@ adj, A, D];
 		fStruct[group_, a___, x_, b___, x_, c___] := 0;
+
+		(*Symmetric tensor*)
+		Clear @ dSym;
+		dSym[group_, OrderlessPatternSequence[A_, A_, _]]:= 0;
+		dSym/: del[group_@ adj, OrderlessPatternSequence[A_, X_]] dSym[group_, OrderlessPatternSequence[X_, B_, C_]] := dSym[group, A, B, C];
+		dSym/: fStruct[group_, OrderlessPatternSequence[A_, X_, Y_]] dSym[group_, OrderlessPatternSequence[X_, Y_, B_]] := 0; 
 
 		(*Two-index delta*)
 		Clear @ twoIndexRepDelta;
@@ -338,6 +347,7 @@ DefineLieGroup[groupName_Symbol, lieGroup_Symbol[n_Integer|n_Symbol] ] :=
 			Message[DefineLieGroup::unkown, lieGroup[n] ];
 			Return @ $Failed;
 		];
+		$LieGroups@ groupName= lieGroup @ n;
 	];
 
 (*Initialization for an SO(n) gauge group.*)
@@ -418,6 +428,10 @@ DefineSUGroup[group_Symbol, n_Integer|n_Symbol] :=
 		twoIndexRepDelta[group @ A2, a_, b_] = AntiSym[a @ 1, a @ 2 ][del[group@fund, a@1, b@1] del[group@fund, a@2, b@2] ];
 		(*del/: del[group @ A2, a_, b_] del[group @ fund, a_[[1]], b_]*)
 
+		(*Symmetric tensor*)
+		dSym/: dSym[group, OrderlessPatternSequence[A_, X_, Y_]] dSym[group, OrderlessPatternSequence[B_, X_, Y_]] = (n^2-4)/ n* del[group@ adj, A, B];
+		dSym/: Power[dSym[group, __], 2] = n^2 - 4;
+
 		(*Adjoint*)
 		Dim[group[adj]] = n^2 - 1;
 		TraceNormalization[group[adj]] = n;
@@ -440,3 +454,135 @@ DefineU1Group[group_Symbol, power_Integer:1] :=
 		];
 		fStruct[group, __] = 0;
 	];
+
+
+(*##########################################*)
+(*----------Advanced color algebra----------*)
+(*##########################################*)
+(* SU(N) algebra for the adjoint representation is evaluated using the *)
+
+
+PerformColorAlg[expr_] := 
+	Module[{out = Expand @ expr, cgs, cgGr},
+		If[Head @ out === Plus, PerformColorAlg /@ out // Return; ];
+		
+		{cgs, out} = SelectAndDelteCases[out, _fStruct | _dSym];
+		cgs = GatherBy[cgs, First];
+		Times @@ out* Product[
+				If[Length@ cgGr > 2, AdjContraction[Times @@ cgGr], Times @@ cgGr]
+			, {cgGr, cgs}]
+	];
+
+AdjContraction @ prod:Times[prefact___, cgs:Longest[(_fStruct | _dSym) ..]] /; Length@{cgs} > 2 := 
+	Module[{out},
+		out = EliminateShortestCycle[Times@ cgs];
+		If[FreeQ[out, AdjTrace], Return@ prod;];
+		AdjContraction[Times@prefact* (out /. x_AdjTrace :> EvaluateAdjTrace@x) // Expand]	
+	];
+AdjContraction @ sum_Plus := AdjContraction /@ sum;
+AdjContraction @ x_ := x;
+
+EliminateShortestCycle[prod_Times] := Replace[prod, {
+    	(*3-cycles*)
+		Times[rest___, cyc:OrderlessPatternSequence[_[_, OrderlessPatternSequence[_, x1_, x2_]], 
+	   		_[_, OrderlessPatternSequence[_, x2_, x3_]], _[_, OrderlessPatternSequence[_, x3_, x1_]] ]] :>
+     	Times @ rest * CycleToTrace3 @ cyc
+    ,
+		(*4-cycles*)
+    	Times[rest___, cyc:OrderlessPatternSequence[_[_, OrderlessPatternSequence[_, x1_, x2_]], 
+			_[_, OrderlessPatternSequence[_, x2_, x3_]], _[_, OrderlessPatternSequence[_, x3_, x4_]], 
+			_[_, OrderlessPatternSequence[_, x4_, x1_]] ]] :>
+     	Times @ rest * CycleToTrace4 @ cyc
+    } ];
+
+CycleToTrace3 @ OrderlessPatternSequence[h1_[gr_, p1:OrderlessPatternSequence[a1_, x1_, x2_]],
+		h2_[gr_, p2 : OrderlessPatternSequence[a2_, x2_, x3_]], 
+		h3_[gr_, p3 : OrderlessPatternSequence[a3_, x3_, x1_]] ] := 
+ 	Module[{pref},
+		pref = If[h1 === fStruct, Signature @ {p1} * Signature @ {a1, x1, x2}, 1]* 
+			If[h2 === fStruct, Signature @ {p2} * Signature @ {a2, x2, x3}, 1]*
+			If[h3 === fStruct, Signature @ {p3} * Signature @ {a3, x3, x1}, 1]*
+			Power[I, Count[{h1, h2, h3}, fStruct]];
+		pref* AdjTrace[gr, {h1, h2, h3} /. {dSym -> DMat, fStruct -> FMat}, {a1, a2, a3} ]
+	];
+
+CycleToTrace4 @ OrderlessPatternSequence[h1_[gr_, p1 : OrderlessPatternSequence[a1_, x1_, x2_]], 
+		h2_[gr_, p2 : OrderlessPatternSequence[a2_, x2_, x3_]], 
+		h3_[gr_, p3 : OrderlessPatternSequence[a3_, x3_, x4_]], 
+		h4_[gr_, p4 : OrderlessPatternSequence[a4_, x4_, x1_]] ] := 
+	Module[{pref},
+		pref = 
+		If[h1 === fStruct, Signature @ {p1} * Signature @ {a1, x1, x2}, 1] * 
+			If[h2 === fStruct, Signature@ {p2}* Signature@ {a2, x2, x3}, 1] *
+				If[h3 === fStruct, Signature@ {p3}* Signature@ {a3, x3, x4}, 1] *
+				If[h4 === fStruct, Signature@ {p4}* Signature@ {a4, x4, x1}, 1] *
+				Power[I, Count[{h1, h2, h3, h4}, fStruct]];
+		pref* AdjTrace[gr, {h1, h2, h3, h4} /. {dSym -> DMat, fStruct -> FMat}, {a1, a2, a3, a4} ]
+	];
+
+CanonizeAdjTrace @ AdjTrace[gr_, types_, inds_] := 
+	Block[{can, canTransp, ind, indTransp, ord, rots = Length @ types - 1},
+		can = NestList[RotateLeft, types, rots];
+		ind = NestList[RotateLeft, inds, rots];
+		canTransp = Reverse /@ can; 
+		indTransp = Reverse /@ ind;
+		ord = First @ Ordering @ can;
+		can = can[[ord]]; ind = ind[[ord]];
+		ord = First @ Ordering @ canTransp;
+		canTransp = canTransp[[ord]]; indTransp = indTransp[[ord]];
+		If[OrderedQ @ {can, canTransp},
+			AdjTrace[gr, can, ind]
+		,
+			Power[-1, Count[types, FMat]] * AdjTrace[gr, canTransp, indTransp]
+		]
+	];
+
+EvaluateAdjTrace::unkwn = "The cadjoint trace has not been implemented: `1`";
+EvaluateAdjTrace @ adjTr:AdjTrace[gr_, types_, _] := 
+	Module[{out, n = First @ $LieGroups @ gr, e},
+		out = CanonizeAdjTrace @ adjTr;
+		out /. Switch[Length @ types
+			, 3, {	
+				AdjTrace[gr, {FMat, FMat, FMat}, {a_, b_, c_}] :> 
+					I* n/ 2* fStruct[gr, a, b, c],
+				AdjTrace[gr, {DMat, FMat, FMat}, {a_, b_, c_}] :> 
+					n/ 2* dSym[gr, a, b, c],
+				AdjTrace[gr, {DMat, DMat, FMat}, {a_, b_, c_}] :> 
+					I*  AdjTrFactor[n, 4]/2* fStruct[gr, a, b, c],
+				AdjTrace[gr, {DMat, DMat, DMat}, {a_, b_, c_}] :> 
+					AdjTrFactor[n, 12]/2* dSym[gr, a, b, c]
+				}
+			, 4, {
+				AdjTrace[gr, {FMat, FMat, FMat, FMat}, {a_, b_, c_, d_}] :> (
+					del[gr@ adj, a, d]  del[gr@ adj, b, c] +
+					(del[gr@ adj, a, b]  del[gr@ adj, c, d] + del[gr@ adj, a, c]  del[gr@ adj, b, d])/2 +
+					n/4* ( fStruct[gr, a, d, e]  fStruct[gr, b, c, e] + dSym[gr, a, d, e]  dSym[gr, b, c, e])
+					),
+				AdjTrace[gr, {DMat, FMat, FMat, FMat}, {d_, a_, b_, c_}] :> 
+					1/4  I  n (dSym[gr, a, d, e]  fStruct[gr, b, c, e] - fStruct[gr, a, d, e]  dSym[gr, b, c, e] ),
+				AdjTrace[gr, {DMat, DMat, FMat, FMat}, {c_, d_, a_, b_}] :> (
+					(del[gr@ adj, a, b]  del[gr@ adj, c, d] - del[gr@ adj, a, c]  del[gr@ adj, b, d])/2 +
+					AdjTrFactor[n, 8]/4  fStruct[gr, a, d, e]  fStruct[gr, b, c, e] +
+					n/4   dSym[gr, a, d, e]  dSym[gr, b, c, e]),
+				AdjTrace[gr, {DMat, FMat, DMat, FMat}, {d_, a_, b_, c_}] :> (
+					-(del[gr@ adj, a, b]  del[gr@ adj, c, d] - del[gr@ adj, a, c]  del[gr@ adj, b, d])/2 +
+					n/4  fStruct[gr, a, d, e]  fStruct[gr, b, c, e] +
+					n/4   dSym[gr, a, d, e]  dSym[gr, b, c, e]),
+				AdjTrace[gr, {DMat, DMat, DMat, FMat}, {b_, c_, d_, a_}] :> (
+					2 I/n  fStruct[gr, a, d, e]  dSym[gr, b, c, e] +
+					I  AdjTrFactor[n, 8]/4  fStruct[gr, a, b, e]  dSym[gr, c, d, e] +
+					I/4  dSym[gr, a, b, e]  fStruct[gr, c, d, e]),
+				AdjTrace[gr, {DMat, DMat, DMat, DMat}, {a_, b_, c_, d_}] :> (
+					AdjTrFactor[n, 4]/n (del[gr@ adj, a, b]  del[gr@ adj, c, d] + del[gr@ adj, a, d]  del[gr@ adj, b, c]) +
+					AdjTrFactor[n, 16]/4 (dSym[gr, a, b, e]  dSym[gr, c, d, e] + dSym[gr, a, d, e]  dSym[gr, b, c, e]) -
+					n/4  dSym[gr, a, c, e]  dSym[gr, b, d, e])
+				}
+			, _,
+				Message[EvaluateAdjTrace::unkwn, out]; Abort[];
+		]
+	];	
+(*Introduced to minimize the no. of terms at intermediate steps when \
+N is kept symbolic*)
+EvalTrReductionFactors@ expr_ := expr /. AdjTrFactor[n_, a_] :> (n^2 - a)/n; 
+
+
