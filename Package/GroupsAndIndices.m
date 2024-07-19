@@ -40,6 +40,7 @@ PackageExport["Trans"]
 
 PackageExport["$LieGroups"]
 
+PackageScope["AdjTrFactor"]
 PackageScope["PerformColorAlg"]
 PackageScope["RefineGroupStructures"]
 PackageScope["ReInitializeSymbols"]
@@ -190,6 +191,9 @@ ReInitializeSymbols[] :=
 		fStruct /: del[group_[adj], OrderlessPatternSequence[X_, A_]] fStruct[group_, B___, X_, C___] := fStruct[group, B, A, C];
 		fStruct /: fStruct[group_, x:OrderlessPatternSequence[A_, B_, C_] ] fStruct[group_, y:OrderlessPatternSequence[D_, B_, C_] ] :=
 			Signature[List@ x] Signature[List@ y] Signature[{A, B, C}] Signature[{D, B, C}] Casimir2[group@ adj] del[group@ adj, A, D];
+		fStruct /: Power[fStruct[group_, __], 2] := Dim[group@ adj] Casimir2[group@ adj];
+		fStruct /: fStruct[group_, a_, b_, c_] fStruct[group_, p1:OrderlessPatternSequence[a_, b_, c_]] := 
+			Signature @ {a, b, c} * Signature @ {p1} * Dim[group@ adj] Casimir2[group@ adj];
 		fStruct[group_, a___, x_, b___, x_, c___] := 0;
 
 		(*Symmetric tensor*)
@@ -205,8 +209,9 @@ ReInitializeSymbols[] :=
 
 (*Function applying the group *)
 	replace = {
-		tGen[group_[adj], A_, B_, C_] :> - Module[{a, b, c}, 2 AntiSym[A, B][tGen[group@ fund, A, a, b] tGen[group@ fund, B, b, c]] tGen[group@ fund, C , c, a]
-			] / TraceNormalization @ group @ fund,
+		(* tGen[group_[adj], A_, B_, C_] :> - Module[{a, b, c}, 2 AntiSym[A, B][tGen[group@ fund, A, a, b] tGen[group@ fund, B, b, c]] tGen[group@ fund, C , c, a]
+			] / TraceNormalization @ group @ fund, *)
+		tGen[group_[adj], A_, B_, C_]:> - I fStruct[group, A, B, C],
 		del[group_[S2], a_ ,b_] :> twoIndexRepDelta[group @ S2, a ,b],
 		del[group_[A2], a_ ,b_] :> twoIndexRepDelta[group @ A2, a ,b],
 		tGen[group_[S2], A_, a_, b_] -> 2 Sym[a@1, a@2] @ Sym[b@1, b@2][tGen[group@ fund, A, a@1, b@1] del[group@ fund, a@2, b@2]],
@@ -215,7 +220,7 @@ ReInitializeSymbols[] :=
 		delA2[group_, a_, i_, j_] -> AntiSym[a@1, a@2][ del[group@ fund, a@1, i] del[group@ fund, a@2, j]]
 		(*del[group_[A2], a_ ,b_] :> AntiSym[a @ 1, a @ 2 ][del[group@fund, a@1, b@1] del[group@fund, a@2, b@2] ]*)
 	};
-RefineGroupStructures[expr_] := expr /. replace // Expand;
+RefineGroupStructures[expr_] := expr /. replace // PerformColorAlg // EvalTrReductionFactors // Expand;
 
 (*Adds case to the system built in function Tr and Dot, to deal with substituting couplings for 0.*)
 	Unprotect[Tr, Dot];
@@ -429,8 +434,8 @@ DefineSUGroup[group_Symbol, n_Integer|n_Symbol] :=
 		(*del/: del[group @ A2, a_, b_] del[group @ fund, a_[[1]], b_]*)
 
 		(*Symmetric tensor*)
-		dSym/: dSym[group, OrderlessPatternSequence[A_, X_, Y_]] dSym[group, OrderlessPatternSequence[B_, X_, Y_]] = (n^2-4)/ n* del[group@ adj, A, B];
-		dSym/: Power[dSym[group, __], 2] = n^2 - 4;
+		dSym/: dSym[group, OrderlessPatternSequence[A_, X_, Y_]] dSym[group, OrderlessPatternSequence[B_, X_, Y_]] = AdjTrFactor[n, 4]* del[group@ adj, A, B];
+		dSym/: Power[dSym[group, __], 2] = (n^2 - 1)* AdjTrFactor[n, 4];
 
 		(*Adjoint*)
 		Dim[group[adj]] = n^2 - 1;
@@ -465,7 +470,8 @@ DefineU1Group[group_Symbol, power_Integer:1] :=
 PerformColorAlg[expr_] := 
 	Module[{out = Expand @ expr, cgs, cgGr},
 		If[Head @ out === Plus, PerformColorAlg /@ out // Return; ];
-		
+		out = If[Head @ out === Times, List @@ out, {out} ];
+
 		{cgs, out} = SelectAndDelteCases[out, _fStruct | _dSym];
 		cgs = GatherBy[cgs, First];
 		Times @@ out* Product[
@@ -493,6 +499,12 @@ EliminateShortestCycle[prod_Times] := Replace[prod, {
 			_[_, OrderlessPatternSequence[_, x2_, x3_]], _[_, OrderlessPatternSequence[_, x3_, x4_]], 
 			_[_, OrderlessPatternSequence[_, x4_, x1_]] ]] :>
      	Times @ rest * CycleToTrace4 @ cyc
+	,
+		(*5-cycles*)
+    	Times[rest___, cyc:OrderlessPatternSequence[_[_, OrderlessPatternSequence[_, x1_, x2_]], 
+			_[_, OrderlessPatternSequence[_, x2_, x3_]], _[_, OrderlessPatternSequence[_, x3_, x4_]], 
+			_[_, OrderlessPatternSequence[_, x4_, x5_]], _[_, OrderlessPatternSequence[_, x5_, x1_]] ]] :>
+     	Times @ rest * CommuteTrace5 @ Times@ cyc * AdjTrace[]
     } ];
 
 CycleToTrace3 @ OrderlessPatternSequence[h1_[gr_, p1:OrderlessPatternSequence[a1_, x1_, x2_]],
@@ -518,6 +530,25 @@ CycleToTrace4 @ OrderlessPatternSequence[h1_[gr_, p1 : OrderlessPatternSequence[
 				If[h4 === fStruct, Signature@ {p4}* Signature@ {a4, x4, x1}, 1] *
 				Power[I, Count[{h1, h2, h3, h4}, fStruct]];
 		pref* AdjTrace[gr, {h1, h2, h3, h4} /. {dSym -> DMat, fStruct -> FMat}, {a1, a2, a3, a4} ]
+	];
+
+(* There is only one possible full contraction of 10 tensors with no 3- or 4-cycle. Any commutation will reduce it. *)
+ CommuteTrace5 @ Times[fStruct[gr_, p1:OrderlessPatternSequence[a_, b_, e_]], 
+ 		fStruct[gr_, p2:OrderlessPatternSequence[c_, d_, e_]], rest__]:= 
+	Signature @ {a, b, e} * Signature @ {c, d, e} * Signature @ {p1} * Signature @ {p2} * Times @ rest *
+		(-fStruct[gr, c, b, e] fStruct[gr, a, e, d] - fStruct[gr, d, b, e] fStruct[gr, a, c, e]);
+
+CommuteTrace5 @ Times[fStruct[gr_, p1:OrderlessPatternSequence[a_, b_, e_]], 
+ 		dSym[gr_, OrderlessPatternSequence[c_, d_, e_]], rest__]:= 
+	Signature @ {a, b, e} * Signature @ {p1} * Times @ rest *
+		(-fStruct[gr, a, c, e] dSym[gr, b, d, e] - fStruct[gr, a, d, e] fStruct[gr, b, c, e]);
+
+CommuteTrace5 @ Times[dSym[gr_, OrderlessPatternSequence[b_, c_, e_]], dSym[gr_, OrderlessPatternSequence[a_, d_, e_]], rest__]:= 
+	Module[{n = First@ $LieGroups@ gr},
+		Times @ rest * (
+			dSym[gr, a, c, e] dSym[gr, b, d, e] - fStruct[gr, a, b, e] fStruct[gr, c, d, e] + 
+			2/n (del[gr@ adj, a, c] del[gr@ adj, b, d] - del[gr@ adj, a, d] del[gr@ adj, b, c]) 
+		)
 	];
 
 CanonizeAdjTrace @ AdjTrace[gr_, types_, inds_] := 
@@ -569,9 +600,9 @@ EvaluateAdjTrace @ adjTr:AdjTrace[gr_, types_, _] :=
 					n/4  fStruct[gr, a, d, e]  fStruct[gr, b, c, e] +
 					n/4   dSym[gr, a, d, e]  dSym[gr, b, c, e]),
 				AdjTrace[gr, {DMat, DMat, DMat, FMat}, {b_, c_, d_, a_}] :> (
-					2 I/n  fStruct[gr, a, d, e]  dSym[gr, b, c, e] +
-					I  AdjTrFactor[n, 8]/4  fStruct[gr, a, b, e]  dSym[gr, c, d, e] +
-					I/4  dSym[gr, a, b, e]  fStruct[gr, c, d, e]),
+					2 I/n * fStruct[gr, a, d, e]  dSym[gr, b, c, e] +
+					I * AdjTrFactor[n, 8]/4  fStruct[gr, a, b, e]  dSym[gr, c, d, e] +
+					I/4 * n * dSym[gr, a, b, e]  fStruct[gr, c, d, e]),
 				AdjTrace[gr, {DMat, DMat, DMat, DMat}, {a_, b_, c_, d_}] :> (
 					AdjTrFactor[n, 4]/n (del[gr@ adj, a, b]  del[gr@ adj, c, d] + del[gr@ adj, a, d]  del[gr@ adj, b, c]) +
 					AdjTrFactor[n, 16]/4 (dSym[gr, a, b, e]  dSym[gr, c, d, e] + dSym[gr, a, d, e]  dSym[gr, b, c, e]) -
@@ -581,8 +612,9 @@ EvaluateAdjTrace @ adjTr:AdjTrace[gr_, types_, _] :=
 				Message[EvaluateAdjTrace::unkwn, out]; Abort[];
 		]
 	];	
-(*Introduced to minimize the no. of terms at intermediate steps when \
-N is kept symbolic*)
+EvaluateAdjTrace@ AdjTrace[]= 1;
+
+(*Introduced to minimize the no. of terms at intermediate steps when N is kept symbolic*)
 EvalTrReductionFactors@ expr_ := expr /. AdjTrFactor[n_, a_] :> (n^2 - a)/n; 
 
 
