@@ -222,6 +222,7 @@ ReInitializeSymbols[] :=
 	};
 RefineGroupStructures[expr_] := expr /. replace // PerformColorAlg // EvalTrReductionFactors // Expand;
 
+
 (*Adds case to the system built in function Tr and Dot, to deal with substituting couplings for 0.*)
 	Unprotect[Tr, Dot];
 		Dot[___, 0, ___] = 0;
@@ -466,13 +467,28 @@ DefineU1Group[group_Symbol, power_Integer:1] :=
 (*##########################################*)
 (* SU(N) algebra for the adjoint representation is evaluated using the *)
 
+PerformColorAlg @ expr_ := PerformAdjAlg @ PerformGeneratorTraces @ expr;
 
-PerformColorAlg[expr_] := 
+PerformGeneratorTraces @ expr_ :=
+	Module[{SUNgroups},
+		SUNgroups = Keys@ Select[$LieGroups, MatchQ[_SU]];
+		FixedPoint[Expand[#/. 
+			tGen[gr_@ rep_, a_, x1_, x2_] tGen[gr_@ rep_, b_, x2_, x3_]/; MemberQ[SUNgroups, gr]:>
+				Module[{c},
+					del[gr@ adj, a, b] del[gr@ rep, x1, x3]/ First@ $LieGroups@ gr +
+					(dSym[gr, a, b, c] + I fStruct[gr, a, b, c]) tGen[gr@ rep, c, x1, x3]
+				]/2
+		] &, expr]
+	];
+
+PerformAdjAlg[expr_] := 
 	Module[{out = Expand @ expr, cgs, cgGr},
-		If[Head @ out === Plus, PerformColorAlg /@ out // Return; ];
+		If[Head @ out === Plus, PerformAdjAlg /@ out // Return; ];
 		out = If[Head @ out === Times, List @@ out, {out} ];
 
 		{cgs, out} = SelectAndDelteCases[out, _fStruct | _dSym];
+		If[cgs === {}, Return@ expr; ];
+
 		cgs = GatherBy[cgs, First];
 		Times @@ out* Product[
 				If[Length@ cgGr > 2, AdjContraction[Times @@ cgGr], Times @@ cgGr]
