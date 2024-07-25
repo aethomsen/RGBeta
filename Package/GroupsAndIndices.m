@@ -495,7 +495,7 @@ PerformAdjAlg[expr_] :=
 			, {cgGr, cgs}]
 	];
 
-AdjContraction @ prod:Times[prefact___, cgs:Longest[(_fStruct | _dSym) ..]] /; Length@{cgs} > 2 := 
+(* AdjContraction @ prod:Times[prefact___, cgs:Longest[(_fStruct | _dSym) ..]] /; Length@{cgs} > 2 := 
 	Module[{out},
 		out = EliminateShortestCycle[Times@ cgs];
 		If[FreeQ[out, AdjTrace], Return@ prod;];
@@ -521,7 +521,107 @@ EliminateShortestCycle[prod_Times] := Replace[prod, {
 			_[_, OrderlessPatternSequence[_, x2_, x3_]], _[_, OrderlessPatternSequence[_, x3_, x4_]], 
 			_[_, OrderlessPatternSequence[_, x4_, x5_]], _[_, OrderlessPatternSequence[_, x5_, x1_]] ]] :>
      	Times @ rest * CommuteTrace5 @ Times@ cyc * AdjTrace[]
-    } ];
+    } ]; *)
+
+(* AdjContraction @ prod:Times[prefact___, cgs:Longest[(_fStruct | _dSym) ..]] /; Length@{cgs} > 2 := 
+	Module[{out},
+		out = EliminateShortestCycle@ List @ cgs;
+		If[FreeQ[out, AdjTrace], Return@ prod;];
+		AdjContraction[Times @ prefact * (out /. x_AdjTrace :> EvaluateAdjTrace @ x) // Expand]	
+	]; *)
+AdjContraction @ prod:Times[prefact___, cgs:Longest[(_fStruct | _dSym) ..]] /; Length@{cgs} > 2 := 
+	Module[{out},
+		out = EliminateShortestCycle@ List @ cgs;
+		If[FreeQ[out, AdjTrace], Return @ prod;];
+		Times @ prefact * AdjContraction @ Expand[out /. x_AdjTrace :> EvaluateAdjTrace @ x]	
+	];
+AdjContraction @ sum_Plus := AdjContraction /@ sum;
+AdjContraction @ x_ := x;
+
+EliminateShortestCycle@ cgs_List := 
+	Module[{cycle, len},
+		cycle = ShortestCycle @ CGsToAdjList @ cgs;
+		len = Length @ cycle;
+		If[len === 0 || len > 5, Return[Times @@ cgs]; ];
+
+		Times @@ cgs[[Complement[Range @ Length @ cgs, cycle]]] *
+			ReplaceCycle[Times @@ cgs[[cycle]], len]  
+	];
+
+ReplaceCycle[prod_Times, 3]:= Replace[prod, 
+		Times[rest___, cyc:OrderlessPatternSequence[_[_, OrderlessPatternSequence[_, x1_, x2_]], 
+	   		_[_, OrderlessPatternSequence[_, x2_, x3_]], _[_, OrderlessPatternSequence[_, x3_, x1_]] ]] :>
+     	Times @ rest * CycleToTrace3 @ cyc
+	];
+
+ReplaceCycle[prod_Times, 4]:= Replace[prod, 
+		Times[rest___, cyc:OrderlessPatternSequence[_[_, OrderlessPatternSequence[_, x1_, x2_]], 
+			_[_, OrderlessPatternSequence[_, x2_, x3_]], _[_, OrderlessPatternSequence[_, x3_, x4_]], 
+			_[_, OrderlessPatternSequence[_, x4_, x1_]] ]] :>
+     	Times @ rest * CycleToTrace4 @ cyc
+	];
+
+ReplaceCycle[prod_Times, 5]:= Replace[prod, 
+		Times[rest___, cyc:OrderlessPatternSequence[_[_, OrderlessPatternSequence[_, x1_, x2_]], 
+			_[_, OrderlessPatternSequence[_, x2_, x3_]], _[_, OrderlessPatternSequence[_, x3_, x4_]], 
+			_[_, OrderlessPatternSequence[_, x4_, x5_]], _[_, OrderlessPatternSequence[_, x5_, x1_]] ]] :>
+     	Times @ rest * CommuteTrace5 @ Times@ cyc * AdjTrace[]
+	];
+
+CGsToAdjList @ cgs_List := 
+	Module[{inds, repInds, ind, v1, v2},
+		inds = List @@@ cgs[[;; , 2 ;;]];
+		repInds = Cases[Tally[Flatten@ inds], {x_, 2} -> x];
+		Reap[Do[
+				{v1, v2} = Position[inds, ind, {2}][[;; , 1]];
+				Sow[v1, v2];
+				Sow[v2, v1];
+			, {ind, repInds}] , Range@ Length@ cgs][[2, ;; , 1]]
+   ];
+
+ShortestCycle @ adjList_List :=
+  	Block[{cycle, minCycle = {}, minCycleLen = 10000, len},
+   		Do[
+			cycle = ShortestCycleFromVert[adjList, n];
+			len = Length @ cycle;
+			If[len > 0 && len < minCycleLen,
+				(* Stop looking when loop of length 3 is found *)
+				If[len === 3, Return[cycle, Block];];
+				(* Otherwise save new smallest loop *)
+				minCycleLen = len;
+				minCycle = cycle;
+			];
+		, {n, Length @ adjList}];
+   		minCycle
+   	];
+
+ShortestCycleFromVert[adjList_List, initVert_Integer] := 
+	Block[{current, cycle = {initVert}, distances, next, parents, v, 
+		take = 1, put = 2, len = Length @ adjList, minDist, temp},
+		minDist = 10000;
+		parents = distances = next = ConstantArray[-1, len + 1];
+		next[[1]] = initVert; 
+		distances[[initVert]] = 0;
+		While[(current = next[[take++]]) =!= -1,
+				Do[
+					Which[distances[[v]] === -1,
+						distances[[v]] = distances[[current]] + 1;
+						parents[[v]] = current;
+						next[[put++]] = v;
+					, parents[[v]] =!= current && parents[[current]] =!= v,
+						If[(temp = distances[[current]] + distances[[v]] + 1) < minDist,
+							minDist = temp;
+							cycle = Join[ ParentList[parents, current, initVert],
+								Reverse @ ParentList[parents, v, initVert] ];
+						];
+					];
+				, {v, adjList[[current]]}]
+			];
+		Most @ cycle
+	];
+ParentList[parents_, start_, end_] := If[start === end, {start},
+   	Append[ParentList[parents, parents[[start]], end], start]];
+
 
 CycleToTrace3 @ OrderlessPatternSequence[h1_[gr_, p1:OrderlessPatternSequence[a1_, x1_, x2_]],
 		h2_[gr_, p2 : OrderlessPatternSequence[a2_, x2_, x3_]], 

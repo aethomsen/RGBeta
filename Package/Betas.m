@@ -298,7 +298,7 @@ ProjectionToUnmixedBetas[type_, loop_, func_, opt:OptionsPattern[]]:=
 				Table[Quiet@ func[c, loop, opt], {c, couplings}]
 			, StringForm["Evaluating the `` \[Beta]-function", c] ];
 
-		Association@@ Thread@ Rule[couplings, invMatrix . beta // Simplify]
+		Association@@ Thread@ Rule[couplings, invMatrix . beta // Expand]
 
 	];
 
