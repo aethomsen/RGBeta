@@ -107,6 +107,12 @@ TStructure::usage =
 (*----------Generic tensor properties----------*)
 (*#############################################*)
 
+(*Numerical factors introduced to minimize the no. of terms at intermediate steps when N is kept symbolic*)
+EvalTrReductionFactors@ expr_ := expr /. {
+		AdjTrFactor[n_, a_] :> (n^2 - a)/n,
+		AdjDimFactor[n_] :> n^2 - 1
+	}; 
+
 (*An overall function which sets up the properties of symbols wrt. implicit summation. It flushes all previous definitions.*)
 ReInitializeSymbols[] :=
 	Module[{},
@@ -411,10 +417,15 @@ DefineSpGroup[group_Symbol, n_Integer|n_Symbol] :=
 (*Initialization for an SU(n) Lie group.*)
 DefineSUGroup[group_Symbol, n_Integer|n_Symbol] :=
 	Module[{},
+		(*Adjoint*)
+		Dim[group[adj]] = If[Head @ n === Integer, n^2 - 1, AdjDimFactor @ n];
+		TraceNormalization[group[adj]] = n;
+		Casimir2[group[adj]] = n;
+		
 		(*Fundamental*)
 		Dim[group[fund]] = n;
 		TraceNormalization[group[fund]] = 1/2;
-		Casimir2[group[fund]] = (n^2 - 1) / (2 n);
+		Casimir2[group[fund]] = If[Head @ n === Integer, (n^2 - 1) / (2 n), AdjTrFactor[n, 1]/ 2];
 		(*Fierz identitiy*)
 		tGen /: tGen[group[fund], A_, a_, b_] tGen[group[fund], A_, c_, d_] = TraceNormalization[group[fund]] *
 			(del[group[fund], a, d] del[group[fund], c, b] - del[group[fund], a, b] del[group[fund], c, d] / n);
@@ -436,12 +447,7 @@ DefineSUGroup[group_Symbol, n_Integer|n_Symbol] :=
 
 		(*Symmetric tensor*)
 		dSym/: dSym[group, OrderlessPatternSequence[A_, X_, Y_]] dSym[group, OrderlessPatternSequence[B_, X_, Y_]] = AdjTrFactor[n, 4]* del[group@ adj, A, B];
-		dSym/: Power[dSym[group, __], 2] = (n^2 - 1)* AdjTrFactor[n, 4];
-
-		(*Adjoint*)
-		Dim[group[adj]] = n^2 - 1;
-		TraceNormalization[group[adj]] = n;
-		Casimir2[group[adj]] = n;
+		dSym/: Power[dSym[group, __], 2] = Dim[group[adj]]* AdjTrFactor[n, 4];
 	];
 
 (*Initialization for a U(1) gauge group.*)
@@ -465,10 +471,16 @@ DefineU1Group[group_Symbol, power_Integer:1] :=
 (*##########################################*)
 (*----------Advanced color algebra----------*)
 (*##########################################*)
-(* SU(N) algebra for the adjoint representation is evaluated using the *)
+(* SU(N) algebra for the adjoint representation is evaluated by reducing everything to d and f tensors of the adjoint group. 
+Everything with up to 10 vertices may then be reduced, by reducing 3- and 4- cycles from the graphs using the identities of 
+Haber's [arXiv:1912.13302]. The single fully-contracted 10 vertex graph with a 5-cycle as its shortest cycle can be reduced by 
+commuting any two vertices. *)
 
+(* Main reduction function *)
 PerformColorAlg @ expr_ := PerformAdjAlg @ PerformGeneratorTraces @ expr;
 
+
+(* Reduces traces of generators for non-adjoint SU(N) representations to 3-index d and f tensros *)
 PerformGeneratorTraces @ expr_ :=
 	Module[{SUNgroups},
 		SUNgroups = Keys@ Select[$LieGroups, MatchQ[_SU]];
@@ -481,6 +493,8 @@ PerformGeneratorTraces @ expr_ :=
 		] &, expr]
 	];
 
+
+(* Evaluates contractions of d- and f- tensors *)
 PerformAdjAlg[expr_] := 
 	Module[{out = Expand @ expr, cgs, cgGr},
 		If[Head @ out === Plus, PerformAdjAlg /@ out // Return; ];
@@ -489,85 +503,48 @@ PerformAdjAlg[expr_] :=
 		{cgs, out} = SelectAndDelteCases[out, _fStruct | _dSym];
 		If[cgs === {}, Return@ expr; ];
 
+		(* f and d tensors of each group are contracted separately *)
 		cgs = GatherBy[cgs, First];
 		Times @@ out* Product[
 				If[Length@ cgGr > 2, AdjContraction[Times @@ cgGr], Times @@ cgGr]
 			, {cgGr, cgs}]
 	];
 
-(* AdjContraction @ prod:Times[prefact___, cgs:Longest[(_fStruct | _dSym) ..]] /; Length@{cgs} > 2 := 
-	Module[{out},
-		out = EliminateShortestCycle[Times@ cgs];
-		If[FreeQ[out, AdjTrace], Return@ prod;];
-		AdjContraction[Times@prefact* (out /. x_AdjTrace :> EvaluateAdjTrace@x) // Expand]	
-	];
-AdjContraction @ sum_Plus := AdjContraction /@ sum;
-AdjContraction @ x_ := x;
 
-EliminateShortestCycle[prod_Times] := Replace[prod, {
-    	(*3-cycles*)
-		Times[rest___, cyc:OrderlessPatternSequence[_[_, OrderlessPatternSequence[_, x1_, x2_]], 
-	   		_[_, OrderlessPatternSequence[_, x2_, x3_]], _[_, OrderlessPatternSequence[_, x3_, x1_]] ]] :>
-     	Times @ rest * CycleToTrace3 @ cyc
-    ,
-		(*4-cycles*)
-    	Times[rest___, cyc:OrderlessPatternSequence[_[_, OrderlessPatternSequence[_, x1_, x2_]], 
-			_[_, OrderlessPatternSequence[_, x2_, x3_]], _[_, OrderlessPatternSequence[_, x3_, x4_]], 
-			_[_, OrderlessPatternSequence[_, x4_, x1_]] ]] :>
-     	Times @ rest * CycleToTrace4 @ cyc
-	,
-		(*5-cycles*)
-    	Times[rest___, cyc:OrderlessPatternSequence[_[_, OrderlessPatternSequence[_, x1_, x2_]], 
-			_[_, OrderlessPatternSequence[_, x2_, x3_]], _[_, OrderlessPatternSequence[_, x3_, x4_]], 
-			_[_, OrderlessPatternSequence[_, x4_, x5_]], _[_, OrderlessPatternSequence[_, x5_, x1_]] ]] :>
-     	Times @ rest * CommuteTrace5 @ Times@ cyc * AdjTrace[]
-    } ]; *)
-
-(* AdjContraction @ prod:Times[prefact___, cgs:Longest[(_fStruct | _dSym) ..]] /; Length@{cgs} > 2 := 
-	Module[{out},
-		out = EliminateShortestCycle@ List @ cgs;
-		If[FreeQ[out, AdjTrace], Return@ prod;];
-		AdjContraction[Times @ prefact * (out /. x_AdjTrace :> EvaluateAdjTrace @ x) // Expand]	
-	]; *)
+(* AdjContraction is applied recursively to reduce cycles in the graph formed by f- and d- tensors.
+2- cycles in the product evaluates automatically with up values.*)
 AdjContraction @ prod:Times[prefact___, cgs:Longest[(_fStruct | _dSym) ..]] /; Length@{cgs} > 2 := 
 	Module[{out},
 		out = EliminateShortestCycle@ List @ cgs;
+		(* AdjTrace[...] acts as a flag that a reduction has been made by EliminateShortestCycle and, thus, 
+		that the recursion should proceed *)
 		If[FreeQ[out, AdjTrace], Return @ prod;];
 		Times @ prefact * AdjContraction @ Expand[out /. x_AdjTrace :> EvaluateAdjTrace @ x]	
 	];
+(* If no reduction can be made on a product *)
 AdjContraction @ sum_Plus := AdjContraction /@ sum;
 AdjContraction @ x_ := x;
 
+
+(* Perform shortest-cycle reduction on list of d- and f- tensors *)
 EliminateShortestCycle@ cgs_List := 
 	Module[{cycle, len},
+		(* Finds which cgs form the shortest cycle *)
 		cycle = ShortestCycle @ CGsToAdjList @ cgs;
 		len = Length @ cycle;
 		If[len === 0 || len > 5, Return[Times @@ cgs]; ];
 
+		(* Replaces the cgs of the shortest cycle. Pattern-matching only attempted with the appropriate cgs to improve performance *)
 		Times @@ cgs[[Complement[Range @ Length @ cgs, cycle]]] *
-			ReplaceCycle[Times @@ cgs[[cycle]], len]  
+			ReplaceCycle[cgs[[cycle]], len]  
 	];
 
-ReplaceCycle[prod_Times, 3]:= Replace[prod, 
-		Times[rest___, cyc:OrderlessPatternSequence[_[_, OrderlessPatternSequence[_, x1_, x2_]], 
-	   		_[_, OrderlessPatternSequence[_, x2_, x3_]], _[_, OrderlessPatternSequence[_, x3_, x1_]] ]] :>
-     	Times @ rest * CycleToTrace3 @ cyc
-	];
+(* Dispatches to the appropriate replacement rules*)
+ReplaceCycle[cyc_List, 3] := CycleToTrace3 @@ cyc;
+ReplaceCycle[cyc_List, 4] := CycleToTrace4 @@ cyc;
+ReplaceCycle[cyc_List, 5] := AdjTrace[] * CommuteTrace5[Times @@ cyc]; (* AdjTrace[] is used *)
 
-ReplaceCycle[prod_Times, 4]:= Replace[prod, 
-		Times[rest___, cyc:OrderlessPatternSequence[_[_, OrderlessPatternSequence[_, x1_, x2_]], 
-			_[_, OrderlessPatternSequence[_, x2_, x3_]], _[_, OrderlessPatternSequence[_, x3_, x4_]], 
-			_[_, OrderlessPatternSequence[_, x4_, x1_]] ]] :>
-     	Times @ rest * CycleToTrace4 @ cyc
-	];
-
-ReplaceCycle[prod_Times, 5]:= Replace[prod, 
-		Times[rest___, cyc:OrderlessPatternSequence[_[_, OrderlessPatternSequence[_, x1_, x2_]], 
-			_[_, OrderlessPatternSequence[_, x2_, x3_]], _[_, OrderlessPatternSequence[_, x3_, x4_]], 
-			_[_, OrderlessPatternSequence[_, x4_, x5_]], _[_, OrderlessPatternSequence[_, x5_, x1_]] ]] :>
-     	Times @ rest * CommuteTrace5 @ Times@ cyc * AdjTrace[]
-	];
-
+(* Finds the adjecency list for the graph formed by the d- and f- contractions*)
 CGsToAdjList @ cgs_List := 
 	Module[{inds, repInds, ind, v1, v2},
 		inds = List @@@ cgs[[;; , 2 ;;]];
@@ -579,6 +556,7 @@ CGsToAdjList @ cgs_List :=
 			, {ind, repInds}] , Range@ Length@ cgs][[2, ;; , 1]]
    ];
 
+(* Finds the shortest cycle of the graph to perform the elimination on, by looking for the shortest cycle involving each vertex*)
 ShortestCycle @ adjList_List :=
   	Block[{cycle, minCycle = {}, minCycleLen = 10000, len},
    		Do[
@@ -595,6 +573,9 @@ ShortestCycle @ adjList_List :=
    		minCycle
    	];
 
+(* Finds the shortest cycle of a graph involving the vertex (initVert) with a variation of breath-first graph traversal.
+The shortest cycle found might be a true cycle appended to a single line traversed twice from the original vertex. 
+In this case the true shortest cycle will be found at another vertex. Thus ShortestCycle will still yield the true result*)
 ShortestCycleFromVert[adjList_List, initVert_Integer] := 
 	Block[{current, cycle = {initVert}, distances, next, parents, v, 
 		take = 1, put = 2, len = Length @ adjList, minDist, temp},
@@ -622,7 +603,7 @@ ShortestCycleFromVert[adjList_List, initVert_Integer] :=
 ParentList[parents_, start_, end_] := If[start === end, {start},
    	Append[ParentList[parents, parents[[start]], end], start]];
 
-
+(* Collect a 3-cycle to a trace of adjoint matrices *)
 CycleToTrace3 @ OrderlessPatternSequence[h1_[gr_, p1:OrderlessPatternSequence[a1_, x1_, x2_]],
 		h2_[gr_, p2 : OrderlessPatternSequence[a2_, x2_, x3_]], 
 		h3_[gr_, p3 : OrderlessPatternSequence[a3_, x3_, x1_]] ] := 
@@ -634,6 +615,7 @@ CycleToTrace3 @ OrderlessPatternSequence[h1_[gr_, p1:OrderlessPatternSequence[a1
 		pref* AdjTrace[gr, {h1, h2, h3} /. {dSym -> DMat, fStruct -> FMat}, {a1, a2, a3} ]
 	];
 
+(* Collect a 4-cycle to a trace of adjoint matrices *)
 CycleToTrace4 @ OrderlessPatternSequence[h1_[gr_, p1 : OrderlessPatternSequence[a1_, x1_, x2_]], 
 		h2_[gr_, p2 : OrderlessPatternSequence[a2_, x2_, x3_]], 
 		h3_[gr_, p3 : OrderlessPatternSequence[a3_, x3_, x4_]], 
@@ -653,12 +635,10 @@ CycleToTrace4 @ OrderlessPatternSequence[h1_[gr_, p1 : OrderlessPatternSequence[
  		fStruct[gr_, p2:OrderlessPatternSequence[c_, d_, e_]], rest__]:= 
 	Signature @ {a, b, e} * Signature @ {c, d, e} * Signature @ {p1} * Signature @ {p2} * Times @ rest *
 		(-fStruct[gr, c, b, e] fStruct[gr, a, e, d] - fStruct[gr, d, b, e] fStruct[gr, a, c, e]);
-
 CommuteTrace5 @ Times[fStruct[gr_, p1:OrderlessPatternSequence[a_, b_, e_]], 
  		dSym[gr_, OrderlessPatternSequence[c_, d_, e_]], rest__]:= 
 	Signature @ {a, b, e} * Signature @ {p1} * Times @ rest *
 		(-fStruct[gr, a, c, e] dSym[gr, b, d, e] - fStruct[gr, a, d, e] fStruct[gr, b, c, e]);
-
 CommuteTrace5 @ Times[dSym[gr_, OrderlessPatternSequence[b_, c_, e_]], dSym[gr_, OrderlessPatternSequence[a_, d_, e_]], rest__]:= 
 	Module[{n = First@ $LieGroups@ gr},
 		Times @ rest * (
@@ -667,24 +647,10 @@ CommuteTrace5 @ Times[dSym[gr_, OrderlessPatternSequence[b_, c_, e_]], dSym[gr_,
 		)
 	];
 
-CanonizeAdjTrace @ AdjTrace[gr_, types_, inds_] := 
-	Block[{can, canTransp, ind, indTransp, ord, rots = Length @ types - 1},
-		can = NestList[RotateLeft, types, rots];
-		ind = NestList[RotateLeft, inds, rots];
-		canTransp = Reverse /@ can; 
-		indTransp = Reverse /@ ind;
-		ord = First @ Ordering @ can;
-		can = can[[ord]]; ind = ind[[ord]];
-		ord = First @ Ordering @ canTransp;
-		canTransp = canTransp[[ord]]; indTransp = indTransp[[ord]];
-		If[OrderedQ @ {can, canTransp},
-			AdjTrace[gr, can, ind]
-		,
-			Power[-1, Count[types, FMat]] * AdjTrace[gr, canTransp, indTransp]
-		]
-	];
 
-EvaluateAdjTrace::unkwn = "The cadjoint trace has not been implemented: `1`";
+(* Evaluates the 3- and 4- traces of adjoint matrices using the identities from Haber *)
+EvaluateAdjTrace::unkwn = "The adjoint trace has not been implemented: `1`";
+EvaluateAdjTrace @ AdjTrace[]= 1;
 EvaluateAdjTrace @ adjTr:AdjTrace[gr_, types_, _] := 
 	Module[{out, n = First @ $LieGroups @ gr, e},
 		out = CanonizeAdjTrace @ adjTr;
@@ -728,9 +694,21 @@ EvaluateAdjTrace @ adjTr:AdjTrace[gr_, types_, _] :=
 				Message[EvaluateAdjTrace::unkwn, out]; Abort[];
 		]
 	];	
-EvaluateAdjTrace@ AdjTrace[]= 1;
 
-(*Introduced to minimize the no. of terms at intermediate steps when N is kept symbolic*)
-EvalTrReductionFactors@ expr_ := expr /. AdjTrFactor[n_, a_] :> (n^2 - a)/n; 
-
-
+(* Puts the traces of the adjoint matrices on canonical form *)
+CanonizeAdjTrace @ AdjTrace[gr_, types_, inds_] := 
+	Block[{can, canTransp, ind, indTransp, ord, rots = Length @ types - 1},
+		can = NestList[RotateLeft, types, rots];
+		ind = NestList[RotateLeft, inds, rots];
+		canTransp = Reverse /@ can; 
+		indTransp = Reverse /@ ind;
+		ord = First @ Ordering @ can;
+		can = can[[ord]]; ind = ind[[ord]];
+		ord = First @ Ordering @ canTransp;
+		canTransp = canTransp[[ord]]; indTransp = indTransp[[ord]];
+		If[OrderedQ @ {can, canTransp},
+			AdjTrace[gr, can, ind]
+		,
+			Power[-1, Count[types, FMat]] * AdjTrace[gr, canTransp, indTransp]
+		]
+	];
