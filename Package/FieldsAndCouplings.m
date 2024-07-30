@@ -41,6 +41,7 @@ PackageScope["Yuk"]
 PackageScope["YukTil"]
 
 PackageScope["$fieldIndexMap"]
+PackageScope["$flavorReps"]
 
 PackageScope["AveragePermutations"]
 PackageScope["CouplingPermutations"]
@@ -304,6 +305,9 @@ AddScalar[field_, OptionsPattern[] ] ? OptionsCheck :=
 			SelfConjugate -> OptionValue[SelfConjugate]|>];
 		UpdateFieldIndexMap[];
 
+		(* Update flavor reps list *)
+		$flavorReps = Union[$flavorReps, OptionValue[FlavorIndices]];
+
 		(* The projectors must be updated to accomodate the changes in the $fieldIndexMap *)
 		UpdateProjectors[Join[Keys@ $yukawas, Keys@ $quartics, Keys@ $fermionMasses, Keys@ $trilinears, Keys@ $scalarMasses] ];
 		ResetBetas[];
@@ -326,6 +330,9 @@ AddFermion[field_, OptionsPattern[] ] ? OptionsCheck :=
 			FlavorIndices -> OptionValue[FlavorIndices]
 			|>];
 		UpdateFieldIndexMap[];
+
+		(* Update flavor reps list *)
+		$flavorReps = Union[$flavorReps, OptionValue[FlavorIndices]];
 
 		(* The projectors must be updated to accomodate the changes in the $fieldIndexMap *)
 		UpdateProjectors[Join[Keys@ $yukawas, Keys@ $fermionMasses] ];
@@ -1073,6 +1080,8 @@ ResetModel[] :=
 		(*Resets all information of the current model.*)
 		(*Global couplings variable*)
 		$couplings = <||>;
+		(*List of all flavor representations*)
+		$flavorReps = {};
 		(*Association with all information on the gauge groups: fields, couplings etc.*)
 		$gaugeGroups = <||>;
 		(*Association with all information on the fermion fields: representations etc.*)

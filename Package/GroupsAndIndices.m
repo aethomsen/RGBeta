@@ -631,14 +631,17 @@ CycleToTrace4 @ OrderlessPatternSequence[h1_[gr_, p1 : OrderlessPatternSequence[
 	];
 
 (* There is only one possible full contraction of 10 tensors with no 3- or 4-cycle. Any commutation will reduce it. *)
+ (* eq. (35) *)
  CommuteTrace5 @ Times[fStruct[gr_, p1:OrderlessPatternSequence[a_, b_, e_]], 
  		fStruct[gr_, p2:OrderlessPatternSequence[c_, d_, e_]], rest__]:= 
 	Signature @ {a, b, e} * Signature @ {c, d, e} * Signature @ {p1} * Signature @ {p2} * Times @ rest *
 		(-fStruct[gr, c, b, e] fStruct[gr, a, e, d] - fStruct[gr, d, b, e] fStruct[gr, a, c, e]);
+(* eq. (37) *)
 CommuteTrace5 @ Times[fStruct[gr_, p1:OrderlessPatternSequence[a_, b_, e_]], 
  		dSym[gr_, OrderlessPatternSequence[c_, d_, e_]], rest__]:= 
 	Signature @ {a, b, e} * Signature @ {p1} * Times @ rest *
-		(-fStruct[gr, a, c, e] dSym[gr, b, d, e] - fStruct[gr, a, d, e] fStruct[gr, b, c, e]);
+		(-fStruct[gr, a, c, e] dSym[gr, b, d, e] - fStruct[gr, a, d, e] dSym[gr, b, c, e]);
+(* eq. (42) *)
 CommuteTrace5 @ Times[dSym[gr_, OrderlessPatternSequence[b_, c_, e_]], dSym[gr_, OrderlessPatternSequence[a_, d_, e_]], rest__]:= 
 	Module[{n = First@ $LieGroups@ gr},
 		Times @ rest * (
@@ -655,7 +658,7 @@ EvaluateAdjTrace @ adjTr:AdjTrace[gr_, types_, _] :=
 	Module[{out, n = First @ $LieGroups @ gr, e},
 		out = CanonizeAdjTrace @ adjTr;
 		out /. Switch[Length @ types
-			, 3, {	
+			, 3, {
 				AdjTrace[gr, {FMat, FMat, FMat}, {a_, b_, c_}] :> 
 					I* n/ 2* fStruct[gr, a, b, c],
 				AdjTrace[gr, {DMat, FMat, FMat}, {a_, b_, c_}] :> 

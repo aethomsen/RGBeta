@@ -1,6 +1,7 @@
 ## v.1.2.0 (2024-xx-xx)
 - `BetaTerm` and `BetaFunction` using coupling types (`Yukawa`, `Quartic`, etc.) now returns an association of the corresponding beta-functions or terms. 
-- Added support for the three index symmetric tensor of adjoint indices for SU(N) groups: `dSym[group, a, b, c]`
+- Added support for the three-index symmetric tensor of adjoint indices for SU(N) groups: `dSym[group, a, b, c]`.
+- Added `BetaSimplify` function optimized for simplifying beta functions.
 - Improved performance of color algebra involving the adjoint of SU(N). 
 
 ### v.1.1.5 (2023-02-29)

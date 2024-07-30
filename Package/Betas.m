@@ -18,6 +18,7 @@ PackageExport["FermionMass"]
 PackageExport["AnomalousDimension"]
 PackageExport["AnomalousDimTerm"]
 PackageExport["BetaFunction"]
+PackageExport["BetaSimplify"]
 PackageExport["BetaTerm"]
 PackageExport["CheckProjection"]
 PackageExport["Finalize"]
@@ -52,6 +53,8 @@ BetaFunction::usage =
 	Option FourDimensions-> True (default) removes the 0-order \[Epsilon]-dependent part.
 	Option RescaledCouplings-> True (not default) will absorb the loop factors of 1/16\[Pi]^2 into the couplings.
 	Rather than a single coupling, Gauge, Yukawa, Quartic, Trilinear, ScalarMass, and FermionMass can be used for a class of couplings."
+BetaSimplify::usage = 
+	"BetaSimplify provides a simplification routine optimized to apply to long RG functions."
 BetaTerm::usage =
 	"BetaTerm[coupling, loop] computes the l-loop contribution to the beta function of the coupling.
 	Option FlavorImproved-> True (default) uses the flavor-improved \[Beta]-function (relevant from 3-loop order).
@@ -142,6 +145,11 @@ Ttimes[a_] = a;
 Tdot[a_, b_, c___] := Tdot[Expand[a.b], c];
 Tdot[a_] = a;
 
+(* Efficient simplification of long beta-function expressions *)
+BetaSimplify @ expr_ := 
+	Block[{symbols = Join[Keys@ $couplings, $flavorReps, {_Tr, _Tensor}]},
+		Collect[Expand@ expr, symbols, Simplify] 
+	]
 
 (*##################################*)
 (*----------Beta functions----------*)
@@ -298,7 +306,7 @@ ProjectionToUnmixedBetas[type_, loop_, func_, opt:OptionsPattern[]]:=
 				Table[Quiet@ func[c, loop, opt], {c, couplings}]
 			, StringForm["Evaluating the `` \[Beta]-function", c] ];
 
-		Association@@ Thread@ Rule[couplings, invMatrix . beta // Expand]
+		Association@@ Thread@ Rule[couplings, invMatrix . beta // BetaSimplify]
 
 	];
 
