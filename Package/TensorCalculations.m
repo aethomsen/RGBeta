@@ -22,6 +22,7 @@ PackageScope["ScalarMassiveTensors"]
 PackageScope["YukawaTensors"]
 
 PackageScope["UpsilonYukawaTensors"]
+PackageScope["UpsilonQuarticTensors"]
 PackageScope["FermionUpsilonTensors"]
 PackageScope["ScalarUpsilonTensors"]
 
@@ -177,21 +178,6 @@ FourGLam[a_, b_, c_, d_] := Module[{A1, A2, b1, b2},
 	Ttimes[TsG2[A1, a, b1], TsG2[A2, b1, b], Tscal[A1, c, b2], Tscal[A2, b2, d]]
 ];
 
-(* Extra identities required to handle the more complicated combinations of struture constants appearing in the 4-loop gauge beta functions. *)
-NewIdentities[expr_] := Block[{fStruct, tGen, n},
-	fStruct /: fStruct[gr_, x : OrderlessPatternSequence[A_, B_, C_]] tGen[gr_[rep_], B_, a_, b_] tGen[gr_[rep_], C_, b_, c_] :=
-    	I/2 Signature[List@x] Signature[{A, B, C}] Casimir2[gr@adj] tGen[gr@rep, A, a, c];
-	fStruct /: fStruct[gr_, OrderlessPatternSequence[A_, C_, E_]] fStruct[gr_, OrderlessPatternSequence[B_, D_, E_]] *
-		tGen[gr_@rep_, A_, a_,b_] tGen[gr_@rep_, B_, b_, c_] tGen[gr_@rep_, C_, c_, d_] tGen[gr_@rep_, D_, d_, a_] := 0;
-	fStruct /: fStruct[gr_, x1 : OrderlessPatternSequence[E_, A_, F_]] fStruct[gr_, x2 : OrderlessPatternSequence[F_, B_, G_]] *
-		fStruct[gr_, x3 : OrderlessPatternSequence[G_, C_, H_]] fStruct[gr_, x4 : OrderlessPatternSequence[H_, D_, E_]] fStruct[gr_, y1 : OrderlessPatternSequence[I_, A_, J_]] *
-		fStruct[gr_, y2 : OrderlessPatternSequence[J_, B_, K_]] fStruct[gr_, y3 : OrderlessPatternSequence[K_, C_, L_]] fStruct[gr_, y4 : OrderlessPatternSequence[L_, D_, I_]] /;
-		Head@$gaugeGroups[gr, LieGroup] == SU :=
-		(n = $gaugeGroups[gr, LieGroup][[1]]; Signature[List@x1] Signature[List@x2] Signature[List@x3] Signature[List@x4] Signature[List@y1]  *
-			Signature[List@y2] Signature[List@y3] Signature[List@y4] Signature[{E, A, F}] Signature[{F, B, G}] Signature[{G, C, H}] Signature[{H, D, E}] *
-			Signature[{I, A, J}] Signature[{J, B, K}] Signature[{K, C, L}] Signature[{L, D, I}] n^2 (n^2 - 1) (n^2 + 12)/8);
-	expr
-];
 
 (*##################################*)
 (*------------RG tensors------------*)
@@ -216,12 +202,7 @@ GaugeTensors[coupling_Symbol, loop_Integer] :=
 			{n, diagrams}];
 		,StringForm["Evaluating term `` / ``", n, diagrams]];
 
-		(* At 4-loops additional identities are required.*)
-		If[loop > 3,
-			NewIdentities @ bTerm
-		,
-			bTerm
-		]
+		bTerm
 	];
 
 YukawaTensors[coupling_Symbol, loop_Integer] :=
@@ -332,6 +313,17 @@ UpsilonYukawaTensors[coupling_Symbol, loop_Integer] :=
 				Ucoef[2, loop, n] RefineGroupStructures @ Tr@ Tdot[Ttimes[$yukawas[coupling, Projector][$a, $i, $j], UpsilonTensor[2, loop, n]], Yuk[$b, $i, $j]]
 			, {n, diagrams[[2]]}]
 		,StringForm["Evaluating term `` / ``", d, Plus@@ diagrams]]
+	];
+
+(* Returns (\upsilon g)_aij for use in B = \beta - (\upsilon g)*)
+UpsilonQuarticTensors[coupling_Symbol, loop_Integer] :=
+	Module[{diagrams = {0, 0, 3}[[loop]], n= 0},
+		Monitor[
+			Sum[
+				Ucoef[2, loop, n] RefineGroupStructures @ Ttimes[$quartics[coupling, Projector][$a, $c, $d, $e], 
+                    UpsilonTensor[2, loop, n] Lam[$b, $c, $d, $e] // Expand // TsSym4[$a, $c, $d, $e]  ]
+			, {n, diagrams}]
+		, StringForm["Evaluating term `` / ``", n, diagrams]]
 	];
 
 FermionUpsilonTensors[fields_, loop_Integer] :=

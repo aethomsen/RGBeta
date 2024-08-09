@@ -52,13 +52,13 @@ BetaFunction::usage =
 	Option FlavorImproved-> True (default) uses the flavor-improved \[Beta]-function (relevant from 3-loop order).
 	Option FourDimensions-> True (default) removes the 0-order \[Epsilon]-dependent part.
 	Option RescaledCouplings-> True (not default) will absorb the loop factors of 1/16\[Pi]^2 into the couplings.
-	Rather than a single coupling, Gauge, Yukawa, Quartic, Trilinear, ScalarMass, and FermionMass can be used for a class of couplings."
-BetaSimplify::usage = 
+	Rather than a single coupling, Gauge, Yukawa, Quartic, Trilinear, ScalarMass, and FermionMass can be used for a class of couplings, which returns an association of all couplings of the class to their corresponding beta functions."
+BetaSimplify::usage =
 	"BetaSimplify provides a simplification routine optimized to apply to long RG functions."
 BetaTerm::usage =
 	"BetaTerm[coupling, loop] computes the l-loop contribution to the beta function of the coupling.
 	Option FlavorImproved-> True (default) uses the flavor-improved \[Beta]-function (relevant from 3-loop order).
-	Rather than a single coupling, Gauge, Yukawa, Quartic, Trilinear, ScalarMass, and FermionMass can be used for a class of couplings."
+	Rather than a single coupling, Gauge, Yukawa, Quartic, Trilinear, ScalarMass, and FermionMass can be used for a class of couplings, which returns an association of all couplings of the class to their corresponding beta terms."
 CheckProjection::usage =
 	"CheckProjection[coupling] returns the result of the automatic projection operator of the coupling on the corresponding generalized coupling."
 Finalize::usage =
@@ -146,9 +146,9 @@ Tdot[a_, b_, c___] := Tdot[Expand[a.b], c];
 Tdot[a_] = a;
 
 (* Efficient simplification of long beta-function expressions *)
-BetaSimplify @ expr_ := 
-	Block[{symbols = Join[Keys@ $couplings, $flavorReps, {_Tr, _Tensor}]},
-		Collect[Expand@ expr, symbols, Simplify] 
+BetaSimplify @ expr_ :=
+	Block[{symbols = Join[Keys@ $couplings, $flavorReps, {_Tr, _Tensor, _Dot}]},
+		Collect[Expand@ expr, symbols, Simplify]
 	]
 
 (*##################################*)
@@ -207,13 +207,17 @@ BetaTerm[coupling_, loop_, opt:OptionsPattern[] ]? OptionsCheck :=
 				beta = beta /. {Matrix[l1_List][group[adj] @ v1] Matrix[l2_List][group[adj] @ v2] :> Outer[Times, l1, l2],
 					Matrix[mat_][group[adj] @ v1, group[adj] @ v2] /; MatrixQ @ mat :> mat};
 			];
+
 		,Yukawa,
 			beta = YukawaTensors[coupling, loop] + If[OptionValue@ FlavorImproved && loop > 0,
 					UpsilonYukawaTensors[coupling, loop]/. $fermionUpsilonCoefficients/. $scalarUpsilonCoefficients, 0
 				]/. $yukawaCoefficients // Expand;
+
 		,Quartic,
 			CheckQuarticMixing[coupling, BetaTerm];
-			beta = QuarticTensors[coupling, loop] /. $quarticCoefficients // Expand;
+			beta = QuarticTensors[coupling, loop] + If[OptionValue@ FlavorImproved && loop > 0,
+					UpsilonQuarticTensors[coupling, loop]/. $scalarUpsilonCoefficients, 0
+				]/. $quarticCoefficients // Expand;
 
 		,FermionMass,
 			beta = FermionMassTensors[coupling, loop] /. $yukawaCoefficients // Expand;
@@ -227,8 +231,7 @@ BetaTerm[coupling_, loop_, opt:OptionsPattern[] ]? OptionsCheck :=
 		];
 
 		(*Canonically order coupling indices if any*)
-		CanonizeMatrices @ beta
-		(* CanonizeMatrices @ RefineGroupStructures @ beta *)
+		BetaSimplify @ CanonizeMatrices @ beta
 	];
 
 (*Function that produces the beta function for the requested coupling*)
@@ -252,7 +255,7 @@ BetaFunction[coupling_, loop_, opt:OptionsPattern[] ] ? OptionsCheck :=
 	];
 
 (* Function for checking possible coupling mixings *)
-CheckPotentialCouplingMixing::mixes= "The quartic couplings `1` involve the same fields. This function returns an unpredictable linear combination of all the associated \[Beta]-functions. Please use the type call `2`[`3`, <loop>] instead."
+CheckPotentialCouplingMixing::mixes= "The couplings `1` involve the same fields. This function returns an unpredictable linear combination of all the associated \[Beta]-functions. Please use the type call `2`[`3`, <loop>] instead."
 CheckPotentialCouplingMixing[coupling_, func_]:=
 	Module[{fields, couplings, couplingsAssoc, type},
 		type= CouplingType@ coupling;
@@ -306,8 +309,9 @@ ProjectionToUnmixedBetas[type_, loop_, func_, opt:OptionsPattern[]]:=
 				Table[Quiet@ func[c, loop, opt], {c, couplings}]
 			, StringForm["Evaluating the `` \[Beta]-function", c] ];
 
-		Association@@ Thread@ Rule[couplings, invMatrix . beta // BetaSimplify]
-
+		Monitor[
+			Association@@ Thread@ Rule[couplings, invMatrix . beta // BetaSimplify]
+		, "Simplifying the \[Beta]-functions"]
 	];
 
 

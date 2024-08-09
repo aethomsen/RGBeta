@@ -1,4 +1,5 @@
-## v.1.2.0 (2024-xx-xx)
+## v.1.2.0 (2024-08-09)
+- Added 3-loop quartic beta function.
 - `BetaTerm` and `BetaFunction` using coupling types (`Yukawa`, `Quartic`, etc.) now returns an association of the corresponding beta-functions or terms. 
 - Added support for the three-index symmetric tensor of adjoint indices for SU(N) groups: `dSym[group, a, b, c]`.
 - Added `BetaSimplify` function optimized for simplifying beta functions.
